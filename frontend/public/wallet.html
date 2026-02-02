@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arc Wallet - Passkey Registration</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    h1 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #888;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #aaa;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #6c5ce7;
+    }
+
+    input::placeholder {
+      color: #666;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.info {
+      background: rgba(108, 92, 231, 0.2);
+      border: 1px solid rgba(108, 92, 231, 0.3);
+      color: #a29bfe;
+      display: block;
+    }
+
+    .status.success {
+      background: rgba(0, 184, 148, 0.2);
+      border: 1px solid rgba(0, 184, 148, 0.3);
+      color: #00b894;
+      display: block;
+    }
+
+    .status.error {
+      background: rgba(214, 48, 49, 0.2);
+      border: 1px solid rgba(214, 48, 49, 0.3);
+      color: #ff7675;
+      display: block;
+    }
+
+    .wallet-info {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(0, 184, 148, 0.1);
+      border: 1px solid rgba(0, 184, 148, 0.2);
+      border-radius: 10px;
+      display: none;
+    }
+
+    .wallet-info.show {
+      display: block;
+    }
+
+    .wallet-address {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      color: #00b894;
+      word-break: break-all;
+      margin: 10px 0;
+    }
+
+    .wallet-link {
+      display: inline-block;
+      color: #6c5ce7;
+      text-decoration: none;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .wallet-link:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .divider span {
+      padding: 0 15px;
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+
+    .info-box h3 {
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .info-box p {
+      color: #888;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Arc Wallet</h1>
+    <p class="subtitle">Create a smart wallet with Passkey (Touch ID / Face ID)</p>
+
+    <div class="form-group">
+      <label for="username">Username or Email</label>
+      <input type="text" id="username" placeholder="user@example.com" />
+    </div>
+
+    <button class="btn btn-primary" id="registerBtn" onclick="registerWallet()">
+      Create New Wallet
+    </button>
+
+    <div class="divider"><span>or</span></div>
+
+    <button class="btn btn-secondary" id="loginBtn" onclick="loginWallet()">
+      Login to Existing Wallet
+    </button>
+
+    <div id="status" class="status"></div>
+
+    <div id="walletInfo" class="wallet-info">
+      <h3 style="color: #fff; margin-bottom: 10px;">Wallet Created!</h3>
+      <p style="color: #888; font-size: 12px;">Your Smart Account Address:</p>
+      <p id="walletAddress" class="wallet-address"></p>
+      <a id="explorerLink" class="wallet-link" href="#" target="_blank">
+        View on Arc Explorer →
+      </a>
+    </div>
+
+    <div class="info-box">
+      <h3>About Passkey Wallets</h3>
+      <p>
+        Your wallet is secured by WebAuthn passkeys stored in your device's secure enclave.
+        No seed phrases, no passwords — just your biometrics (Touch ID, Face ID) or device PIN.
+        Circle's Modular Wallet uses ERC-4337 smart accounts for enhanced security and gas sponsorship.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    console.log('=== WALLET MODULE STARTING ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Location:', window.location.href);
+
+    // Circle Modular Wallets SDK + Viem
+    let toPasskeyTransport, toModularTransport, toWebAuthnCredential, WebAuthnMode;
+    let toCircleSmartAccount, toWebAuthnAccount;
+    let createPublicClient, defineChain;
+
+    try {
+      // Circle SDK - for passkey transport, credentials, AND smart account
+      const circleSDK = await import('https://esm.sh/@circle-fin/modular-wallets-core@1');
+      console.log('Circle SDK exports:', Object.keys(circleSDK));
+      toPasskeyTransport = circleSDK.toPasskeyTransport;
+      toModularTransport = circleSDK.toModularTransport;
+      toWebAuthnCredential = circleSDK.toWebAuthnCredential;
+      toCircleSmartAccount = circleSDK.toCircleSmartAccount;
+      WebAuthnMode = circleSDK.WebAuthnMode;
+      console.log('Circle SDK loaded');
+
+      // Viem - for public client
+      const viemSDK = await import('https://esm.sh/viem@2');
+      createPublicClient = viemSDK.createPublicClient;
+      defineChain = viemSDK.defineChain;
+      console.log('Viem loaded');
+
+      // Viem account-abstraction - for WebAuthnAccount wrapper
+      const viemAA = await import('https://esm.sh/viem@2/account-abstraction');
+      console.log('Viem AA exports:', Object.keys(viemAA));
+      toWebAuthnAccount = viemAA.toWebAuthnAccount;
+      console.log('Viem Account Abstraction loaded');
+      console.log('  toWebAuthnAccount:', typeof toWebAuthnAccount);
+    } catch (err) {
+      console.error('Failed to load SDK:', err);
+      document.getElementById('status').className = 'status error';
+      document.getElementById('status').innerHTML = 'Failed to load wallet SDK: ' + err.message;
+    }
+
+    // Configuration
+    const CIRCLE_CLIENT_URL = 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl';
+    const CIRCLE_CLIENT_KEY = 'TEST_CLIENT_KEY:3a7c33087a5778dae06374364113e8de:324e884310a56ba506340bec23de86f2';
+
+    // Arc Testnet chain definition
+    const arcTestnet = defineChain({
+      id: 16180,
+      name: 'Arc Testnet',
+      nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+      rpcUrls: {
+        default: { http: ['https://rpc-testnet.arc.io'] }
+      },
+      blockExplorers: {
+        default: { name: 'ArcScan', url: 'https://testnet.arcscan.app' }
+      },
+      testnet: true
+    });
+
+    // Network configuration
+    const NETWORK = 'arcTestnet';
+    const CHAIN = arcTestnet;
+    const EXPLORER_URL = 'https://testnet.arcscan.app';
+
+    // UI helpers
+    function showStatus(message, type = 'info') {
+      const status = document.getElementById('status');
+      status.className = `status ${type}`;
+      status.innerHTML = message;
+    }
+
+    function showWallet(address) {
+      const walletInfo = document.getElementById('walletInfo');
+      const walletAddress = document.getElementById('walletAddress');
+      const explorerLink = document.getElementById('explorerLink');
+
+      walletAddress.textContent = address;
+      explorerLink.href = `${EXPLORER_URL}/address/${address}`;
+      walletInfo.classList.add('show');
+    }
+
+    function setLoading(buttonId, loading) {
+      const btn = document.getElementById(buttonId);
+      const originalText = btn.dataset.originalText || btn.textContent;
+
+      if (loading) {
+        btn.dataset.originalText = originalText;
+        btn.innerHTML = '<span class="loading"></span>Processing...';
+        btn.disabled = true;
+      } else {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Register new wallet with passkey
+    async function registerWallet() {
+      const username = document.getElementById('username').value.trim();
+
+      if (!username) {
+        showStatus('Please enter a username or email', 'error');
+        return;
+      }
+
+      setLoading('registerBtn', true);
+      showStatus('<span class="loading"></span>Creating passkey transport...', 'info');
+
+      try {
+        // 1. Create passkey transport
+        const passkeyTransport = toPasskeyTransport(CIRCLE_CLIENT_URL, CIRCLE_CLIENT_KEY);
+
+        showStatus('<span class="loading"></span>Waiting for passkey registration (Touch ID / Face ID)...', 'info');
+
+        // 2. Register new passkey credential
+        const credential = await toWebAuthnCredential({
+          transport: passkeyTransport,
+          mode: WebAuthnMode.Register,
+          username: username
+        });
+
+        console.log('=== REGISTER CREDENTIAL ===');
+        console.log('credential:', credential);
+        console.log('credential.id:', credential.id);
+        console.log('credential.publicKey:', credential.publicKey);
+
+        showStatus(`<span class="loading"></span>Creating smart account on ${NETWORK}...`, 'info');
+
+        // 3. Create modular transport for the network
+        const modularTransport = toModularTransport(
+          `${CIRCLE_CLIENT_URL}/${NETWORK}`,
+          CIRCLE_CLIENT_KEY
+        );
+
+        // 4. Create public client
+        const client = createPublicClient({
+          chain: CHAIN,
+          transport: modularTransport
+        });
+
+        // 5. Wrap credential in WebAuthnAccount and create Circle Smart Account
+        const owner = toWebAuthnAccount({ credential });
+        console.log('WebAuthnAccount owner:', owner);
+
+        const smartAccount = await toCircleSmartAccount({
+          client,
+          owner
+        });
+
+        // Success!
+        showStatus('Wallet created successfully!', 'success');
+        showWallet(smartAccount.address);
+
+        // Store credential info for later use
+        localStorage.setItem('arcWallet', JSON.stringify({
+          address: smartAccount.address,
+          username: username,
+          credentialId: credential.id,
+          publicKey: credential.publicKey
+        }));
+
+        console.log('Smart Account created:', smartAccount.address);
+
+      } catch (error) {
+        console.error('Registration error:', error);
+        showStatus(`Error: ${error.message}`, 'error');
+      } finally {
+        setLoading('registerBtn', false);
+      }
+    }
+
+    // Login to existing wallet with passkey
+    async function loginWallet() {
+      const username = document.getElementById('username').value.trim();
+
+      if (!username) {
+        showStatus('Please enter your username or email', 'error');
+        return;
+      }
+
+      setLoading('loginBtn', true);
+      showStatus('<span class="loading"></span>Authenticating with passkey...', 'info');
+
+      try {
+        // 1. Create passkey transport
+        const passkeyTransport = toPasskeyTransport(CIRCLE_CLIENT_URL, CIRCLE_CLIENT_KEY);
+
+        // 2. Login with existing passkey
+        const credential = await toWebAuthnCredential({
+          transport: passkeyTransport,
+          mode: WebAuthnMode.Login,
+          username: username
+        });
+
+        console.log('=== LOGIN CREDENTIAL ===');
+        console.log('credential:', credential);
+        console.log('credential.id:', credential.id);
+        console.log('credential.publicKey:', credential.publicKey);
+
+        showStatus('<span class="loading"></span>Retrieving smart account...', 'info');
+
+        // 3. Create modular transport for the network
+        const modularTransport = toModularTransport(
+          `${CIRCLE_CLIENT_URL}/${NETWORK}`,
+          CIRCLE_CLIENT_KEY
+        );
+
+        // 4. Create public client
+        const client = createPublicClient({
+          chain: CHAIN,
+          transport: modularTransport
+        });
+
+        // 5. Wrap credential in WebAuthnAccount and get Circle Smart Account
+        const owner = toWebAuthnAccount({ credential });
+        console.log('WebAuthnAccount owner:', owner);
+
+        const smartAccount = await toCircleSmartAccount({
+          client,
+          owner
+        });
+
+        console.log('Smart account:', smartAccount);
+
+        // Success!
+        showStatus('Logged in successfully!', 'success');
+        showWallet(smartAccount.address);
+
+        // Update stored info
+        localStorage.setItem('arcWallet', JSON.stringify({
+          address: smartAccount.address,
+          username: username,
+          credentialId: credential.id,
+          publicKey: credential.publicKey
+        }));
+
+        console.log('Smart Account retrieved:', smartAccount.address);
+
+      } catch (error) {
+        console.error('Login error:', error);
+        showStatus(`Error: ${error.message}`, 'error');
+      } finally {
+        setLoading('loginBtn', false);
+      }
+    }
+
+    // Check for existing wallet on page load
+    function checkExistingWallet() {
+      const stored = localStorage.getItem('arcWallet');
+      if (stored) {
+        try {
+          const wallet = JSON.parse(stored);
+          document.getElementById('username').value = wallet.username || '';
+          showStatus(`Found existing wallet. Click "Login" to authenticate.`, 'info');
+        } catch (e) {
+          // Invalid stored data, ignore
+        }
+      }
+    }
+
+    // Expose functions to window for onclick handlers
+    window.registerWallet = registerWallet;
+    window.loginWallet = loginWallet;
+
+    // Initialize
+    checkExistingWallet();
+  </script>
+</body>
+</html>

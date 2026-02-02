@@ -1,0 +1,11 @@
+[
+    "function receiveMessage(bytes message, bytes attestation) returns (bool success)",
+    "function usedNonces(bytes32 sourceAndNonce) view returns (uint256)",
+    "function localDomain() view returns (uint32)",
+    "function version() view returns (uint32)",
+    "function attesterManager() view returns (address)",
+    "function maxMessageBodySize() view returns (uint256)",
+    "function nextAvailableNonce() view returns (uint64)",
+    "event MessageReceived(address indexed caller, uint32 sourceDomain, uint64 indexed nonce, bytes32 sender, bytes messageBody)",
+    "event MessageSent(bytes message)"
+]
