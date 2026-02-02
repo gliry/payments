@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IRIS_API_SANDBOX = exports.ARC_TESTNET = exports.CHAINS = void 0;
+exports.IRIS_API_SANDBOX = exports.ALL_CHAINS = exports.ARC_TESTNET = exports.CHAINS = void 0;
+/**
+ * Source chains for CCTP transfers (burn USDC here)
+ */
 exports.CHAINS = {
     'ethereum-sepolia': {
         chainId: 11155111,
@@ -30,6 +33,9 @@ exports.CHAINS = {
         explorer: 'https://testnet.sonicscan.org',
     },
 };
+/**
+ * Arc Testnet config (destination chain for CCTP)
+ */
 exports.ARC_TESTNET = {
     chainId: 5042002,
     domain: 26, // Arc testnet CCTP domain
@@ -38,5 +44,12 @@ exports.ARC_TESTNET = {
     tokenMessenger: '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA',
     messageTransmitter: '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275',
     explorer: 'https://testnet.arcscan.app',
+};
+/**
+ * All chains including Arc (for AA scripts)
+ */
+exports.ALL_CHAINS = {
+    ...exports.CHAINS,
+    'arc-testnet': exports.ARC_TESTNET,
 };
 exports.IRIS_API_SANDBOX = 'https://iris-api-sandbox.circle.com/v1/attestations';

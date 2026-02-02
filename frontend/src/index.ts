@@ -1,17 +1,3 @@
-// Main exports
-export { collectToArc, collectFromChain } from './lib/collectToArc';
-export type { CollectParams, CollectResult } from './lib/collectToArc';
-
-// CCTP modules
-export { burnOnChain, burnOnSourceChains } from './lib/cctp/burn';
-export type { BurnParams, BurnEvent } from './lib/cctp/burn';
-
-export { pollAttestation, pollAttestations } from './lib/cctp/attestation';
-export type { AttestationResult } from './lib/cctp/attestation';
-
-export { mintOnArc, mintAllOnArc } from './lib/cctp/mint';
-export type { MintResult } from './lib/cctp/mint';
-
 // Wallet management (Modular Wallets with Passkey)
 export {
   CircleConfig,
@@ -26,5 +12,28 @@ export {
 export type { WalletInfo, WebAuthnCredential, CircleSmartAccount } from './lib/wallets';
 
 // Config
-export { CHAINS, ARC_TESTNET, IRIS_API_SANDBOX } from './config/chains';
+export { CHAINS, ARC_TESTNET, ALL_CHAINS } from './config/chains';
 export type { ChainConfig, SupportedChain } from './config/chains';
+
+// Gateway (cross-chain USDC transfers)
+export {
+  GATEWAY_WALLET,
+  GATEWAY_MINTER,
+  GATEWAY_API,
+  GATEWAY_DOMAINS,
+  DOMAIN_TO_CHAIN,
+  getDomain,
+  buildGatewayDepositCalls,
+  buildGatewayMintCalls,
+  getGatewayBalance,
+  getTotalGatewayBalance,
+  createBurnIntent,
+  requestTransfer,
+  initiateTransfer,
+  addressToBytes32,
+} from './lib/gateway';
+export type {
+  BurnIntent,
+  TransferResponse,
+  ParsedBalance,
+} from './lib/gateway';

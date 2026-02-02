@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "collect": "ts-node src/scripts/collect.ts",
+    "collect:aa": "ts-node scripts/collect-aa.ts",
     "send-native": "ts-node scripts/sendNative.ts",
     "send-native:base": "ts-node scripts/sendNative.ts base",
     "send-native:sonic": "ts-node scripts/sendNative.ts sonic",

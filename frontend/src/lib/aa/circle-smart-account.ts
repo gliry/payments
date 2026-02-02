@@ -1,56 +1,78 @@
 /**
  * Circle Smart Account utilities for Account Abstraction
  *
- * This module provides functions to create and use Circle Smart Accounts
- * with an EOA signer (private key) instead of passkeys.
+ * ⚠️  IMPORTANT: OWNER TYPE AFFECTS AA ADDRESS!
+ *
+ * The Smart Account address is determined by CREATE2 using:
+ *   mixedSalt = keccak256(owner + salt)
+ *
+ * Different owner types produce DIFFERENT addresses:
+ *   - EOA owner (privateKey)  → AA address 0xAAA...
+ *   - Passkey owner (WebAuthn) → AA address 0xBBB... (DIFFERENT!)
+ *
+ * For automation/CLI scripts, use EOA mode.
+ * For browser UX with biometrics, use Passkey mode.
+ *
+ * @see https://developers.circle.com/wallets/account-types
+ * @see https://developers.circle.com/wallets/modular/web-sdk
  */
 
-import { createPublicClient, http, type Chain, type PublicClient } from 'viem';
-import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
+// Polyfill for Node.js environment
+// Circle SDK checks window.location.hostname for API key validation
+declare const globalThis: any;
+if (typeof globalThis.window === 'undefined') {
+  globalThis.window = {
+    location: { hostname: 'localhost' }
+  };
+}
+
 import {
-  createBundlerClient,
-  type BundlerClient,
-  type SmartAccount,
-} from 'viem/account-abstraction';
+  createPublicClient,
+  http,
+  type Chain,
+  type Hex,
+  type PublicClient,
+} from 'viem';
+import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import {
   toCircleSmartAccount,
   toModularTransport,
 } from '@circle-fin/modular-wallets-core';
+import { createBundlerClient } from 'viem/account-abstraction';
 
-import { CIRCLE_CLIENT_KEY } from '../../config/circle';
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
 
-// Circle bundler RPC endpoints for each chain
+const CIRCLE_CLIENT_KEY = process.env.CIRCLE_CLIENT_KEY || '';
+
+/**
+ * Circle bundler RPC endpoints for each chain
+ * Note: Not all Gateway chains have Circle bundler support
+ */
 export const CIRCLE_BUNDLER_RPCS: Record<string, string> = {
-  'ethereum-sepolia': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/ethereumSepolia',
-  'base-sepolia': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/baseSepolia',
-  'sonic-testnet': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/sonicTestnet',
+  // Supported by Circle Modular Wallets SDK
+  'arbitrum-sepolia': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/arbitrumSepolia',
   'arc-testnet': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/arcTestnet',
+  'avalanche-fuji': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/avalancheFuji',
+  'base-sepolia': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/baseSepolia',
+  'monad-testnet': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/monadTestnet',
+  'optimism-sepolia': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/optimismSepolia',
+  'polygon-amoy': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/polygonAmoy',
+  'unichain-sepolia': 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/unichainSepolia',
 };
 
-// Chain definitions for viem
+/**
+ * Chain definitions for viem
+ */
 export const CHAIN_DEFINITIONS: Record<string, Chain> = {
-  'ethereum-sepolia': {
-    id: 11155111,
-    name: 'Ethereum Sepolia',
+  // AA-supported chains (Circle Modular Wallets SDK)
+  'arbitrum-sepolia': {
+    id: 421614,
+    name: 'Arbitrum Sepolia',
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
     rpcUrls: {
-      default: { http: ['https://rpc.sepolia.org'] },
-    },
-  },
-  'base-sepolia': {
-    id: 84532,
-    name: 'Base Sepolia',
-    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-    rpcUrls: {
-      default: { http: ['https://sepolia.base.org'] },
-    },
-  },
-  'sonic-testnet': {
-    id: 64165,
-    name: 'Sonic Testnet',
-    nativeCurrency: { name: 'S', symbol: 'S', decimals: 18 },
-    rpcUrls: {
-      default: { http: ['https://rpc.blaze.soniclabs.com'] },
+      default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] },
     },
   },
   'arc-testnet': {
@@ -61,36 +83,113 @@ export const CHAIN_DEFINITIONS: Record<string, Chain> = {
       default: { http: ['https://rpc.testnet.arc.network'] },
     },
   },
+  'avalanche-fuji': {
+    id: 43113,
+    name: 'Avalanche Fuji',
+    nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://api.avax-test.network/ext/bc/C/rpc'] },
+    },
+  },
+  'base-sepolia': {
+    id: 84532,
+    name: 'Base Sepolia',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://sepolia.base.org'] },
+    },
+  },
+  'monad-testnet': {
+    id: 10143,
+    name: 'Monad Testnet',
+    nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://testnet-rpc.monad.xyz'] },
+    },
+  },
+  'optimism-sepolia': {
+    id: 11155420,
+    name: 'Optimism Sepolia',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://optimism-sepolia-public.nodies.app'] },
+    },
+  },
+  'polygon-amoy': {
+    id: 80002,
+    name: 'Polygon Amoy',
+    nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://rpc-amoy.polygon.technology'] },
+    },
+  },
+  'unichain-sepolia': {
+    id: 1301,
+    name: 'Unichain Sepolia',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    rpcUrls: {
+      default: { http: ['https://sepolia.unichain.org'] },
+    },
+  },
 };
 
+// =============================================================================
+// TYPES
+// =============================================================================
+
 export interface SmartAccountSetup {
-  account: SmartAccount;
-  bundlerClient: BundlerClient;
+  accountAddress: Hex;
+  bundlerClient: any;
   publicClient: PublicClient;
   owner: PrivateKeyAccount;
+  chainKey: string;
+  bundlerRpc: string;
 }
 
+export interface UserOperationCall {
+  to: Hex;
+  data: Hex;
+  value?: bigint;
+}
+
+export interface UserOperationResult {
+  userOpHash: Hex;
+  txHash: Hex;
+}
+
+// =============================================================================
+// EOA MODE (CLI + Browser)
+// =============================================================================
+
 /**
- * Create a Circle Smart Account for a specific chain
+ * Create a Circle Smart Account with EOA signer
+ *
+ * ✅ Works in: Node.js, Browser
+ * ✅ Automation: Full (private key can sign without user interaction)
  *
  * @param chainKey - Chain identifier (e.g., 'ethereum-sepolia', 'arc-testnet')
  * @param ownerPrivateKey - Private key of the EOA owner (hex string with 0x prefix)
  * @returns Smart account setup with bundler client
  */
-export async function createSmartAccountForChain(
+export async function createSmartAccountWithEOA(
   chainKey: string,
-  ownerPrivateKey: `0x${string}`
+  ownerPrivateKey: Hex
 ): Promise<SmartAccountSetup> {
   const bundlerRpc = CIRCLE_BUNDLER_RPCS[chainKey];
   const chain = CHAIN_DEFINITIONS[chainKey];
 
   if (!bundlerRpc || !chain) {
-    throw new Error(`Unsupported chain: ${chainKey}`);
+    throw new Error(`Unsupported chain: ${chainKey}. Supported: ${Object.keys(CIRCLE_BUNDLER_RPCS).join(', ')}`);
   }
 
   if (!CIRCLE_CLIENT_KEY) {
-    throw new Error('CIRCLE_CLIENT_KEY is not set in environment');
+    throw new Error(
+      'CIRCLE_CLIENT_KEY is not set in environment. ' +
+      'Get your Client Key from https://console.circle.com'
+    );
   }
+
+  console.log(`[EOA MODE] Creating Smart Account on ${chainKey}...`);
 
   // Create EOA owner account from private key
   const owner = privateKeyToAccount(ownerPrivateKey);
@@ -105,6 +204,7 @@ export async function createSmartAccountForChain(
   });
 
   // Create Circle Smart Account with EOA owner
+  // The SDK accepts LocalAccount (from privateKeyToAccount) as owner
   const account = await toCircleSmartAccount({
     client: publicClient,
     owner,
@@ -117,54 +217,68 @@ export async function createSmartAccountForChain(
     transport,
   });
 
-  console.log(`[${chainKey}] Smart Account created: ${account.address}`);
+  const accountAddress = await account.getAddress();
+
+  console.log(`[${chainKey}] Smart Account: ${accountAddress}`);
   console.log(`[${chainKey}] Owner EOA: ${owner.address}`);
 
   return {
-    account,
+    accountAddress,
     bundlerClient,
     publicClient,
     owner,
+    chainKey,
+    bundlerRpc,
   };
 }
 
-export interface UserOperationCall {
-  to: `0x${string}`;
-  data: `0x${string}`;
-  value?: bigint;
+/**
+ * Alias for createSmartAccountWithEOA (backwards compatibility)
+ * @deprecated Use createSmartAccountWithEOA for clarity
+ */
+export const createSmartAccountForChain = createSmartAccountWithEOA;
+
+// =============================================================================
+// PASSKEY MODE (Browser only)
+// =============================================================================
+
+/**
+ * Create a Circle Smart Account with Passkey (WebAuthn) signer
+ *
+ * ⚠️  BROWSER ONLY - Does NOT work in Node.js!
+ */
+export async function createSmartAccountWithPasskey(
+  _chainKey: string,
+  _credential: unknown
+): Promise<SmartAccountSetup> {
+  throw new Error(
+    'Passkey mode is only available in the browser with WebAuthn support. ' +
+    'For CLI/Node.js scripts, use createSmartAccountWithEOA() instead.'
+  );
 }
 
-export interface UserOperationResult {
-  userOpHash: `0x${string}`;
-  txHash: `0x${string}`;
-}
+// =============================================================================
+// USER OPERATIONS
+// =============================================================================
 
 /**
  * Send a UserOperation from the Smart Account
- *
- * @param setup - Smart account setup from createSmartAccountForChain
- * @param calls - Array of contract calls to execute
- * @returns UserOperation hash and transaction hash
  */
 export async function sendUserOperation(
   setup: SmartAccountSetup,
   calls: UserOperationCall[]
 ): Promise<UserOperationResult> {
-  console.log(`Sending UserOperation with ${calls.length} call(s)...`);
+  console.log(`[${setup.chainKey}] Sending UserOperation with ${calls.length} call(s)...`);
 
-  // Send the UserOperation via bundler
   const userOpHash = await setup.bundlerClient.sendUserOperation({
     calls,
   });
+  console.log(`[${setup.chainKey}] UserOperation sent: ${userOpHash}`);
 
-  console.log(`UserOperation sent: ${userOpHash}`);
-
-  // Wait for the UserOperation to be included
   const receipt = await setup.bundlerClient.waitForUserOperationReceipt({
     hash: userOpHash,
   });
-
-  console.log(`UserOperation included in tx: ${receipt.receipt.transactionHash}`);
+  console.log(`[${setup.chainKey}] UserOperation included in tx: ${receipt.receipt.transactionHash}`);
 
   return {
     userOpHash,
@@ -172,17 +286,34 @@ export async function sendUserOperation(
   };
 }
 
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
 /**
- * Get the Smart Account address for a given owner on any chain
- * (Same address across all chains due to CREATE2)
- *
- * @param ownerPrivateKey - Private key of the EOA owner
- * @returns The deterministic Smart Account address
+ * Get the Smart Account address for a given EOA owner
  */
 export async function getSmartAccountAddress(
-  ownerPrivateKey: `0x${string}`
-): Promise<`0x${string}`> {
-  // Use any chain to get the address (it's the same on all chains)
-  const setup = await createSmartAccountForChain('ethereum-sepolia', ownerPrivateKey);
-  return setup.account.address;
+  ownerPrivateKey: Hex
+): Promise<Hex> {
+  const setup = await createSmartAccountWithEOA('ethereum-sepolia', ownerPrivateKey);
+  return setup.accountAddress;
 }
+
+/**
+ * Create Smart Accounts on multiple chains with the same owner
+ */
+export async function createSmartAccountsOnMultipleChains(
+  chainKeys: string[],
+  ownerPrivateKey: Hex
+): Promise<Map<string, SmartAccountSetup>> {
+  const accounts = new Map<string, SmartAccountSetup>();
+
+  for (const chainKey of chainKeys) {
+    const setup = await createSmartAccountWithEOA(chainKey, ownerPrivateKey);
+    accounts.set(chainKey, setup);
+  }
+
+  return accounts;
+}
+

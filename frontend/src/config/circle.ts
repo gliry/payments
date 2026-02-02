@@ -18,13 +18,13 @@ export const CIRCLE_CLIENT_URL = 'https://modular-sdk.circle.com/v1/rpc/w3s/buid
 // Client Key for frontend SDK (NOT the API Key used for backend)
 export const CIRCLE_CLIENT_KEY = process.env.CIRCLE_CLIENT_KEY || '';
 
-// Supported networks for Modular Wallets (with CCTP domain IDs)
+// Supported networks for Modular Wallets
 export const SUPPORTED_NETWORKS = {
   testnet: [
-    'arcTestnet',       // domain 26
-    'baseSepolia',      // domain 6
-    'ethereumSepolia',  // domain 0
-    'sonicTestnet',     // domain 13
+    'arcTestnet',
+    'baseSepolia',
+    'ethereumSepolia',
+    'sonicTestnet',
   ],
   mainnet: [
     'arc',
