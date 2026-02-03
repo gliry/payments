@@ -36,7 +36,10 @@ import {
   CHAIN_DEFINITIONS,
   type SmartAccountSetup,
 } from '../src/lib/aa/circle-smart-account';
-import { AA_CHAINS, ALL_CHAINS, type AAChain } from '../src/config/chains';
+import { AA_CHAINS, ALL_CHAINS, type AAChain, type SupportedChain } from '../src/config/chains';
+
+// Use AA_CHAINS as CHAINS for this script
+const CHAINS = AA_CHAINS;
 
 // =============================================================================
 // CONFIGURATION
@@ -234,7 +237,7 @@ async function collectAll(
 
   const results: { chain: string; txHash: Hex }[] = [];
 
-  for (const chainKey of Object.keys(CHAINS) as SupportedChain[]) {
+  for (const chainKey of Object.keys(CHAINS) as AAChain[]) {
     try {
       const privateKeyEnv = CHAIN_PRIVATE_KEY_ENV[chainKey];
       const fundingPrivateKey = process.env[privateKeyEnv] as Hex | undefined;
@@ -355,7 +358,7 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    const chainKey = chainArg as SupportedChain;
+    const chainKey = chainArg as AAChain;
     const privateKeyEnv = CHAIN_PRIVATE_KEY_ENV[chainKey];
     const fundingPrivateKey = getEnvOrThrow(privateKeyEnv) as Hex;
 

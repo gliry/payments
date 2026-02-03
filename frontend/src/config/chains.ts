@@ -26,6 +26,15 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     aaSupported: true,
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   },
+  'avalanche-fuji': {
+    chainId: 43113,
+    rpc: 'https://api.avax-test.network/ext/bc/C/rpc',
+    usdc: '0x5425890298aed601595a70ab815c96711a31bc65',
+    explorer: 'https://testnet.snowtrace.io',
+    gatewayDomain: 1,
+    aaSupported: true,
+    nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
+  },
   'arc-testnet': {
     chainId: 5042002,
     rpc: 'https://rpc.testnet.arc.network',
@@ -86,14 +95,6 @@ export const GATEWAY_ONLY_CHAINS: Record<string, ChainConfig> = {
     explorer: 'https://sepolia.etherscan.io',
     gatewayDomain: 0,
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-  },
-  'avalanche-fuji': {
-    chainId: 43113,
-    rpc: 'https://api.avax-test.network/ext/bc/C/rpc',
-    usdc: '0x5425890298aed601595a70ab815c96711a31bc65',
-    explorer: 'https://testnet.snowtrace.io',
-    gatewayDomain: 1,
-    nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
   },
   'sonic-testnet': {
     chainId: 64165,

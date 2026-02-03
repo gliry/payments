@@ -25,12 +25,15 @@ export {
   getDomain,
   buildGatewayDepositCalls,
   buildGatewayMintCalls,
+  buildMscaDepositCalls,
+  buildAddDelegateCalls,
+  buildRemoveDelegateCalls,
   getGatewayBalance,
   getTotalGatewayBalance,
   createBurnIntent,
   requestTransfer,
   initiateTransfer,
-  addressToBytes32,
+  initiateMscaTransfer,
 } from './lib/gateway';
 export type {
   BurnIntent,

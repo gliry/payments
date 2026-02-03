@@ -262,6 +262,17 @@ export async function createSmartAccountWithPasskey(
 // =============================================================================
 
 /**
+ * Minimum gas prices for chains that require higher values
+ * Arc testnet requires at least 1 gwei priority fee
+ */
+const CHAIN_MIN_GAS: Record<string, { maxPriorityFeePerGas: bigint; maxFeePerGas: bigint }> = {
+  'arc-testnet': {
+    maxPriorityFeePerGas: 1_000_000_000n, // 1 gwei
+    maxFeePerGas: 50_000_000_000n, // 50 gwei
+  },
+};
+
+/**
  * Send a UserOperation from the Smart Account
  */
 export async function sendUserOperation(
@@ -270,8 +281,15 @@ export async function sendUserOperation(
 ): Promise<UserOperationResult> {
   console.log(`[${setup.chainKey}] Sending UserOperation with ${calls.length} call(s)...`);
 
+  // Check if chain requires minimum gas parameters
+  const gasOverrides = CHAIN_MIN_GAS[setup.chainKey];
+
   const userOpHash = await setup.bundlerClient.sendUserOperation({
     calls,
+    ...(gasOverrides && {
+      maxPriorityFeePerGas: gasOverrides.maxPriorityFeePerGas,
+      maxFeePerGas: gasOverrides.maxFeePerGas,
+    }),
   });
   console.log(`[${setup.chainKey}] UserOperation sent: ${userOpHash}`);
 

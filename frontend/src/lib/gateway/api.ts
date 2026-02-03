@@ -376,5 +376,54 @@ export async function initiateTransfer(
   return { burnIntent, transfer };
 }
 
+/**
+ * MSCA Delegate Transfer - Transfer USDC from MSCA's Gateway balance
+ *
+ * This is for the MSCA + delegate flow where:
+ * - sourceDepositor = MSCA address (has the Gateway balance)
+ * - sourceSigner = delegate EOA (signs the burn intent)
+ *
+ * The delegate must have been added to Gateway via buildAddDelegateCalls.
+ *
+ * @param sourceChain - Source chain key
+ * @param destinationChain - Destination chain key
+ * @param amount - Amount to transfer
+ * @param mscaAddress - MSCA address that deposited to Gateway (sourceDepositor)
+ * @param recipient - Recipient on destination chain
+ * @param delegateAccount - Delegate EOA that signs the intent (sourceSigner)
+ */
+export async function initiateMscaTransfer(
+  sourceChain: string,
+  destinationChain: string,
+  amount: bigint,
+  mscaAddress: Hex,
+  recipient: Hex,
+  delegateAccount: PrivateKeyAccount
+): Promise<{ burnIntent: BurnIntent; transfer: TransferResponse }> {
+  // For MSCA flow: depositor is MSCA, signer is delegate EOA
+  const burnIntent = createBurnIntent(
+    sourceChain,
+    destinationChain,
+    amount,
+    mscaAddress,              // sourceDepositor = MSCA (has the balance)
+    recipient,
+    delegateAccount.address   // sourceSigner = delegate EOA
+  );
+
+  console.log(`[gateway] Creating MSCA burn intent...`);
+  console.log(`  Source: ${sourceChain} (domain ${burnIntent.spec.sourceDomain})`);
+  console.log(`  Destination: ${destinationChain} (domain ${burnIntent.spec.destinationDomain})`);
+  console.log(`  Amount: ${amount} (${Number(amount) / 10 ** USDC_DECIMALS} USDC)`);
+  console.log(`  MSCA Depositor: ${mscaAddress}`);
+  console.log(`  Recipient: ${recipient}`);
+  console.log(`  Delegate Signer: ${delegateAccount.address}`);
+
+  const transfer = await requestTransfer(burnIntent, delegateAccount);
+
+  console.log(`[gateway] Attestation received!`);
+
+  return { burnIntent, transfer };
+}
+
 // Export for external use
 export { BURN_INTENT_TYPES, createBurnIntentTypedData };

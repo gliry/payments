@@ -30,9 +30,13 @@ export type {
 export {
   buildGatewayDepositCalls,
   buildGatewayMintCalls,
+  buildMscaDepositCalls,
+  buildAddDelegateCalls,
+  buildRemoveDelegateCalls,
   ERC20_ABI,
   GATEWAY_WALLET_ABI,
   GATEWAY_MINTER_ABI,
+  GATEWAY_WALLET_DELEGATE_ABI,
 } from './operations';
 
 // API interactions
@@ -42,4 +46,5 @@ export {
   createBurnIntent,
   requestTransfer,
   initiateTransfer,
+  initiateMscaTransfer,
 } from './api';

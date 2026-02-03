@@ -155,12 +155,6 @@ async function transfer(
 
   console.log(`Source chain: ${sourceChain}`);
 
-  // Get source chain ID
-  const sourceChainDef = CHAIN_DEFINITIONS[sourceChain];
-  if (!sourceChainDef) {
-    throw new Error(`Unknown source chain: ${sourceChain}`);
-  }
-
   // Step 1: Create burn intent and get attestation
   console.log('');
   console.log('Step 1: Creating burn intent and requesting attestation...');
@@ -169,9 +163,9 @@ async function transfer(
     sourceChain,
     destinationChain,
     amount,
-    aaAddress,
-    owner,
-    sourceChainDef.id
+    aaAddress,   // depositor (where funds are in Gateway)
+    aaAddress,   // recipient (where to send on destination)
+    owner        // EOA signer
   );
 
   console.log('Attestation received!');
@@ -182,7 +176,7 @@ async function transfer(
 
   const mintCalls = buildGatewayMintCalls(
     transferResult.attestation,
-    transferResult.operatorSignature
+    transferResult.signature
   );
 
   const mintResult = await sendUserOperation(destSetup, mintCalls);
