@@ -69,6 +69,17 @@ const GATEWAY_WALLET_DELEGATE_ABI = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'function',
+    name: 'isAuthorizedForBalance',
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'depositor', type: 'address' },
+      { name: 'addr', type: 'address' },
+    ],
+    outputs: [{ type: 'bool' }],
+    stateMutability: 'view',
+  },
 ] as const;
 
 export function buildGatewayDepositCalls(
