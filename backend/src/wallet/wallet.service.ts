@@ -122,75 +122,40 @@ export class WalletService {
       transport: http(chainConfig.rpc),
     });
 
-    try {
-      const isAuthorized = await client.readContract({
-        address: GATEWAY_WALLET as `0x${string}`,
-        abi: GATEWAY_WALLET_DELEGATE_ABI,
-        functionName: 'isAuthorizedForBalance',
-        args: [
-          chainConfig.usdc as `0x${string}`,
-          user.walletAddress as `0x${string}`,
-          user.delegateAddress as `0x${string}`,
-        ],
-      });
+    const isAuthorized = await client.readContract({
+      address: GATEWAY_WALLET as `0x${string}`,
+      abi: GATEWAY_WALLET_DELEGATE_ABI,
+      functionName: 'isAuthorizedForBalance',
+      args: [
+        chainConfig.usdc as `0x${string}`,
+        user.walletAddress as `0x${string}`,
+        user.delegateAddress as `0x${string}`,
+      ],
+    });
 
-      if (!isAuthorized) {
-        await this.prisma.delegateSetup.update({
-          where: { id: setup.id },
-          data: {
-            status: 'FAILED',
-            txHash: dto.txHash,
-            errorMessage:
-              'Delegate not found on-chain. Transaction may have failed or targeted wrong contract.',
-          },
-        });
-
-        throw new BadRequestException(
-          'Delegate is not registered on the Gateway contract',
-        );
-      }
-
-      this.logger.log(
-        `Delegate verified on-chain: ${user.delegateAddress} authorized for ${user.walletAddress} on ${dto.chain}`,
+    if (!isAuthorized) {
+      throw new BadRequestException(
+        'Delegate is not registered on the Gateway contract',
       );
+    }
 
-      await this.prisma.delegateSetup.update({
-        where: { id: setup.id },
-        data: {
-          status: 'CONFIRMED',
-          txHash: dto.txHash,
-          errorMessage: null,
-        },
-      });
+    this.logger.log(
+      `Delegate verified on-chain: ${user.delegateAddress} authorized for ${user.walletAddress} on ${dto.chain}`,
+    );
 
-      return {
-        chain: dto.chain,
+    await this.prisma.delegateSetup.update({
+      where: { id: setup.id },
+      data: {
         status: 'CONFIRMED',
         txHash: dto.txHash,
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
+        errorMessage: null,
+      },
+    });
 
-      this.logger.warn(
-        `Could not verify delegate on ${dto.chain}: ${error.message}`,
-      );
-
-      await this.prisma.delegateSetup.update({
-        where: { id: setup.id },
-        data: {
-          status: 'SUBMITTED',
-          txHash: dto.txHash,
-          errorMessage: `On-chain verification failed: ${error.message}`,
-        },
-      });
-
-      return {
-        chain: dto.chain,
-        status: 'SUBMITTED',
-        txHash: dto.txHash,
-        message:
-          'Transaction submitted but on-chain verification failed. Will retry.',
-      };
-    }
+    return {
+      chain: dto.chain,
+      status: 'CONFIRMED',
+      txHash: dto.txHash,
+    };
   }
 }
