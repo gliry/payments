@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './common/prisma/prisma.module';
-import { AccountsModule } from './accounts/accounts.module';
-import { DepositsModule } from './deposits/deposits.module';
-import { PayoutsModule } from './payouts/payouts.module';
-import { TransfersModule } from './transfers/transfers.module';
+import { CircleModule } from './circle/circle.module';
+import { AuthModule } from './auth/auth.module';
+import { WalletModule } from './wallet/wallet.module';
+import { OperationsModule } from './operations/operations.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
@@ -16,10 +16,10 @@ import { WebhooksModule } from './webhooks/webhooks.module';
       envFilePath: '.env',
     }),
     PrismaModule,
-    AccountsModule,
-    DepositsModule,
-    PayoutsModule,
-    TransfersModule,
+    CircleModule,
+    AuthModule,
+    WalletModule,
+    OperationsModule,
     WebhooksModule,
   ],
   controllers: [AppController],

@@ -5,12 +5,10 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  // Enable rawBody for webhook signature verification
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -19,39 +17,38 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
   app.enableCors({
     origin: process.env.CORS_ORIGINS?.split(',') || '*',
     credentials: true,
   });
 
-  // API prefix
   app.setGlobalPrefix('v1');
 
-  // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('OmniFlow API')
-    .setDescription('Stripe-like API for cross-chain crypto payments')
-    .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'api-key')
-    .addTag('accounts', 'Account management')
-    .addTag('deposits', 'Deposit operations')
-    .addTag('payouts', 'Payout operations')
-    .addTag('transfers', 'Internal transfers')
+    .setDescription(
+      'Non-custodial API for cross-chain USDC payments. ' +
+      'Users sign all transactions with Passkey. ' +
+      'Pattern: Prepare \u2192 Sign \u2192 Submit.',
+    )
+    .setVersion('2.0')
+    .addBearerAuth()
+    .addTag('auth', 'Registration and login with Passkey')
+    .addTag('wallet', 'Wallet info, balances, and delegate management')
+    .addTag('operations', 'Collect, send, and bridge operations')
     .addTag('webhooks', 'Webhook management')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  // Enable graceful shutdown hooks (required for Prisma 5+)
   app.enableShutdownHooks();
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  console.log(`🚀 OmniFlow API is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api`);
+  console.log(`OmniFlow API running on: http://localhost:${port}`);
+  console.log(`Swagger docs: http://localhost:${port}/api`);
 }
 
 bootstrap();

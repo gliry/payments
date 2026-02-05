@@ -1,251 +1,214 @@
-// Prisma Schema for OmniFlow API
-// Database: SQLite (development) -> PostgreSQL (production)
+// OmniFlow API - Non-Custodial Cross-Chain USDC Payments
+// Database: SQLite (dev) -> PostgreSQL (production)
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "sqlite"
 }
 
-// User accounts (sub-accounts in the system)
-model Account {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  externalId    String?   @unique // External identifier from client system
+// =============================================
+// USER & AUTH
+// =============================================
 
-  // Circle Wallet info
-  walletAddress String?   @unique
+model User {
+  id String @id @default(uuid())
 
-  // Metadata
-  metadata      Json?
+  username String @unique
 
-  // Timestamps
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  // Passkey credential (registered client-side via Circle SDK)
+  credentialId String @unique
+  publicKey    String
 
-  // Relations
-  deposits      Deposit[]
-  payouts       Payout[]
-  transfersFrom Transfer[] @relation("TransferFrom")
-  transfersTo   Transfer[] @relation("TransferTo")
+  // MSCA wallet address (deterministic via CREATE2, same on all chains)
+  walletAddress String @unique
 
-  @@map("accounts")
+  // Server-generated delegate EOA for Gateway burn intent signing
+  delegateAddress      String @unique
+  delegateEncryptedKey String // AES-256-GCM encrypted private key
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  delegateSetups DelegateSetup[]
+  operations     Operation[]
+  webhooks       Webhook[]
+
+  @@map("users")
 }
 
-// Deposits (incoming funds to the platform)
-model Deposit {
-  id              String   @id @default(uuid())
-  accountId       String
+// =============================================
+// DELEGATE SETUP PER CHAIN
+// =============================================
 
-  // Amount and currency
-  expectedAmount  String?  // Expected amount (optional, for tracking)
-  receivedAmount  String?  // Actual received amount
-  creditedAmount  String?  // Amount credited after fees
-  currency        String   @default("USDC")
+model DelegateSetup {
+  id     String              @id @default(uuid())
+  userId String
+  chain  String
+  status DelegateSetupStatus @default(PENDING)
 
-  // Source chain info
-  sourceChain     String
-  sourceAddress   String?  // Address that sent the deposit
+  txHash       String?
+  errorMessage String?
 
-  // Fee
-  feePercent      String   @default("0.4")
-  feeAmount       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Status
-  status          DepositStatus @default(AWAITING)
+  user User @relation(fields: [userId], references: [id])
 
-  // Transaction info
-  txHash          String?
-
-  // Metadata
-  metadata        Json?
-
-  // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  completedAt     DateTime?
-
-  // Relations
-  account         Account  @relation(fields: [accountId], references: [id])
-
-  @@index([accountId])
-  @@index([status])
-  @@map("deposits")
+  @@unique([userId, chain])
+  @@index([userId])
+  @@map("delegate_setups")
 }
 
-enum DepositStatus {
-  AWAITING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-// Payouts (outgoing payments from the platform)
-model Payout {
-  id                String       @id @default(uuid())
-  accountId         String
-  batchId           String?      // For batch payouts
-
-  // Amount
-  amount            String       // Amount recipient will receive
-  currency          String       @default("USDC")
-
-  // Destination
-  destinationAddress String
-  destinationChain   String
-  destinationToken   String?     // If converting (e.g., ETH, USDT)
-
-  // Fee
-  feePercent        String       @default("0.4")
-  feeAmount         String?
-  totalDeducted     String?      // Total deducted from account balance
-
-  // Status
-  status            PayoutStatus @default(PENDING)
-
-  // Transaction info
-  txHash            String?
-
-  // Metadata
-  metadata          Json?
-
-  // Timestamps
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  completedAt       DateTime?
-  estimatedCompletion DateTime?
-
-  // Relations
-  account           Account      @relation(fields: [accountId], references: [id])
-  batch             PayoutBatch? @relation(fields: [batchId], references: [id])
-
-  @@index([accountId])
-  @@index([batchId])
-  @@index([status])
-  @@map("payouts")
-}
-
-enum PayoutStatus {
+enum DelegateSetupStatus {
   PENDING
-  PROCESSING
-  COMPLETED
+  AWAITING_SIGNATURE
+  SUBMITTED
+  CONFIRMED
   FAILED
 }
 
-// Batch payouts
-model PayoutBatch {
-  id            String   @id @default(uuid())
-  accountId     String
+// =============================================
+// OPERATIONS (Collect, Send, Bridge)
+// =============================================
 
-  // Status
-  status        PayoutBatchStatus @default(PENDING)
+model Operation {
+  id     String          @id @default(uuid())
+  userId String
+  type   OperationType
+  status OperationStatus @default(PREPARING)
 
-  // Totals
-  totalAmount   String?
-  totalFees     String?
+  params       Json
+  summary      Json?
+  signRequests Json?
 
-  // Metadata
-  metadata      Json?
+  feeAmount  String?
+  feePercent String?
 
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  completedAt   DateTime?
+  metadata     Json?
+  errorMessage String?
 
-  // Relations
-  payouts       Payout[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
 
-  @@index([accountId])
+  user  User            @relation(fields: [userId], references: [id])
+  steps OperationStep[]
+
+  @@index([userId])
   @@index([status])
-  @@map("payout_batches")
+  @@index([type])
+  @@map("operations")
 }
 
-enum PayoutBatchStatus {
-  PENDING
+enum OperationType {
+  COLLECT
+  SEND
+  BRIDGE
+}
+
+enum OperationStatus {
+  PREPARING
+  AWAITING_SIGNATURE
+  SUBMITTED
   PROCESSING
+  AWAITING_SIGNATURE_PHASE2
+  SUBMITTED_PHASE2
   COMPLETED
-  PARTIAL
   FAILED
+  CANCELLED
 }
 
-// Internal transfers (between OmniFlow accounts)
-model Transfer {
-  id              String         @id @default(uuid())
-  fromAccountId   String
-  toAccountId     String
+model OperationStep {
+  id          String     @id @default(uuid())
+  operationId String
+  stepIndex   Int
+  chain       String
+  type        StepType
+  status      StepStatus @default(PENDING)
 
-  // Amount
-  amount          String
-  currency        String         @default("USDC")
+  callData   Json?
+  txHash     String?
+  userOpHash String?
 
-  // Fee (0 for internal transfers)
-  feeAmount       String         @default("0")
+  burnIntentData    Json?
+  attestation       String?
+  operatorSignature String?
 
-  // Status
-  status          TransferStatus @default(PENDING)
+  errorMessage String?
 
-  // Metadata
-  metadata        Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
 
-  // Timestamps
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  completedAt     DateTime?
+  operation Operation @relation(fields: [operationId], references: [id])
 
-  // Relations
-  fromAccount     Account        @relation("TransferFrom", fields: [fromAccountId], references: [id])
-  toAccount       Account        @relation("TransferTo", fields: [toAccountId], references: [id])
-
-  @@index([fromAccountId])
-  @@index([toAccountId])
-  @@index([status])
-  @@map("transfers")
+  @@index([operationId])
+  @@map("operation_steps")
 }
 
-enum TransferStatus {
+enum StepType {
+  APPROVE
+  DEPOSIT
+  APPROVE_AND_DEPOSIT
+  ADD_DELEGATE
+  BURN_INTENT
+  WAIT_ATTESTATION
+  MINT
+  TRANSFER
+}
+
+enum StepStatus {
   PENDING
-  COMPLETED
+  AWAITING_SIGNATURE
+  SUBMITTED
+  CONFIRMED
   FAILED
+  SKIPPED
 }
 
-// Webhooks configuration
+// =============================================
+// WEBHOOKS
+// =============================================
+
 model Webhook {
-  id            String   @id @default(uuid())
-  url           String
-  events        String   // JSON array of event types
-  secret        String   // For signature verification
+  id       String  @id @default(uuid())
+  userId   String
+  url      String
+  events   String
+  secret   String
+  isActive Boolean @default(true)
 
-  // Status
-  isActive      Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  user       User              @relation(fields: [userId], references: [id])
+  deliveries WebhookDelivery[]
 
+  @@index([userId])
   @@map("webhooks")
 }
 
-// Webhook delivery log
 model WebhookDelivery {
-  id            String   @id @default(uuid())
-  webhookId     String
-  eventType     String
-  payload       Json
+  id         String @id @default(uuid())
+  webhookId  String
+  eventType  String
+  payload    Json
+  httpStatus Int?
+  response   String?
+  attempts   Int     @default(0)
+  delivered  Boolean @default(false)
 
-  // Delivery info
-  httpStatus    Int?
-  response      String?
-  attempts      Int      @default(0)
-
-  // Status
-  delivered     Boolean  @default(false)
-
-  // Timestamps
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
   lastAttemptAt DateTime?
   deliveredAt   DateTime?
+
+  webhook Webhook @relation(fields: [webhookId], references: [id])
 
   @@index([webhookId])
   @@index([delivered])

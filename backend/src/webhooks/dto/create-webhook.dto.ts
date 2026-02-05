@@ -1,15 +1,22 @@
+import { IsString, IsUrl, IsArray, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsArray, IsUrl } from 'class-validator';
 
 export class CreateWebhookDto {
-  @ApiProperty({ example: 'https://example.com/webhooks/omniflow' })
+  @ApiProperty({ example: 'https://example.com/webhooks' })
   @IsUrl()
   url: string;
 
   @ApiProperty({
-    example: ['deposit.completed', 'payout.completed', 'payout.failed'],
+    example: ['operation.completed', 'operation.failed'],
+    required: false,
   })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  events: string[];
+  events?: string[];
+
+  @ApiProperty({ example: 'my-secret-key', required: false })
+  @IsOptional()
+  @IsString()
+  secret?: string;
 }
