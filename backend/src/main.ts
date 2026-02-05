@@ -1,3 +1,4 @@
+import { join } from 'path';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -41,6 +42,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
+  // Serve static files from backend/public (test client at /index.html)
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   app.enableShutdownHooks();
 

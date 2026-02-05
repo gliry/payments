@@ -1,3 +1,11 @@
+// Polyfill: Circle SDK's fetchFromApi references window.location.hostname
+// which doesn't exist in Node.js. Provide a minimal shim.
+if (typeof globalThis.window === 'undefined') {
+  (globalThis as any).window = {
+    location: { hostname: 'localhost', protocol: 'http:' },
+  };
+}
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createPublicClient, defineChain, formatUnits } from 'viem';

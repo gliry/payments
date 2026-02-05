@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFlow — API Test Client</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .app { max-width: 720px; margin: 0 auto; }
+
+    h1 { text-align: center; margin-bottom: 4px; font-size: 28px; }
+    .subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 24px; }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 { font-size: 16px; margin-bottom: 14px; color: #a29bfe; }
+
+    label { display: block; color: #aaa; font-size: 13px; margin-bottom: 6px; }
+
+    input, select {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: #fff; font-size: 14px;
+      margin-bottom: 12px;
+    }
+    input:focus, select:focus { outline: none; border-color: #6c5ce7; }
+    input::placeholder { color: #555; }
+
+    .btn {
+      padding: 10px 18px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s; margin-right: 8px; margin-bottom: 8px;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(108,92,231,0.3);
+    }
+
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
+
+    .btn-sm { padding: 8px 14px; font-size: 13px; }
+
+    .row { display: flex; gap: 10px; align-items: flex-end; }
+    .row > * { flex: 1; }
+
+    .token-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; margin-top: 12px;
+      background: rgba(0,184,148,0.1);
+      border: 1px solid rgba(0,184,148,0.2);
+      border-radius: 8px; font-size: 12px;
+      word-break: break-all;
+    }
+    .token-bar .label { color: #00b894; font-weight: 600; white-space: nowrap; }
+    .token-bar .val { color: #ccc; flex: 1; }
+
+    .user-info { margin-top: 12px; font-size: 13px; color: #aaa; line-height: 1.7; }
+    .user-info span { color: #00b894; font-family: monospace; font-size: 12px; }
+
+    .hidden { display: none !important; }
+
+    .response-box {
+      margin-top: 12px; padding: 14px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      max-height: 300px; overflow: auto;
+    }
+    .response-box pre {
+      font-family: 'Monaco','Menlo','Consolas', monospace;
+      font-size: 12px; color: #ccc;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .response-box .res-status { font-size: 11px; margin-bottom: 6px; font-weight: 600; }
+    .res-ok { color: #00b894; }
+    .res-err { color: #ff7675; }
+
+    .endpoint-group { margin-bottom: 14px; }
+    .endpoint-group h3 {
+      font-size: 13px; color: #ddd; margin-bottom: 8px;
+      padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .loading {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-msg {
+      margin-top: 10px; padding: 10px 14px;
+      border-radius: 8px; font-size: 13px;
+    }
+    .status-msg.info { background: rgba(108,92,231,0.15); border: 1px solid rgba(108,92,231,0.25); color: #a29bfe; }
+    .status-msg.success { background: rgba(0,184,148,0.15); border: 1px solid rgba(0,184,148,0.25); color: #00b894; }
+    .status-msg.error { background: rgba(214,48,49,0.15); border: 1px solid rgba(214,48,49,0.25); color: #ff7675; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>OmniFlow</h1>
+    <p class="subtitle">API Test Client &mdash; Passkey + Smart Wallet</p>
+
+    <!-- ===== AUTH ===== -->
+    <div class="card" id="authCard">
+      <h2>Auth</h2>
+      <label for="username">Username / Email</label>
+      <input type="text" id="username" placeholder="alice@example.com" />
+
+      <div>
+        <button class="btn btn-primary" id="registerBtn" onclick="doRegister()">
+          Create Wallet (Register)
+        </button>
+        <button class="btn btn-secondary" id="loginBtn" onclick="doLogin()">
+          Login
+        </button>
+      </div>
+
+      <div id="authStatus"></div>
+
+      <div id="authInfo" class="hidden">
+        <div class="token-bar">
+          <span class="label">JWT</span>
+          <span class="val" id="jwtDisplay"></span>
+        </div>
+        <div class="user-info">
+          Wallet: <span id="infoWallet"></span><br>
+          Delegate: <span id="infoDelegate"></span><br>
+          User ID: <span id="infoUserId"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== API EXPLORER ===== -->
+    <div class="card hidden" id="explorerCard">
+      <h2>API Explorer</h2>
+
+      <div class="endpoint-group">
+        <h3>Auth</h3>
+        <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/auth/me')">GET /auth/me</button>
+      </div>
+
+      <div class="endpoint-group">
+        <h3>Wallet</h3>
+        <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet')">GET /wallet</button>
+        <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet/balances')">GET /wallet/balances</button>
+      </div>
+
+      <div class="endpoint-group">
+        <h3>Operations</h3>
+        <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/operations')">GET /operations</button>
+
+        <div style="margin-top: 10px;">
+          <label>Collect: source chains (comma-separated)</label>
+          <div class="row">
+            <input type="text" id="collectChains" placeholder="base-sepolia,avalanche-fuji" style="margin-bottom:0" />
+            <input type="text" id="collectAmount" placeholder="1.0" style="max-width:100px;margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doCollect()">POST collect</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="apiResponse" class="response-box hidden">
+        <div class="res-status" id="resStatus"></div>
+        <pre id="resBody"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    // ── Circle SDK imports ──────────────────────────────
+    let toPasskeyTransport, toWebAuthnCredential, WebAuthnMode;
+
+    try {
+      const sdk = await import('https://esm.sh/@circle-fin/modular-wallets-core@1');
+      toPasskeyTransport = sdk.toPasskeyTransport;
+      toWebAuthnCredential = sdk.toWebAuthnCredential;
+      WebAuthnMode = sdk.WebAuthnMode;
+      console.log('Circle SDK loaded');
+    } catch (err) {
+      console.error('SDK load error:', err);
+      showAuthStatus('Failed to load Circle SDK: ' + err.message, 'error');
+    }
+
+    const CIRCLE_CLIENT_URL = 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl';
+    const CIRCLE_CLIENT_KEY = 'TEST_CLIENT_KEY:3a7c33087a5778dae06374364113e8de:324e884310a56ba506340bec23de86f2';
+
+    const API = ''; // relative — same origin
+
+    // ── State ───────────────────────────────────────────
+    let jwt = localStorage.getItem('omniflow_jwt') || null;
+    let userInfo = JSON.parse(localStorage.getItem('omniflow_user') || 'null');
+
+    if (jwt && userInfo) {
+      showLoggedIn(userInfo, jwt);
+    }
+
+    // ── Helpers ─────────────────────────────────────────
+    function showAuthStatus(msg, type = 'info') {
+      const el = document.getElementById('authStatus');
+      el.className = `status-msg ${type}`;
+      el.innerHTML = msg;
+    }
+
+    function showLoggedIn(user, token) {
+      document.getElementById('authInfo').classList.remove('hidden');
+      document.getElementById('explorerCard').classList.remove('hidden');
+      document.getElementById('jwtDisplay').textContent = token.slice(0, 40) + '...';
+      document.getElementById('infoWallet').textContent = user.walletAddress || '-';
+      document.getElementById('infoDelegate').textContent = user.delegateAddress || '-';
+      document.getElementById('infoUserId').textContent = user.id || '-';
+    }
+
+    function setLoading(btnId, on) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      const orig = btn.dataset.orig || btn.textContent;
+      if (on) {
+        btn.dataset.orig = orig;
+        btn.innerHTML = '<span class="loading"></span>Working...';
+        btn.disabled = true;
+      } else {
+        btn.textContent = orig;
+        btn.disabled = false;
+      }
+    }
+
+    // ── Register ────────────────────────────────────────
+    async function doRegister() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) { showAuthStatus('Enter a username', 'error'); return; }
+
+      setLoading('registerBtn', true);
+      showAuthStatus('<span class="loading"></span>Creating passkey...', 'info');
+
+      try {
+        const transport = toPasskeyTransport(CIRCLE_CLIENT_URL, CIRCLE_CLIENT_KEY);
+
+        const credential = await toWebAuthnCredential({
+          transport,
+          mode: WebAuthnMode.Register,
+          username,
+        });
+
+        console.log('Credential registered:', credential.id);
+        showAuthStatus('<span class="loading"></span>Sending to backend...', 'info');
+
+        const res = await fetch(`${API}/v1/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            credentialId: credential.id,
+            publicKey: credential.publicKey,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+
+        jwt = data.accessToken;
+        userInfo = data.user;
+        localStorage.setItem('omniflow_jwt', jwt);
+        localStorage.setItem('omniflow_user', JSON.stringify(userInfo));
+
+        showAuthStatus('Wallet created!', 'success');
+        showLoggedIn(userInfo, jwt);
+      } catch (err) {
+        console.error('Register error:', err);
+        showAuthStatus('Error: ' + err.message, 'error');
+      } finally {
+        setLoading('registerBtn', false);
+      }
+    }
+
+    // ── Login ───────────────────────────────────────────
+    async function doLogin() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) { showAuthStatus('Enter a username', 'error'); return; }
+
+      setLoading('loginBtn', true);
+      showAuthStatus('<span class="loading"></span>Authenticating with passkey...', 'info');
+
+      try {
+        const transport = toPasskeyTransport(CIRCLE_CLIENT_URL, CIRCLE_CLIENT_KEY);
+
+        const credential = await toWebAuthnCredential({
+          transport,
+          mode: WebAuthnMode.Login,
+          username,
+        });
+
+        console.log('Credential login:', credential.id);
+        showAuthStatus('<span class="loading"></span>Sending to backend...', 'info');
+
+        const res = await fetch(`${API}/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            credentialId: credential.id,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+
+        jwt = data.accessToken;
+        userInfo = data.user;
+        localStorage.setItem('omniflow_jwt', jwt);
+        localStorage.setItem('omniflow_user', JSON.stringify(userInfo));
+
+        showAuthStatus('Logged in!', 'success');
+        showLoggedIn(userInfo, jwt);
+      } catch (err) {
+        console.error('Login error:', err);
+        showAuthStatus('Error: ' + err.message, 'error');
+      } finally {
+        setLoading('loginBtn', false);
+      }
+    }
+
+    // ── Generic API call ────────────────────────────────
+    async function apiCall(method, path, body) {
+      const resBox = document.getElementById('apiResponse');
+      const resStatus = document.getElementById('resStatus');
+      const resBody = document.getElementById('resBody');
+
+      resBox.classList.remove('hidden');
+      resStatus.className = 'res-status';
+      resStatus.textContent = `${method} ${path} ...`;
+      resBody.textContent = '';
+
+      try {
+        const opts = {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+          },
+        };
+        if (body && method !== 'GET') opts.body = JSON.stringify(body);
+
+        const res = await fetch(`${API}${path}`, opts);
+        const data = await res.json().catch(() => res.text());
+
+        resStatus.textContent = `${method} ${path}  \u2014  ${res.status} ${res.statusText}`;
+        resStatus.classList.add(res.ok ? 'res-ok' : 'res-err');
+        resBody.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      } catch (err) {
+        resStatus.textContent = `${method} ${path}  \u2014  ERROR`;
+        resStatus.classList.add('res-err');
+        resBody.textContent = err.message;
+      }
+    }
+
+    // ── Collect ─────────────────────────────────────────
+    async function doCollect() {
+      const chains = document.getElementById('collectChains').value.trim();
+      const amount = document.getElementById('collectAmount').value.trim();
+      if (!chains) { alert('Enter source chains'); return; }
+
+      await apiCall('POST', '/v1/operations/collect', {
+        sourceChains: chains.split(',').map(s => s.trim()),
+        amount: amount || '1',
+      });
+    }
+
+    // ── Expose to window for onclick ────────────────────
+    window.doRegister = doRegister;
+    window.doLogin = doLogin;
+    window.apiCall = apiCall;
+    window.doCollect = doCollect;
+  </script>
+</body>
+</html>
