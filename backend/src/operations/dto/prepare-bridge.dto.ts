@@ -2,11 +2,11 @@ import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PrepareBridgeDto {
-  @ApiProperty({ example: 'base-sepolia' })
+  @ApiProperty({ example: 'arbitrum' })
   @IsString()
   sourceChain: string;
 
-  @ApiProperty({ example: 'arc-testnet' })
+  @ApiProperty({ example: 'base' })
   @IsString()
   destinationChain: string;
 

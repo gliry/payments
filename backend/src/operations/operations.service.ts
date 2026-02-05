@@ -36,7 +36,7 @@ export class OperationsService {
 
   async prepareCollect(userId: string, dto: PrepareCollectDto) {
     const user = await this.getUser(userId);
-    const destination = dto.destination || 'arc-testnet';
+    const destination = dto.destination || 'base';
 
     this.validateGatewayChain(destination);
     for (const chain of dto.sourceChains) {
@@ -186,7 +186,7 @@ export class OperationsService {
 
   async prepareSend(userId: string, dto: PrepareSendDto) {
     const user = await this.getUser(userId);
-    const sourceChain = dto.sourceChain || 'arc-testnet';
+    const sourceChain = dto.sourceChain || 'base';
 
     this.validateGatewayChain(sourceChain);
     this.validateGatewayChain(dto.destinationChain);
@@ -194,7 +194,7 @@ export class OperationsService {
     const amountRaw = parseUnits(dto.amount, USDC_DECIMALS);
     const isInternal =
       sourceChain === dto.destinationChain &&
-      sourceChain === 'arc-testnet';
+      sourceChain === 'base';
 
     const feePercent = isInternal ? '0' : CROSS_CHAIN_FEE_PERCENT;
     const feeRaw = isInternal
@@ -239,7 +239,7 @@ export class OperationsService {
         data: {
           operationId: operation.id,
           stepIndex: stepIndex++,
-          chain: 'arc-testnet',
+          chain: 'base',
           type: 'TRANSFER',
           status: 'AWAITING_SIGNATURE',
           callData: {
@@ -252,7 +252,7 @@ export class OperationsService {
 
       signRequests.push({
         stepId: step.id,
-        chain: 'arc-testnet',
+        chain: 'base',
         type: 'TRANSFER',
         description: `Transfer ${dto.amount} USDC to ${dto.destinationAddress} on Arc`,
       });

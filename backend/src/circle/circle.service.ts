@@ -29,13 +29,13 @@ import {
 import type { UserOperationCall } from './gateway/gateway.types';
 import { USDC_DECIMALS } from './gateway/gateway.types';
 
-// Arc Testnet chain definition for viem
-const arcTestnet = defineChain({
-  id: 5042002,
-  name: 'Arc Testnet',
-  nativeCurrency: { name: 'ARC', symbol: 'ARC', decimals: 18 },
+// Base mainnet chain definition for viem (hub chain)
+const baseMainnet = defineChain({
+  id: 8453,
+  name: 'Base',
+  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
-    default: { http: ['https://rpc.testnet.arc.network'] },
+    default: { http: ['https://mainnet.base.org'] },
   },
 });
 
@@ -64,7 +64,7 @@ export class CircleService {
     publicKey: string,
   ): Promise<string> {
     const clientKey = this.configService.getOrThrow<string>('CIRCLE_CLIENT_KEY');
-    const bundlerRpc = CIRCLE_BUNDLER_RPCS['arc-testnet'];
+    const bundlerRpc = CIRCLE_BUNDLER_RPCS['base'];
 
     const transport = toModularTransport(
       `${bundlerRpc}`,
@@ -72,7 +72,7 @@ export class CircleService {
     );
 
     const client = createPublicClient({
-      chain: arcTestnet,
+      chain: baseMainnet,
       transport,
     });
 

@@ -6,7 +6,7 @@ export class PrepareSendDto {
   @IsString()
   destinationAddress: string;
 
-  @ApiProperty({ example: 'base-sepolia' })
+  @ApiProperty({ example: 'arbitrum' })
   @IsString()
   destinationChain: string;
 
@@ -14,7 +14,7 @@ export class PrepareSendDto {
   @IsString()
   amount: string;
 
-  @ApiProperty({ example: 'arc-testnet', required: false })
+  @ApiProperty({ example: 'base', required: false })
   @IsOptional()
   @IsString()
   sourceChain?: string;
