@@ -12,6 +12,7 @@ import { OperationsService } from './operations.service';
 import { PrepareCollectDto } from './dto/prepare-collect.dto';
 import { PrepareSendDto } from './dto/prepare-send.dto';
 import { PrepareBridgeDto } from './dto/prepare-bridge.dto';
+import { PrepareBatchSendDto } from './dto/prepare-batch-send.dto';
 import { SubmitOperationDto } from './dto/submit-operation.dto';
 import {
   AuthGuard,
@@ -53,9 +54,18 @@ export class OperationsController {
     return this.operationsService.prepareBridge(user.id, dto);
   }
 
+  @Post('batch-send')
+  @ApiOperation({ summary: 'Prepare batch send (send USDC to multiple recipients)' })
+  prepareBatchSend(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: PrepareBatchSendDto,
+  ) {
+    return this.operationsService.prepareBatchSend(user.id, dto);
+  }
+
   @Get()
   @ApiOperation({ summary: 'List operations history' })
-  @ApiQuery({ name: 'type', required: false, enum: ['COLLECT', 'SEND', 'BRIDGE'] })
+  @ApiQuery({ name: 'type', required: false, enum: ['COLLECT', 'SEND', 'BRIDGE', 'BATCH_SEND'] })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })

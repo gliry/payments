@@ -18,6 +18,7 @@ import { USDC_DECIMALS } from '../circle/gateway/gateway.types';
 import { PrepareCollectDto } from './dto/prepare-collect.dto';
 import { PrepareSendDto } from './dto/prepare-send.dto';
 import { PrepareBridgeDto } from './dto/prepare-bridge.dto';
+import { PrepareBatchSendDto } from './dto/prepare-batch-send.dto';
 import { SubmitOperationDto } from './dto/submit-operation.dto';
 
 const CROSS_CHAIN_FEE_PERCENT = '0.3';
@@ -415,6 +416,145 @@ export class OperationsService {
     return {
       id: operation.id,
       type: 'BRIDGE',
+      status: 'AWAITING_SIGNATURE',
+      summary: operation.summary,
+      signRequests,
+    };
+  }
+
+  async prepareBatchSend(userId: string, dto: PrepareBatchSendDto) {
+    const user = await this.getUser(userId);
+    const sourceChain = dto.sourceChain || 'base';
+
+    if (dto.recipients.length === 0) {
+      throw new BadRequestException('At least one recipient is required');
+    }
+
+    this.validateGatewayChain(sourceChain);
+    for (const r of dto.recipients) {
+      this.validateGatewayChain(r.chain);
+    }
+
+    // Calculate totals and fee
+    let totalRaw = 0n;
+    const recipientDetails = dto.recipients.map((r) => {
+      const amountRaw = parseUnits(r.amount, USDC_DECIMALS);
+      totalRaw += amountRaw;
+      return { ...r, amountRaw };
+    });
+
+    const feeRaw =
+      (totalRaw * BigInt(Math.round(parseFloat(BATCH_FEE_PERCENT) * 10000))) /
+      10000n;
+
+    const operation = await this.prisma.operation.create({
+      data: {
+        userId,
+        type: 'BATCH_SEND',
+        status: 'AWAITING_SIGNATURE',
+        params: {
+          recipients: dto.recipients.map((r) => ({
+            address: r.address,
+            chain: r.chain,
+            amount: r.amount,
+          })),
+          sourceChain,
+        },
+        summary: {
+          action: 'batch_send',
+          recipientCount: dto.recipients.length,
+          recipients: dto.recipients.map((r) => ({
+            address: r.address,
+            chain: r.chain,
+            amount: r.amount,
+          })),
+          totalAmount: formatUnits(totalRaw, USDC_DECIMALS),
+          fee: formatUnits(feeRaw, USDC_DECIMALS),
+          feePercent: BATCH_FEE_PERCENT,
+          totalDeducted: formatUnits(totalRaw + feeRaw, USDC_DECIMALS),
+          sourceChain,
+          estimatedTime: '3-5 minutes',
+        },
+        feeAmount: formatUnits(feeRaw, USDC_DECIMALS),
+        feePercent: BATCH_FEE_PERCENT,
+      },
+    });
+
+    const signRequests: any[] = [];
+    let stepIndex = 0;
+
+    for (const r of recipientDetails) {
+      const isInternal =
+        sourceChain === r.chain && sourceChain === 'base';
+
+      if (isInternal) {
+        const step = await this.prisma.operationStep.create({
+          data: {
+            operationId: operation.id,
+            stepIndex: stepIndex++,
+            chain: 'base',
+            type: 'TRANSFER',
+            status: 'AWAITING_SIGNATURE',
+            callData: {
+              type: 'usdc_transfer',
+              to: r.address,
+              amount: r.amountRaw.toString(),
+            },
+          },
+        });
+
+        signRequests.push({
+          stepId: step.id,
+          chain: 'base',
+          type: 'TRANSFER',
+          description: `Transfer ${r.amount} USDC to ${r.address}`,
+        });
+      } else {
+        const burnStep = await this.prisma.operationStep.create({
+          data: {
+            operationId: operation.id,
+            stepIndex: stepIndex++,
+            chain: sourceChain,
+            type: 'BURN_INTENT',
+            status: 'PENDING',
+            burnIntentData: {
+              sourceChain,
+              destinationChain: r.chain,
+              amount: r.amountRaw.toString(),
+              depositor: user.walletAddress,
+              recipient: r.address,
+            },
+          },
+        });
+
+        await this.prisma.operationStep.create({
+          data: {
+            operationId: operation.id,
+            stepIndex: stepIndex++,
+            chain: r.chain,
+            type: 'MINT',
+            status: 'PENDING',
+          },
+        });
+
+        signRequests.push({
+          stepId: burnStep.id,
+          chain: sourceChain,
+          type: 'BURN_INTENT',
+          description: `Burn ${r.amount} USDC → ${r.address} on ${r.chain}`,
+          serverSide: true,
+        });
+      }
+    }
+
+    await this.prisma.operation.update({
+      where: { id: operation.id },
+      data: { signRequests },
+    });
+
+    return {
+      id: operation.id,
+      type: 'BATCH_SEND',
       status: 'AWAITING_SIGNATURE',
       summary: operation.summary,
       signRequests,
