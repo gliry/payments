@@ -3,8 +3,8 @@
 // ============================================================================
 
 import * as state from '../state.js';
-import { accounts, deposits, payouts, transfers } from '../api.js';
-import { formatUSDC, formatAddress, timeAgo, copyToClipboard, getChainSVG } from '../utils.js';
+import { wallet, operations } from '../api.js';
+import { formatUSDC, formatAddress, timeAgo, copyToClipboard, getOpTypeLabel } from '../utils.js';
 import { animateNumber } from '../components/animated-number.js';
 import { statusBadge } from '../components/status-badge.js';
 import { chainBadge } from '../components/chain-icon.js';
@@ -14,22 +14,21 @@ import { navigate } from '../app.js';
 let container;
 let pollInterval = null;
 
-function render(balance, transactions) {
-  const wallet = state.getWallet();
-  const available = parseFloat(balance?.available || '0');
-  const pending = parseFloat(balance?.pending || '0');
+function render(balanceData, ops) {
+  const user = state.getUser();
+  const walletData = state.getWallet();
+  const total = parseFloat(balanceData?.total || '0');
 
   container.innerHTML = `
     <!-- Balance Card -->
     <div class="card card--hero" style="margin-bottom: 24px;">
       <div class="balance-card">
-        <div id="balance-amount" class="balance-card__amount">${formatUSDC(available)}</div>
+        <div id="balance-amount" class="balance-card__amount">${formatUSDC(total)}</div>
         <div class="balance-card__label">
-          <span>Available Balance</span>
-          ${pending > 0 ? `<span class="balance-card__pending">+${formatUSDC(pending)} pending</span>` : ''}
+          <span>Total Balance</span>
         </div>
         <span class="balance-card__address" id="copy-address" title="Click to copy">
-          ${formatAddress(wallet?.address)}
+          ${formatAddress(user?.walletAddress || walletData?.address)}
           <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/></svg>
         </span>
       </div>
@@ -41,7 +40,7 @@ function render(balance, transactions) {
         <div class="quick-action__icon quick-action__icon--deposit">
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
-        <span class="quick-action__label">Deposit</span>
+        <span class="quick-action__label">Receive</span>
       </div>
       <div class="card card--hover quick-action" data-navigate="send">
         <div class="quick-action__icon quick-action__icon--send">
@@ -53,20 +52,20 @@ function render(balance, transactions) {
         <div class="quick-action__icon quick-action__icon--batch">
           <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
-        <span class="quick-action__label">Batch Payout</span>
+        <span class="quick-action__label">Batch Send</span>
       </div>
     </div>
 
-    <!-- Recent Transactions -->
+    <!-- Recent Operations -->
     <div class="card">
       <div class="flex items-center justify-between" style="margin-bottom: 16px;">
-        <h3>Recent Transactions</h3>
+        <h3>Recent Operations</h3>
         <a href="#history" class="text-sm" style="font-weight: 500;">View All</a>
       </div>
-      ${transactions.length === 0
+      ${ops.length === 0
         ? `<div class="empty-state">
-            <div class="empty-state__title">No transactions yet</div>
-            <div class="empty-state__desc">Make a deposit to get started</div>
+            <div class="empty-state__title">No operations yet</div>
+            <div class="empty-state__desc">Send or receive funds to get started</div>
           </div>`
         : `<div class="table-wrapper">
             <table class="table">
@@ -74,14 +73,13 @@ function render(balance, transactions) {
                 <tr>
                   <th>Type</th>
                   <th>Description</th>
-                  <th>Chain</th>
                   <th style="text-align:right">Amount</th>
                   <th>Status</th>
                   <th>Time</th>
                 </tr>
               </thead>
               <tbody>
-                ${transactions.slice(0, 10).map(tx => renderTxRow(tx)).join('')}
+                ${ops.slice(0, 10).map(op => renderOpRow(op)).join('')}
               </tbody>
             </table>
           </div>`
@@ -91,7 +89,7 @@ function render(balance, transactions) {
 
   // Event listeners
   document.getElementById('copy-address')?.addEventListener('click', async () => {
-    await copyToClipboard(wallet?.address || '');
+    await copyToClipboard(user?.walletAddress || walletData?.address || '');
     showToast('Address copied!', 'success');
   });
 
@@ -101,79 +99,47 @@ function render(balance, transactions) {
 
   // Animate balance
   const amountEl = document.getElementById('balance-amount');
-  if (amountEl) animateNumber(amountEl, available);
+  if (amountEl) animateNumber(amountEl, total);
 }
 
-function renderTxRow(tx) {
-  const isDeposit = tx.object === 'deposit';
-  const isTransfer = tx.object === 'transfer';
-  const isPayout = tx.object === 'payout';
+function renderOpRow(op) {
+  const typeLabel = getOpTypeLabel(op.type);
+  const summary = op.summary || typeLabel;
+  const amount = op.amount ? formatUSDC(op.amount) : '';
 
-  let typeIcon, typeLabel, chain, amount, amountClass;
-
-  if (isDeposit) {
-    typeIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    typeLabel = 'Deposit';
-    chain = tx.source_chain;
-    amount = '+' + formatUSDC(tx.credited_amount);
-    amountClass = 'amount-positive';
-  } else if (isPayout) {
-    typeIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M12 20V4m0 0l-6 6m6-6l6 6" stroke="#1894E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    typeLabel = 'Payout';
-    chain = tx.destination?.chain;
-    amount = '-' + formatUSDC(tx.total_deducted);
-    amountClass = 'amount-negative';
-  } else if (isTransfer) {
-    typeIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M4 12h16m-8-8l8 8-8 8" stroke="#9F72FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    typeLabel = 'Transfer';
-    chain = 'arc';
-    amount = '-' + formatUSDC(tx.amount);
-    amountClass = 'amount-negative';
-  }
-
-  const desc = isDeposit
-    ? `Deposit from ${chain}`
-    : isPayout
-      ? `To ${formatAddress(tx.destination?.address)}`
-      : `Transfer to ${formatAddress(tx.to_account)}`;
+  const typeColors = {
+    SEND: '#1894E8',
+    COLLECT: '#10B981',
+    BRIDGE: '#9F72FF',
+    BATCH_SEND: '#F59E0B',
+  };
+  const color = typeColors[op.type] || '#6b7280';
 
   return `
     <tr>
-      <td>${typeIcon}</td>
-      <td><span class="text-sm" style="font-weight: 500;">${desc}</span></td>
-      <td>${chain ? chainBadge(chain) : ''}</td>
-      <td style="text-align:right"><span class="${amountClass}">${amount}</span></td>
-      <td>${statusBadge(tx.status)}</td>
-      <td class="text-sm text-muted">${timeAgo(tx.created_at)}</td>
+      <td><span style="color: ${color}; font-weight: 600;">${typeLabel}</span></td>
+      <td><span class="text-sm" style="font-weight: 500;">${summary}</span></td>
+      <td style="text-align:right"><span class="text-mono">${amount}</span></td>
+      <td>${statusBadge(op.status)}</td>
+      <td class="text-sm text-muted">${timeAgo(op.createdAt)}</td>
     </tr>
   `;
 }
 
 async function fetchData() {
-  const accountId = state.getAccountId();
-  if (!accountId) return;
-
   try {
-    const [balance, depositList, payoutList, transferList] = await Promise.all([
-      accounts.getBalance(accountId),
-      deposits.list(accountId).catch(() => ({ data: [] })),
-      payouts.list(accountId).catch(() => ({ data: [] })),
-      transfers.list(accountId).catch(() => ({ data: [] })),
+    const [balanceData, opsList] = await Promise.all([
+      wallet.balances().catch(() => ({ total: '0' })),
+      operations.list(null, null, 10, 0).catch(() => ({ data: [] })),
     ]);
 
-    // Merge + sort all transactions
-    const allTx = [
-      ...depositList.data,
-      ...payoutList.data,
-      ...transferList.data,
-    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    render(balance, allTx);
+    const ops = opsList.data || opsList || [];
+    render(balanceData, Array.isArray(ops) ? ops : []);
 
     // Update header balance
     const headerBal = document.getElementById('header-balance');
     if (headerBal) {
-      headerBal.textContent = formatUSDC(balance.available);
+      headerBal.textContent = formatUSDC(balanceData.total);
     }
   } catch (err) {
     console.error('Dashboard fetch error:', err);

@@ -1,23 +1,22 @@
 // ============================================================================
-// Screen: Transaction History
+// Screen: Operation History
 // ============================================================================
 
 import * as state from '../state.js';
-import { deposits, payouts, transfers } from '../api.js';
-import { formatUSDC, formatAddress, timeAgo, formatDate, getChainMeta } from '../utils.js';
+import { operations } from '../api.js';
+import { formatUSDC, formatAddress, timeAgo, formatDate, getChainMeta, getOpTypeLabel, getOpStatusLabel } from '../utils.js';
 import { statusBadge } from '../components/status-badge.js';
 import { chainBadge } from '../components/chain-icon.js';
 
 let container;
-let allTransactions = [];
+let allOperations = [];
 let filterType = 'all';
 let filterStatus = 'all';
-let detailPanelOpen = false;
 
 function render() {
-  const filtered = allTransactions.filter(tx => {
-    if (filterType !== 'all' && tx.object !== filterType) return false;
-    if (filterStatus !== 'all' && tx.status !== filterStatus) return false;
+  const filtered = allOperations.filter(op => {
+    if (filterType !== 'all' && op.type !== filterType) return false;
+    if (filterStatus !== 'all' && op.status !== filterStatus) return false;
     return true;
   });
 
@@ -26,15 +25,19 @@ function render() {
     <div class="flex items-center justify-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
       <div class="tabs" style="margin-bottom: 0; border-bottom: none;">
         <button class="tab ${filterType === 'all' ? 'active' : ''}" data-filter-type="all">All</button>
-        <button class="tab ${filterType === 'deposit' ? 'active' : ''}" data-filter-type="deposit">Deposits</button>
-        <button class="tab ${filterType === 'payout' ? 'active' : ''}" data-filter-type="payout">Payouts</button>
-        <button class="tab ${filterType === 'transfer' ? 'active' : ''}" data-filter-type="transfer">Transfers</button>
+        <button class="tab ${filterType === 'SEND' ? 'active' : ''}" data-filter-type="SEND">Send</button>
+        <button class="tab ${filterType === 'COLLECT' ? 'active' : ''}" data-filter-type="COLLECT">Collect</button>
+        <button class="tab ${filterType === 'BRIDGE' ? 'active' : ''}" data-filter-type="BRIDGE">Bridge</button>
+        <button class="tab ${filterType === 'BATCH_SEND' ? 'active' : ''}" data-filter-type="BATCH_SEND">Batch Send</button>
       </div>
-      <select id="filter-status" class="select" style="width: auto; min-width: 140px;">
+      <select id="filter-status" class="select" style="width: auto; min-width: 160px;">
         <option value="all" ${filterStatus === 'all' ? 'selected' : ''}>All Status</option>
-        <option value="completed" ${filterStatus === 'completed' ? 'selected' : ''}>Completed</option>
-        <option value="processing" ${filterStatus === 'processing' ? 'selected' : ''}>Processing</option>
-        <option value="failed" ${filterStatus === 'failed' ? 'selected' : ''}>Failed</option>
+        <option value="COMPLETED" ${filterStatus === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+        <option value="PROCESSING" ${filterStatus === 'PROCESSING' ? 'selected' : ''}>Processing</option>
+        <option value="PENDING" ${filterStatus === 'PENDING' ? 'selected' : ''}>Pending</option>
+        <option value="AWAITING_SIGNATURE" ${filterStatus === 'AWAITING_SIGNATURE' ? 'selected' : ''}>Awaiting Signature</option>
+        <option value="AWAITING_SIGNATURE_PHASE2" ${filterStatus === 'AWAITING_SIGNATURE_PHASE2' ? 'selected' : ''}>Awaiting Sig. (Phase 2)</option>
+        <option value="FAILED" ${filterStatus === 'FAILED' ? 'selected' : ''}>Failed</option>
       </select>
     </div>
 
@@ -42,7 +45,7 @@ function render() {
     <div class="card">
       ${filtered.length === 0
         ? `<div class="empty-state">
-            <div class="empty-state__title">No transactions found</div>
+            <div class="empty-state__title">No operations found</div>
             <div class="empty-state__desc">Try changing your filters</div>
           </div>`
         : `<div class="table-wrapper">
@@ -51,7 +54,6 @@ function render() {
                 <tr>
                   <th>Type</th>
                   <th>Description</th>
-                  <th>Chain</th>
                   <th style="text-align:right">Amount</th>
                   <th style="text-align:right">Fee</th>
                   <th>Status</th>
@@ -59,7 +61,7 @@ function render() {
                 </tr>
               </thead>
               <tbody>
-                ${filtered.map(tx => renderRow(tx)).join('')}
+                ${filtered.map(op => renderRow(op)).join('')}
               </tbody>
             </table>
           </div>`
@@ -70,7 +72,7 @@ function render() {
     <div id="detail-overlay" class="detail-panel__overlay"></div>
     <div id="detail-panel" class="detail-panel">
       <div class="detail-panel__header">
-        <h4>Transaction Details</h4>
+        <h4>Operation Details</h4>
         <button class="detail-panel__close" id="detail-close">&times;</button>
       </div>
       <div class="detail-panel__body" id="detail-body"></div>
@@ -80,52 +82,43 @@ function render() {
   setupListeners();
 }
 
-function renderRow(tx) {
-  const isDeposit = tx.object === 'deposit';
-  const isTransfer = tx.object === 'transfer';
-  const isPayout = tx.object === 'payout';
+function renderRow(op) {
+  const typeLabel = getOpTypeLabel(op.type);
+  const summary = op.summary || typeLabel;
+  const amount = op.amount ? formatUSDC(op.amount) : '';
+  const fee = op.feeAmount ? formatUSDC(op.feeAmount) : '-';
 
-  let typeLabel, chain, amount, amountClass, fee, desc;
-
-  if (isDeposit) {
-    typeLabel = '<span style="color: var(--color-success); font-weight: 600;">Deposit</span>';
-    chain = tx.source_chain;
-    amount = '+' + formatUSDC(tx.credited_amount);
-    amountClass = 'amount-positive';
-    fee = formatUSDC(tx.fee);
-    desc = `From ${getChainMeta(tx.source_chain).name}`;
-  } else if (isPayout) {
-    typeLabel = '<span style="color: var(--color-primary); font-weight: 600;">Payout</span>';
-    chain = tx.destination?.chain;
-    amount = '-' + formatUSDC(tx.amount);
-    amountClass = 'amount-negative';
-    fee = formatUSDC(tx.fee);
-    desc = `To ${formatAddress(tx.destination?.address)}`;
-  } else {
-    typeLabel = '<span style="color: var(--color-purple); font-weight: 600;">Transfer</span>';
-    chain = 'arc';
-    amount = '-' + formatUSDC(tx.amount);
-    amountClass = 'amount-negative';
-    fee = formatUSDC(tx.fee);
-    desc = `To ${formatAddress(tx.to_account)}`;
-  }
+  const typeColors = {
+    SEND: 'var(--color-primary)',
+    COLLECT: 'var(--color-success)',
+    BRIDGE: 'var(--color-purple, #9F72FF)',
+    BATCH_SEND: '#F59E0B',
+  };
+  const color = typeColors[op.type] || 'var(--color-primary)';
 
   return `
-    <tr class="history-row" data-tx-id="${tx.id}" style="cursor: pointer;">
-      <td>${typeLabel}</td>
-      <td class="text-sm">${desc}</td>
-      <td>${chain ? chainBadge(chain) : ''}</td>
-      <td style="text-align:right"><span class="${amountClass}">${amount}</span></td>
+    <tr class="history-row" data-op-id="${op.id}" style="cursor: pointer;">
+      <td><span style="color: ${color}; font-weight: 600;">${typeLabel}</span></td>
+      <td class="text-sm">${summary}</td>
+      <td style="text-align:right"><span class="text-mono">${amount}</span></td>
       <td style="text-align:right" class="text-sm text-mono">${fee}</td>
-      <td>${statusBadge(tx.status)}</td>
-      <td class="text-sm text-muted">${timeAgo(tx.created_at)}</td>
+      <td>${statusBadge(op.status)}</td>
+      <td class="text-sm text-muted">${timeAgo(op.createdAt)}</td>
     </tr>
   `;
 }
 
-function showDetail(tx) {
+async function showDetail(op) {
   const body = document.getElementById('detail-body');
-  const fields = Object.entries(tx).filter(([k]) => k !== 'object');
+
+  // Fetch full operation details
+  let fullOp = op;
+  try {
+    fullOp = await operations.get(op.id);
+  } catch {}
+
+  const fields = Object.entries(fullOp).filter(([k]) => k !== 'steps');
+  const steps = fullOp.steps || [];
 
   body.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -139,6 +132,21 @@ function showDetail(tx) {
       `).join('')}
     </div>
 
+    ${steps.length > 0 ? `
+      <div style="margin-top: 24px;">
+        <div class="text-xs text-muted" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Steps</div>
+        ${steps.map((step, i) => `
+          <div style="background: var(--color-bg-soft); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+            <div class="flex justify-between text-sm">
+              <span style="font-weight: 500;">Step ${i + 1}</span>
+              ${statusBadge(step.status)}
+            </div>
+            <pre style="font-family: var(--font-mono); font-size: 0.7rem; margin-top: 6px; white-space: pre-wrap;">${JSON.stringify(step, null, 2)}</pre>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
     <div style="margin-top: 24px;">
       <div class="text-xs text-muted" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Raw JSON</div>
       <div class="code-block">
@@ -146,7 +154,7 @@ function showDetail(tx) {
           <div class="code-block__dots"><span></span><span></span><span></span></div>
           <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">response.json</span>
         </div>
-        <div class="code-block__body">${JSON.stringify(tx, null, 2)}</div>
+        <div class="code-block__body">${JSON.stringify(fullOp, null, 2)}</div>
       </div>
     </div>
   `;
@@ -178,8 +186,8 @@ function setupListeners() {
   // Row click → detail
   container.querySelectorAll('.history-row').forEach(row => {
     row.addEventListener('click', () => {
-      const tx = allTransactions.find(t => t.id === row.dataset.txId);
-      if (tx) showDetail(tx);
+      const op = allOperations.find(o => o.id === row.dataset.opId);
+      if (op) showDetail(op);
     });
   });
 
@@ -189,22 +197,15 @@ function setupListeners() {
 }
 
 async function fetchData() {
-  const accountId = state.getAccountId();
-  if (!accountId) return;
-
   try {
-    const [depositList, payoutList, transferList] = await Promise.all([
-      deposits.list(accountId).catch(() => ({ data: [] })),
-      payouts.list(accountId).catch(() => ({ data: [] })),
-      transfers.list(accountId).catch(() => ({ data: [] })),
-    ]);
-
-    allTransactions = [
-      ...depositList.data,
-      ...payoutList.data,
-      ...transferList.data,
-    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
+    const result = await operations.list(
+      filterType !== 'all' ? filterType : null,
+      filterStatus !== 'all' ? filterStatus : null,
+      50,
+      0
+    );
+    allOperations = result.data || result || [];
+    if (!Array.isArray(allOperations)) allOperations = [];
     render();
   } catch (err) {
     console.error('History fetch error:', err);

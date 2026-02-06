@@ -36,7 +36,6 @@ export async function copyToClipboard(text) {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
-    // Fallback
     const el = document.createElement('textarea');
     el.value = text;
     el.style.position = 'fixed';
@@ -51,12 +50,12 @@ export async function copyToClipboard(text) {
 
 /** Chain metadata */
 const CHAINS = {
-  arc:       { name: 'Arc',       color: '#1894E8', icon: 'arc' },
-  arbitrum:  { name: 'Arbitrum',  color: '#28a0f0', icon: 'arbitrum' },
   base:      { name: 'Base',      color: '#0052ff', icon: 'base' },
-  ethereum:  { name: 'Ethereum',  color: '#627eea', icon: 'ethereum' },
+  arbitrum:  { name: 'Arbitrum',  color: '#28a0f0', icon: 'arbitrum' },
+  avalanche: { name: 'Avalanche', color: '#e84142', icon: 'avalanche' },
+  optimism:  { name: 'Optimism',  color: '#ff0420', icon: 'optimism' },
   polygon:   { name: 'Polygon',   color: '#8247e5', icon: 'polygon' },
-  sonic:     { name: 'Sonic',     color: '#16c784', icon: 'sonic' },
+  ethereum:  { name: 'Ethereum',  color: '#627eea', icon: 'ethereum' },
 };
 
 export function getChainMeta(chain) {
@@ -67,19 +66,47 @@ export function getAllChains() {
   return Object.keys(CHAINS);
 }
 
-/** Fee calculation (mirrors API logic) */
-export function calculateFee(amount, chain, isBatch = false) {
+/** Fee calculation (mirrors backend logic) */
+export function calculateFee(amount, destChain, srcChain, isBatch = false) {
   const num = parseFloat(amount);
-  if (isBatch) return num * 0.0025;
-  if (chain === 'arc') return num * 0.001;
-  return num * 0.004;
+  if (isBatch) return num * 0.0025; // 0.25%
+  if (srcChain && destChain && srcChain !== destChain) return num * 0.003; // 0.3% cross-chain
+  if (!srcChain && destChain) return num * 0.003; // cross-chain default
+  return 0; // same-chain: free
 }
 
 /** Fee percentage label */
-export function getFeeLabel(chain, isBatch = false) {
+export function getFeeLabel(destChain, srcChain, isBatch = false) {
   if (isBatch) return '0.25%';
-  if (chain === 'arc') return '0.1%';
-  return '0.4%';
+  if (srcChain && destChain && srcChain === destChain) return '0%';
+  return '0.3%';
+}
+
+/** Operation type labels */
+const OP_TYPE_LABELS = {
+  SEND: 'Send',
+  COLLECT: 'Collect',
+  BRIDGE: 'Bridge',
+  BATCH_SEND: 'Batch Send',
+};
+
+export function getOpTypeLabel(type) {
+  return OP_TYPE_LABELS[type] || type;
+}
+
+/** Operation status labels */
+const OP_STATUS_LABELS = {
+  AWAITING_SIGNATURE: 'Awaiting Signature',
+  AWAITING_SIGNATURE_PHASE2: 'Awaiting Signature (Phase 2)',
+  PENDING: 'Pending',
+  PROCESSING: 'Processing',
+  CONFIRMED: 'Confirmed',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed',
+};
+
+export function getOpStatusLabel(status) {
+  return OP_STATUS_LABELS[status] || status;
 }
 
 /** Generate chain icon SVG inline */
@@ -89,8 +116,8 @@ export function getChainSVG(chain, size = 32) {
     base: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`,
     arbitrum: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#28a0f0" opacity="0.85"/><path d="M12,20 L16,10 L20,20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     polygon: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,4 28,12 28,20 16,28 4,20 4,12" fill="#8247e5" opacity="0.85"/><polygon points="16,10 22,14 22,18 16,22 10,18 10,14" fill="#fff" opacity="0.3"/></svg>`,
-    sonic: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#16c784"/><path d="M10 18 L14 12 L18 16 L22 10" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    arc: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#1894E8"/><path d="M10 20 L16 10 L22 20" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="17" x2="20" y2="17" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
+    avalanche: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#e84142"/><path d="M10 22 L16 8 L22 22" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="18" x2="20" y2="18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
+    optimism: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#ff0420"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">O</text></svg>`,
   };
   return svgs[chain] || svgs.ethereum;
 }

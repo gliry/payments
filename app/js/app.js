@@ -63,20 +63,20 @@ function showAppLayout(show) {
 // Update sidebar user info
 function updateSidebarUser() {
   const wallet = state.getWallet();
-  const account = state.getAccount();
+  const user = state.getUser();
 
   const nameEl = document.getElementById('sidebar-user-name');
   const addrEl = document.getElementById('sidebar-user-address');
   const avatarEl = document.getElementById('sidebar-user-avatar');
 
-  if (nameEl && wallet) {
-    nameEl.textContent = wallet.username || account?.email || 'User';
+  if (nameEl) {
+    nameEl.textContent = user?.username || wallet?.username || 'User';
   }
-  if (addrEl && wallet) {
-    addrEl.textContent = formatAddress(wallet.address);
+  if (addrEl) {
+    addrEl.textContent = formatAddress(user?.walletAddress || wallet?.address);
   }
-  if (avatarEl && wallet) {
-    const name = wallet.username || account?.email || 'U';
+  if (avatarEl) {
+    const name = user?.username || wallet?.username || 'U';
     avatarEl.textContent = name.charAt(0).toUpperCase();
   }
 }
@@ -200,7 +200,7 @@ export async function init() {
 
   // Listen for auth changes
   state.on('logout', () => navigate('onboarding'));
-  state.on('account-change', updateSidebarUser);
+  state.on('user-change', updateSidebarUser);
 
   // Initial route
   await handleRoute();

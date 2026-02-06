@@ -3,7 +3,8 @@
 // ============================================================================
 
 const WALLET_KEY = 'omniflow_wallet';
-const ACCOUNT_KEY = 'omniflow_account';
+const USER_KEY = 'omniflow_user';
+const TOKEN_KEY = 'omniflow_token';
 
 const bus = new EventTarget();
 
@@ -19,31 +20,35 @@ export function setWallet(wallet) {
   bus.dispatchEvent(new CustomEvent('wallet-change', { detail: wallet }));
 }
 
-export function getAccount() {
+export function getUser() {
   try {
-    const raw = localStorage.getItem(ACCOUNT_KEY);
+    const raw = localStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-export function setAccount(account) {
-  localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
-  bus.dispatchEvent(new CustomEvent('account-change', { detail: account }));
+export function setUser(user) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  bus.dispatchEvent(new CustomEvent('user-change', { detail: user }));
 }
 
-export function getAccountId() {
-  const account = getAccount();
-  return account?.id || null;
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
 }
 
 export function clearAll() {
   localStorage.removeItem(WALLET_KEY);
-  localStorage.removeItem(ACCOUNT_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   bus.dispatchEvent(new CustomEvent('logout'));
 }
 
 export function isAuthenticated() {
-  return getWallet() !== null && getAccount() !== null;
+  return getToken() !== null && getUser() !== null;
 }
 
 export function on(event, callback) {

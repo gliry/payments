@@ -4,7 +4,7 @@
 
 import { registerPasskey, loginPasskey } from '../auth.js';
 import * as state from '../state.js';
-import { accounts } from '../api.js';
+import { auth } from '../api.js';
 import { navigate } from '../app.js';
 
 let statusEl, walletEl, walletAddrEl;
@@ -48,28 +48,51 @@ async function handleAuth(mode) {
   try {
     showStatus(mode === 'register' ? 'Creating passkey (Touch ID / Face ID)...' : 'Authenticating with passkey...');
 
-    const wallet = mode === 'register'
-      ? await registerPasskey(username)
-      : await loginPasskey(username);
+    let wallet;
+    try {
+      wallet = mode === 'register'
+        ? await registerPasskey(username)
+        : await loginPasskey(username);
+    } catch (passkeyErr) {
+      // If register fails (username duplicated in Circle), try login passkey instead
+      if (mode === 'register' && passkeyErr.message?.includes('duplicated')) {
+        showStatus('Passkey exists, authenticating...', 'info');
+        wallet = await loginPasskey(username);
+      } else {
+        throw passkeyErr;
+      }
+    }
 
     state.setWallet(wallet);
 
-    showStatus('Creating account...', 'info');
+    showStatus('Connecting to server...', 'info');
 
-    // Create or get account from API
-    let account;
+    // Try the intended backend call; fall back if needed
+    let result;
     try {
-      account = await accounts.create(wallet.username || username);
-    } catch (err) {
-      // Account might already exist — try to find it
-      if (err.data?.error?.code === 'email_exists') {
-        const list = await accounts.list();
-        account = list.data.find(a => a.email === username);
+      if (mode === 'register') {
+        result = await auth.register(wallet.username, wallet.credentialId, wallet.publicKey);
+      } else {
+        result = await auth.login(wallet.username, wallet.credentialId);
       }
-      if (!account) throw err;
+    } catch (apiErr) {
+      // If login fails (user not in DB), try register on backend
+      if (mode === 'login' && apiErr.status === 401) {
+        showStatus('Registering new account...', 'info');
+        result = await auth.register(wallet.username, wallet.credentialId, wallet.publicKey);
+      }
+      // If register fails (user already exists in DB), try login
+      else if (mode === 'register' && apiErr.status === 409) {
+        showStatus('Account exists, logging in...', 'info');
+        result = await auth.login(wallet.username, wallet.credentialId);
+      }
+      else {
+        throw apiErr;
+      }
     }
 
-    state.setAccount(account);
+    state.setToken(result.accessToken);
+    state.setUser(result.user);
 
     showStatus('Wallet created successfully!', 'success');
 

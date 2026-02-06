@@ -1,10 +1,10 @@
 // ============================================================================
-// Screen: Batch Payouts — THE KILLER FEATURE
+// Screen: Batch Send — THE KILLER FEATURE
 // ============================================================================
 
 import * as state from '../state.js';
-import { payouts, accounts } from '../api.js';
-import { formatUSDC, formatAddress, getChainMeta, getChainSVG, isValidAddress } from '../utils.js';
+import { wallet, operations } from '../api.js';
+import { formatUSDC, formatAddress, getChainMeta, getChainSVG, isValidAddress, getAllChains, getOpTypeLabel } from '../utils.js';
 import { showToast } from '../components/toast.js';
 import { statusBadge } from '../components/status-badge.js';
 import { chainBadge } from '../components/chain-icon.js';
@@ -26,7 +26,7 @@ const TEMPLATES = {
       { address: '0xB2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1', chain: 'arbitrum', amount: '4200' },
       { address: '0xC3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2', chain: 'polygon', amount: '2800' },
       { address: '0xD4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3', chain: 'ethereum', amount: '5000' },
-      { address: '0xE5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3F4', chain: 'sonic', amount: '1500' },
+      { address: '0xE5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3F4', chain: 'avalanche', amount: '1500' },
     ],
   },
   vendors: {
@@ -46,9 +46,9 @@ const TEMPLATES = {
       { address: '0x2222222222222222222222222222222222222222', chain: 'arbitrum', amount: '100' },
       { address: '0x3333333333333333333333333333333333333333', chain: 'polygon', amount: '100' },
       { address: '0x4444444444444444444444444444444444444444', chain: 'ethereum', amount: '100' },
-      { address: '0x5555555555555555555555555555555555555555', chain: 'sonic', amount: '100' },
+      { address: '0x5555555555555555555555555555555555555555', chain: 'avalanche', amount: '100' },
       { address: '0x6666666666666666666666666666666666666666', chain: 'base', amount: '100' },
-      { address: '0x7777777777777777777777777777777777777777', chain: 'arbitrum', amount: '100' },
+      { address: '0x7777777777777777777777777777777777777777', chain: 'optimism', amount: '100' },
       { address: '0x8888888888888888888888888888888888888888', chain: 'polygon', amount: '100' },
     ],
   },
@@ -111,13 +111,14 @@ function renderManual() {
 }
 
 function renderRow(row, index) {
+  const chains = getAllChains();
   return `
     <tr data-index="${index}">
       <td class="text-sm text-muted">${index + 1}</td>
       <td><input type="text" class="input input--mono batch-address" value="${row.address}" placeholder="0x..." data-index="${index}"></td>
       <td>
         <select class="select batch-chain" data-index="${index}">
-          ${['arc', 'arbitrum', 'base', 'ethereum', 'polygon', 'sonic'].map(c =>
+          ${chains.map(c =>
             `<option value="${c}" ${row.chain === c ? 'selected' : ''}>${getChainMeta(c).name}</option>`
           ).join('')}
         </select>
@@ -173,11 +174,7 @@ function renderTemplates() {
 
 function renderSummary() {
   const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  const totalFees = rows.reduce((sum, r) => {
-    const amt = parseFloat(r.amount || 0);
-    if (r.chain === 'arc') return sum;
-    return sum + amt * 0.0025;
-  }, 0);
+  const totalFees = totalAmount * 0.0025; // 0.25% batch fee
   const totalRequired = totalAmount + totalFees;
   const insufficient = totalRequired > balance;
 
@@ -201,7 +198,7 @@ function renderSummary() {
         <span class="text-mono" style="font-weight: 600;">${formatUSDC(totalAmount)}</span>
       </div>
       <div class="batch-summary__row">
-        <span class="text-muted">Fees (0.25% cross-chain)</span>
+        <span class="text-muted">Fees (0.25% batch)</span>
         <span class="text-mono">${formatUSDC(totalFees)}</span>
       </div>
       <div class="batch-summary__row batch-summary__row--total">
@@ -241,20 +238,21 @@ function renderSummary() {
       ` : ''}
 
       <button id="batch-execute-btn" class="btn btn--primary btn--lg btn--full" style="margin-top: 20px;" ${rows.length === 0 || insufficient ? 'disabled' : ''}>
-        Execute Batch (${rows.length} payouts)
+        Execute Batch (${rows.length} sends)
       </button>
     </div>
   `;
 }
 
 function renderExecution() {
-  const batch = batchResult;
-  if (!batch) return;
+  if (!batchResult) return;
 
-  const total = batch.payouts.length;
-  const completed = batch.payouts.filter(p => p.status === 'completed').length;
-  const progress = total > 0 ? (completed / total * 100) : 0;
+  const summary = batchResult.summary || {};
+  const steps = batchResult.steps || [];
   const isDone = executionState === 'done';
+  const total = steps.length || summary.totalRecipients || 0;
+  const completed = steps.filter(s => s.status === 'COMPLETED').length;
+  const progress = total > 0 ? (completed / total * 100) : 0;
 
   container.innerHTML = `
     <div class="card" style="text-align: center; margin-bottom: 24px;">
@@ -277,11 +275,11 @@ function renderExecution() {
       <div class="grid-3" style="margin-bottom: 24px;">
         <div class="card" style="text-align: center;">
           <div class="text-sm text-muted">Total Sent</div>
-          <div class="text-mono" style="font-size: 1.25rem; font-weight: 700;">${formatUSDC(batch.total_amount)}</div>
+          <div class="text-mono" style="font-size: 1.25rem; font-weight: 700;">${formatUSDC(summary.totalAmount || batchResult.amount)}</div>
         </div>
         <div class="card" style="text-align: center;">
           <div class="text-sm text-muted">Total Fees</div>
-          <div class="text-mono" style="font-size: 1.25rem; font-weight: 700;">${formatUSDC(batch.total_fees)}</div>
+          <div class="text-mono" style="font-size: 1.25rem; font-weight: 700;">${formatUSDC(summary.totalFees || batchResult.feeAmount)}</div>
         </div>
         <div class="card" style="text-align: center;">
           <div class="text-sm text-muted">Recipients</div>
@@ -292,14 +290,14 @@ function renderExecution() {
 
     <!-- Per-recipient status -->
     <div class="card">
-      <h4 style="margin-bottom: 16px;">Payout Status</h4>
-      ${batch.payouts.map((p, i) => `
+      <h4 style="margin-bottom: 16px;">Send Status</h4>
+      ${steps.map((s, i) => `
         <div class="batch-row-status">
           <span class="text-sm text-muted" style="width: 24px;">${i + 1}</span>
-          <span class="text-mono text-sm" style="flex: 1;">${formatAddress(p.destination.address)}</span>
-          ${chainBadge(p.destination.chain)}
-          <span class="text-mono text-sm" style="width: 100px; text-align: right; font-weight: 600;">${formatUSDC(p.amount)}</span>
-          ${statusBadge(p.status)}
+          <span class="text-mono text-sm" style="flex: 1;">${formatAddress(s.destAddr || s.address || '')}</span>
+          ${s.destChain ? chainBadge(s.destChain) : (s.chain ? chainBadge(s.chain) : '')}
+          <span class="text-mono text-sm" style="width: 100px; text-align: right; font-weight: 600;">${formatUSDC(s.amount)}</span>
+          ${statusBadge(s.status)}
         </div>
       `).join('')}
     </div>
@@ -457,7 +455,6 @@ function parseCSV(file) {
 }
 
 async function handleExecute() {
-  // Validate rows
   const validRows = rows.filter(r => r.address && r.chain && parseFloat(r.amount) > 0);
   if (validRows.length === 0) {
     showToast('No valid rows to execute', 'warning');
@@ -469,22 +466,23 @@ async function handleExecute() {
   btn.disabled = true;
 
   try {
-    const payoutItems = validRows.map(r => ({
+    const recipients = validRows.map(r => ({
+      address: r.address,
+      chain: r.chain,
       amount: String(r.amount),
-      destination: { address: r.address, chain: r.chain },
     }));
 
-    batchResult = await payouts.batch(state.getAccountId(), payoutItems);
+    batchResult = await operations.batchSend(recipients, 'base');
     executionState = 'executing';
     render();
 
     // Poll for completion
-    if (batchResult.status !== 'completed') {
+    if (batchResult.status !== 'COMPLETED') {
       const pollId = setInterval(async () => {
         try {
-          const updated = await payouts.get(batchResult.id);
+          const updated = await operations.get(batchResult.id);
           batchResult = updated;
-          if (updated.status === 'completed') {
+          if (updated.status === 'COMPLETED' || updated.status === 'FAILED') {
             clearInterval(pollId);
             executionState = 'done';
             render();
@@ -501,15 +499,15 @@ async function handleExecute() {
     }
   } catch (err) {
     showToast(`Batch failed: ${err.message}`, 'error');
-    btn.textContent = `Execute Batch (${rows.length} payouts)`;
+    btn.textContent = `Execute Batch (${rows.length} sends)`;
     btn.disabled = false;
   }
 }
 
 function triggerConfetti() {
-  const container = document.createElement('div');
-  container.className = 'confetti-container';
-  document.body.appendChild(container);
+  const el = document.createElement('div');
+  el.className = 'confetti-container';
+  document.body.appendChild(el);
 
   const colors = ['#1894E8', '#9F72FF', '#62E2A4', '#F59E0B', '#EF4444', '#0052ff'];
 
@@ -523,10 +521,10 @@ function triggerConfetti() {
     piece.style.width = (6 + Math.random() * 8) + 'px';
     piece.style.height = (6 + Math.random() * 8) + 'px';
     piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    container.appendChild(piece);
+    el.appendChild(piece);
   }
 
-  setTimeout(() => container.remove(), 4000);
+  setTimeout(() => el.remove(), 4000);
 }
 
 export function init() {
@@ -534,7 +532,7 @@ export function init() {
 }
 
 export async function show() {
-  document.getElementById('header-title').textContent = 'Batch Payout';
+  document.getElementById('header-title').textContent = 'Batch Send';
   executionState = null;
   batchResult = null;
 
@@ -547,8 +545,8 @@ export async function show() {
   }
 
   try {
-    const bal = await accounts.getBalance(state.getAccountId());
-    balance = parseFloat(bal.available);
+    const bal = await wallet.balances();
+    balance = parseFloat(bal.total || '0');
   } catch { balance = 0; }
 
   render();

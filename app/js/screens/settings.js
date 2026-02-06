@@ -12,28 +12,28 @@ let webhookList = [];
 
 function render() {
   const wallet = state.getWallet();
-  const account = state.getAccount();
+  const user = state.getUser();
 
   container.innerHTML = `
     <!-- Account Info -->
     <div class="card" style="margin-bottom: 24px;">
       <h3 style="margin-bottom: 20px;">Account Info</h3>
-      <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px; font-size: 0.875rem;">
-        <span class="text-muted">Email</span>
-        <span style="font-weight: 500;">${account?.email || 'N/A'}</span>
-        <span class="text-muted">Account ID</span>
-        <span class="text-mono" style="font-size: 0.8125rem;">${account?.id || 'N/A'}</span>
+      <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px; font-size: 0.875rem;">
+        <span class="text-muted">Username</span>
+        <span style="font-weight: 500;">${user?.username || 'N/A'}</span>
+        <span class="text-muted">User ID</span>
+        <span class="text-mono" style="font-size: 0.8125rem;">${user?.id || 'N/A'}</span>
         <span class="text-muted">Wallet Address</span>
         <span class="flex items-center gap-8">
-          <code class="text-mono" style="font-size: 0.8125rem; word-break: break-all;">${wallet?.address || 'N/A'}</code>
+          <code class="text-mono" style="font-size: 0.8125rem; word-break: break-all;">${user?.walletAddress || wallet?.address || 'N/A'}</code>
           <button class="copy-btn" id="copy-wallet-addr">
             <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/></svg>
           </button>
         </span>
-        <span class="text-muted">Network</span>
-        <span>${account?.network || 'arc_testnet'}</span>
+        <span class="text-muted">Delegate Address</span>
+        <span class="text-mono" style="font-size: 0.8125rem; word-break: break-all;">${user?.delegateAddress || 'Not set'}</span>
         <span class="text-muted">Status</span>
-        <span class="badge badge--active">${account?.status || 'active'}</span>
+        <span class="badge badge--active">active</span>
       </div>
     </div>
 
@@ -43,7 +43,7 @@ function render() {
       <div class="input-group" style="margin-bottom: 16px;">
         <label class="input-label">API Endpoint</label>
         <div class="flex items-center gap-8">
-          <code class="input input--mono" style="background: var(--color-bg-soft);" readonly>http://localhost:3001</code>
+          <code class="input input--mono" style="background: var(--color-bg-soft);" readonly>http://localhost:3000</code>
           <button class="copy-btn" id="copy-api-url">
             <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/></svg>
           </button>
@@ -52,7 +52,8 @@ function render() {
       <div class="input-group">
         <label class="input-label">Sample Request</label>
         <div class="code-block">
-          <div class="code-block__body">curl http://localhost:3001/v1/accounts/${account?.id || ':id'}/balance</div>
+          <div class="code-block__body">curl http://localhost:3000/v1/wallet/balances \\
+  -H "Authorization: Bearer YOUR_TOKEN"</div>
         </div>
       </div>
     </div>
@@ -83,8 +84,8 @@ function render() {
                 ${webhookList.map(wh => `
                   <tr>
                     <td class="text-mono text-sm" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis;">${wh.url}</td>
-                    <td class="text-sm">${wh.events.map(e => `<span class="badge badge--processing" style="margin-right: 4px; margin-bottom: 4px;">${e}</span>`).join('')}</td>
-                    <td><span class="badge badge--${wh.active ? 'active' : 'failed'}">${wh.active ? 'Active' : 'Inactive'}</span></td>
+                    <td class="text-sm">${(wh.events || []).map(e => `<span class="badge badge--processing" style="margin-right: 4px; margin-bottom: 4px;">${e}</span>`).join('')}</td>
+                    <td><span class="badge badge--${wh.active !== false ? 'active' : 'failed'}">${wh.active !== false ? 'Active' : 'Inactive'}</span></td>
                     <td><button class="btn btn--ghost btn--sm delete-webhook" data-id="${wh.id}" style="color: var(--color-error);">Delete</button></td>
                   </tr>
                 `).join('')}
@@ -105,7 +106,7 @@ function render() {
         <div class="input-group" style="margin-bottom: 24px;">
           <label class="input-label">Events</label>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-            ${['payout.completed', 'payout.failed', 'deposit.completed', 'deposit.failed', 'transfer.completed'].map(event => `
+            ${['operation.completed', 'operation.failed'].map(event => `
               <label style="display: flex; align-items: center; gap: 8px; font-size: 0.875rem; cursor: pointer;">
                 <input type="checkbox" class="webhook-event" value="${event}" checked>
                 ${event}
@@ -126,14 +127,15 @@ function render() {
 
 function setupListeners() {
   const wallet = state.getWallet();
+  const user = state.getUser();
 
   document.getElementById('copy-wallet-addr')?.addEventListener('click', async () => {
-    await copyToClipboard(wallet?.address || '');
+    await copyToClipboard(user?.walletAddress || wallet?.address || '');
     showToast('Address copied!', 'success');
   });
 
   document.getElementById('copy-api-url')?.addEventListener('click', async () => {
-    await copyToClipboard('http://localhost:3001');
+    await copyToClipboard('http://localhost:3000');
     showToast('API URL copied!', 'success');
   });
 
@@ -189,7 +191,8 @@ function setupListeners() {
 async function fetchWebhooks() {
   try {
     const result = await webhooks.list();
-    webhookList = result.data || [];
+    webhookList = result.data || result || [];
+    if (!Array.isArray(webhookList)) webhookList = [];
   } catch {
     webhookList = [];
   }

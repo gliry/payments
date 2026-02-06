@@ -1,10 +1,10 @@
 // ============================================================================
-// Screen: Send Payout
+// Screen: Send
 // ============================================================================
 
 import * as state from '../state.js';
-import { payouts, accounts } from '../api.js';
-import { formatUSDC, formatAddress, isValidAddress, getChainMeta, getChainSVG, calculateFee, getFeeLabel } from '../utils.js';
+import { wallet, operations } from '../api.js';
+import { formatUSDC, formatAddress, isValidAddress, getChainMeta, getChainSVG, calculateFee, getFeeLabel, getAllChains } from '../utils.js';
 import { showToast } from '../components/toast.js';
 import { statusBadge } from '../components/status-badge.js';
 import { navigate } from '../app.js';
@@ -13,6 +13,7 @@ let container;
 let currentStep = 1;
 let formData = { address: '', chain: 'base', amount: '' };
 let balance = 0;
+const SRC_CHAIN = 'base';
 
 function render() {
   container.innerHTML = `
@@ -44,6 +45,7 @@ function render() {
 }
 
 function renderStep1() {
+  const chains = getAllChains();
   return `
     <h3 style="margin-bottom: 20px;">Recipient</h3>
 
@@ -56,13 +58,13 @@ function renderStep1() {
     <div class="input-group" style="margin-bottom: 24px;">
       <label class="input-label">Destination Chain</label>
       <div class="chain-grid">
-        ${['arc', 'arbitrum', 'base', 'ethereum', 'polygon', 'sonic'].map(chain => {
+        ${chains.map(chain => {
           const meta = getChainMeta(chain);
           return `
             <div class="chain-option ${formData.chain === chain ? 'selected' : ''}" data-chain="${chain}">
               ${getChainSVG(chain, 28)}
               <span class="chain-option__name">${meta.name}</span>
-              <span class="text-xs text-muted">${getFeeLabel(chain)} fee</span>
+              <span class="text-xs text-muted">${getFeeLabel(chain, SRC_CHAIN)} fee</span>
             </div>
           `;
         }).join('')}
@@ -74,7 +76,7 @@ function renderStep1() {
 }
 
 function renderStep2() {
-  const fee = calculateFee(formData.amount || 0, formData.chain);
+  const fee = calculateFee(formData.amount || 0, formData.chain, SRC_CHAIN);
   const total = parseFloat(formData.amount || 0) + fee;
 
   return `
@@ -93,7 +95,7 @@ function renderStep2() {
 
       <div style="background: var(--color-bg-soft); border-radius: 10px; padding: 14px;">
         <div class="flex justify-between text-sm" style="margin-bottom: 4px;">
-          <span class="text-muted">Fee (${getFeeLabel(formData.chain)})</span>
+          <span class="text-muted">Fee (${getFeeLabel(formData.chain, SRC_CHAIN)})</span>
           <span class="text-mono" id="send-fee">${formatUSDC(fee)}</span>
         </div>
         <div class="flex justify-between text-sm" style="font-weight: 600;">
@@ -111,12 +113,12 @@ function renderStep2() {
 }
 
 function renderStep3() {
-  const fee = calculateFee(formData.amount, formData.chain);
+  const fee = calculateFee(formData.amount, formData.chain, SRC_CHAIN);
   const total = parseFloat(formData.amount) + fee;
   const meta = getChainMeta(formData.chain);
 
   return `
-    <h3 style="margin-bottom: 20px;">Confirm Payout</h3>
+    <h3 style="margin-bottom: 20px;">Confirm Send</h3>
 
     <div style="background: var(--color-bg-soft); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
       <div class="flex justify-between" style="margin-bottom: 12px;">
@@ -132,7 +134,7 @@ function renderStep3() {
         <span class="text-mono text-sm" style="font-weight: 600;">${formatUSDC(formData.amount)}</span>
       </div>
       <div class="flex justify-between" style="margin-bottom: 12px;">
-        <span class="text-sm text-muted">Fee (${getFeeLabel(formData.chain)})</span>
+        <span class="text-sm text-muted">Fee (${getFeeLabel(formData.chain, SRC_CHAIN)})</span>
         <span class="text-mono text-sm">${formatUSDC(fee)}</span>
       </div>
       <div class="flex justify-between" style="border-top: 1px solid var(--color-border); padding-top: 12px; font-weight: 700;">
@@ -154,14 +156,14 @@ function renderSuccess() {
       <div class="success-checkmark">
         <svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <h3 style="margin-bottom: 8px;">Payout Sent!</h3>
+      <h3 style="margin-bottom: 8px;">Send Initiated!</h3>
       <p class="text-sm text-muted" style="margin-bottom: 4px;">
         ${formatUSDC(formData.amount)} USDC to ${formatAddress(formData.address)}
       </p>
       <p class="text-sm text-muted" style="margin-bottom: 24px;">
         on ${getChainMeta(formData.chain).name}
       </p>
-      <div id="send-payout-status" style="margin-bottom: 24px;"></div>
+      <div id="send-op-status" style="margin-bottom: 24px;"></div>
       <div class="flex gap-12" style="justify-content: center;">
         <button id="send-another" class="btn btn--secondary">Send Another</button>
         <button id="send-go-dashboard" class="btn btn--primary">Dashboard</button>
@@ -194,16 +196,16 @@ function setupListeners() {
   // Step 2
   document.getElementById('send-amount')?.addEventListener('input', (e) => {
     formData.amount = e.target.value;
-    const fee = calculateFee(formData.amount || 0, formData.chain);
+    const fee = calculateFee(formData.amount || 0, formData.chain, SRC_CHAIN);
     const total = parseFloat(formData.amount || 0) + fee;
     document.getElementById('send-fee').textContent = formatUSDC(fee);
     document.getElementById('send-total').textContent = formatUSDC(total);
   });
 
   document.getElementById('send-use-max')?.addEventListener('click', () => {
-    // Calculate max amount accounting for fee
-    const feeRate = formData.chain === 'arc' ? 0.001 : 0.004;
-    const maxAmount = balance / (1 + feeRate);
+    const isCrossChain = formData.chain !== SRC_CHAIN;
+    const feeRate = isCrossChain ? 0.003 : 0;
+    const maxAmount = feeRate > 0 ? balance / (1 + feeRate) : balance;
     formData.amount = maxAmount.toFixed(2);
     document.getElementById('send-amount').value = formData.amount;
     document.getElementById('send-amount').dispatchEvent(new Event('input'));
@@ -215,7 +217,7 @@ function setupListeners() {
       showToast('Please enter an amount', 'warning');
       return;
     }
-    const fee = calculateFee(formData.amount, formData.chain);
+    const fee = calculateFee(formData.amount, formData.chain, SRC_CHAIN);
     const total = parseFloat(formData.amount) + fee;
     if (total > balance) {
       showToast('Insufficient balance', 'error');
@@ -258,29 +260,26 @@ async function handleSend() {
   btn.disabled = true;
 
   try {
-    const result = await payouts.create(state.getAccountId(), formData.amount, {
-      address: formData.address,
-      chain: formData.chain,
-    });
+    const result = await operations.send(formData.address, formData.chain, formData.amount, SRC_CHAIN);
 
     currentStep = 4;
     render();
 
     // Poll for completion
-    const statusEl = document.getElementById('send-payout-status');
-    if (result.status !== 'completed') {
-      statusEl.innerHTML = statusBadge('processing');
+    const statusEl = document.getElementById('send-op-status');
+    if (result.status !== 'COMPLETED') {
+      statusEl.innerHTML = statusBadge(result.status || 'PROCESSING');
       const pollId = setInterval(async () => {
         try {
-          const updated = await payouts.get(result.id);
-          if (updated.status === 'completed') {
+          const updated = await operations.get(result.id);
+          statusEl.innerHTML = statusBadge(updated.status);
+          if (updated.status === 'COMPLETED' || updated.status === 'FAILED') {
             clearInterval(pollId);
-            statusEl.innerHTML = statusBadge('completed');
           }
         } catch {}
       }, 2000);
     } else {
-      statusEl.innerHTML = statusBadge('completed');
+      statusEl.innerHTML = statusBadge('COMPLETED');
     }
   } catch (err) {
     showToast(`Error: ${err.message}`, 'error');
@@ -299,8 +298,8 @@ export async function show() {
   formData = { address: '', chain: 'base', amount: '' };
 
   try {
-    const bal = await accounts.getBalance(state.getAccountId());
-    balance = parseFloat(bal.available);
+    const bal = await wallet.balances();
+    balance = parseFloat(bal.total || '0');
   } catch { balance = 0; }
 
   render();
