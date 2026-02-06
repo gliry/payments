@@ -24,6 +24,7 @@
       </a>
       <ul class="nav__links">
         <li><a href="#problem">Problem</a></li>
+        <li><a href="#solution">Solution</a></li>
         <li><a href="#how-it-works">How It Works</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#code">API</a></li>
@@ -34,33 +35,42 @@
   </nav>
 
   <!-- ============================================
-       HERO — "One Balance. Any Chain."
+       1. HERO — "One Balance. Any Chain."
        ============================================ -->
   <section class="hero" id="hero">
+    <canvas id="particle-canvas"></canvas>
     <div class="container">
-      <div class="hero__badge">
-        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#9F72FF" opacity="0.2"/><circle cx="8" cy="8" r="4" fill="#9F72FF"/></svg>
-        Powered by Circle USDC
+      <div class="hero__mainnet-badge">
+        <span class="pulse-dot"></span>
+        LIVE ON MAINNET
       </div>
 
       <h1 class="hero__title">
-        One Balance.<br>
-        <span class="gradient-text">Any Chain.</span>
+        A <span class="gradient-text">payments</span> orchestration protocol
       </h1>
 
-      <p class="hero__subtitle">
-        Unify your USDC across Ethereum, Base, Arbitrum, Polygon, Optimism &amp; Avalanche. Send cross-chain payments in a single transaction.
-      </p>
-
-      <div class="hero__buttons">
-        <a href="#code" class="btn btn--primary">View API &rarr;</a>
-        <a href="#how-it-works" class="btn btn--ghost">How It Works</a>
+      <div class="hero__stats">
+        <div class="hero-stat">
+          <span class="hero-stat__number counter" data-target="12" data-suffix="+">0</span>
+          <span class="hero-stat__label">Chains</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__number counter" data-target="100" data-suffix="+">0</span>
+          <span class="hero-stat__label">Tokens</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__number counter" data-target="1">0</span>
+          <span class="hero-stat__label">API Call</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat__number counter" data-target="0">0</span>
+          <span class="hero-stat__label">Seed Phrases</span>
+        </div>
       </div>
 
-      <!-- Hero Visual: chains → hub -->
+      <!-- Hero Visual: chains hub -->
       <div class="hero__visual">
         <svg viewBox="0 0 640 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Chain circles -->
           <!-- Ethereum -->
           <circle cx="60" cy="60" r="30" fill="#627eea" opacity="0.12"/>
           <polygon points="60,38 74,60 60,68 46,60" fill="#627eea" opacity="0.9"/>
@@ -98,8 +108,6 @@
           <!-- Central Hub -->
           <rect x="275" y="135" width="90" height="50" rx="14" fill="#fff" stroke="url(#hubGrad)" stroke-width="2.5"/>
           <text x="320" y="165" text-anchor="middle" fill="#1c132c" font-size="13" font-weight="700" font-family="Inter">OmniFlow</text>
-
-          <!-- Hub glow -->
           <circle cx="320" cy="160" r="40" fill="url(#hubGlow)" opacity="0.25" class="hub-glow"/>
 
           <defs>
@@ -115,44 +123,17 @@
         </svg>
       </div>
 
-      <!-- Chain pills -->
-      <div class="hero__chains">
-        <span class="chain-pill">
-          <svg viewBox="0 0 32 32" fill="none"><polygon points="16,2 26,16 16,22 6,16" fill="#627eea" opacity="0.9"/><polygon points="16,22 26,16 16,30 6,16" fill="#627eea" opacity="0.6"/></svg>
-          Ethereum
-        </span>
-        <span class="chain-pill">
-          <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
-          Base
-        </span>
-        <span class="chain-pill">
-          <svg viewBox="0 0 32 32" fill="none"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#28a0f0" opacity="0.85"/><path d="M12,20 L16,10 L20,20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Arbitrum
-        </span>
-        <span class="chain-pill">
-          <svg viewBox="0 0 32 32" fill="none"><polygon points="16,4 28,12 28,20 16,28 4,20 4,12" fill="#8247e5" opacity="0.85"/><polygon points="16,10 22,14 22,18 16,22 10,18 10,14" fill="#fff" opacity="0.3"/></svg>
-          Polygon
-        </span>
-        <span class="chain-pill">
-          <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" fill="#ff0420"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Inter">O</text></svg>
-          Optimism
-        </span>
-        <span class="chain-pill">
-          <svg viewBox="0 0 32 32" fill="none"><polygon points="16,4 28,26 4,26" fill="#e84142"/><polygon points="16,12 22,24 10,24" fill="#1c132c"/><polygon points="16,16 20,24 12,24" fill="#e84142"/></svg>
-          Avalanche
-        </span>
-      </div>
     </div>
   </section>
 
   <!-- ============================================
-       PROBLEM — "Your USDC is scattered"
+       2. PROBLEM — "Your USDC is scattered"
        ============================================ -->
   <section class="problem" id="problem">
     <div class="container">
       <p class="section-label reveal">The Problem</p>
-      <h2 class="section-title reveal" style="text-align:center">Your USDC is <span class="gradient-text">scattered</span></h2>
-      <p class="section-subtitle reveal" style="text-align:center">Balances fragmented across chains. Bridging is slow, expensive, and risky.</p>
+      <h2 class="section-title reveal" style="text-align:center">Your liquidity is <span class="gradient-text">fragmented</span></h2>
+
 
       <div class="problem__grid">
         <!-- Ethereum -->
@@ -217,98 +198,185 @@
         </div>
       </div>
 
-      <!-- Pain points -->
-      <div class="problem__pains reveal">
-        <span class="pain-pill">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/></svg>
-          Manual bridging
-        </span>
-        <span class="pain-pill">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/></svg>
-          High gas fees
-        </span>
-        <span class="pain-pill">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/></svg>
-          Fragmented UX
-        </span>
+      <!-- Animated total counter -->
+      <div class="problem__total-counter reveal">
+        <span class="counter-big">$<span class="counter" data-target="12880">0</span> total </span><span class="counter-label">≠ total usable balance</span>
       </div>
 
-      <p class="problem__total reveal">
-        <strong>$12,880</strong> scattered across <strong>6 chains</strong>
-      </p>
+      <!-- Pain cards — 2x2 grid -->
+      <div class="problem__pains reveal">
+        <div class="pain-card">
+          <div class="pain-card__icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="pain-card__text">Manual bridging</div>
+            <div class="pain-card__sub">5+ steps per chain hop</div>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-card__icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="pain-card__text">High gas fees</div>
+            <div class="pain-card__sub">$5-$50 per transaction</div>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-card__icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="pain-card__text">Fragmented UX</div>
+            <div class="pain-card__sub">Separate wallets per chain</div>
+          </div>
+        </div>
+        <div class="pain-card">
+          <div class="pain-card__icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="pain-card__text">No orchestration</div>
+            <div class="pain-card__sub">4 separate APIs</div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- ============================================
-       HOW IT WORKS — Flow Diagram
+       3. SOLUTION — "One API. One Balance."
+       ============================================ -->
+  <section class="solution" id="solution">
+    <div class="container">
+      <p class="section-label reveal" style="text-align:center">The Solution</p>
+      <h2 class="section-title reveal" style="text-align:center">One API. <span class="gradient-text">One Balance.</span></h2>
+      <p class="section-subtitle reveal" style="text-align:center">Arc = invisible settlement layer. Like Visa's VisaNet.</p>
+
+      <!-- Convergence visual -->
+      <div class="solution__visual reveal" id="convergence-visual">
+        <svg viewBox="0 0 700 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Chain circles that converge -->
+          <circle class="converge-circle" data-index="0" cx="80" cy="150" r="28" fill="#627eea" opacity="0.15" stroke="#627eea" stroke-width="2"/>
+          <text class="converge-circle" data-index="0" x="80" y="155" text-anchor="middle" fill="#627eea" font-size="10" font-weight="600" font-family="Inter">ETH</text>
+
+          <circle class="converge-circle" data-index="1" cx="170" cy="60" r="28" fill="#0052ff" opacity="0.15" stroke="#0052ff" stroke-width="2"/>
+          <text class="converge-circle" data-index="1" x="170" y="65" text-anchor="middle" fill="#0052ff" font-size="10" font-weight="600" font-family="Inter">Base</text>
+
+          <circle class="converge-circle" data-index="2" cx="170" cy="240" r="28" fill="#28a0f0" opacity="0.15" stroke="#28a0f0" stroke-width="2"/>
+          <text class="converge-circle" data-index="2" x="170" y="245" text-anchor="middle" fill="#28a0f0" font-size="10" font-weight="600" font-family="Inter">ARB</text>
+
+          <circle class="converge-circle" data-index="3" cx="530" cy="60" r="28" fill="#8247e5" opacity="0.15" stroke="#8247e5" stroke-width="2"/>
+          <text class="converge-circle" data-index="3" x="530" y="65" text-anchor="middle" fill="#8247e5" font-size="10" font-weight="600" font-family="Inter">POLY</text>
+
+          <circle class="converge-circle" data-index="4" cx="530" cy="240" r="28" fill="#ff0420" opacity="0.15" stroke="#ff0420" stroke-width="2"/>
+          <text class="converge-circle" data-index="4" x="530" y="245" text-anchor="middle" fill="#ff0420" font-size="10" font-weight="600" font-family="Inter">OP</text>
+
+          <circle class="converge-circle" data-index="5" cx="620" cy="150" r="28" fill="#e84142" opacity="0.15" stroke="#e84142" stroke-width="2"/>
+          <text class="converge-circle" data-index="5" x="620" y="155" text-anchor="middle" fill="#e84142" font-size="10" font-weight="600" font-family="Inter">AVAX</text>
+
+          <!-- Central hub -->
+          <rect x="300" y="115" width="100" height="70" rx="16" fill="#fff" stroke="url(#solGrad)" stroke-width="3"/>
+          <text x="350" y="148" text-anchor="middle" fill="#1c132c" font-size="13" font-weight="800" font-family="Inter">OmniFlow</text>
+          <text x="350" y="168" text-anchor="middle" fill="#9F72FF" font-size="10" font-family="JetBrains Mono">Arc Hub</text>
+          <circle cx="350" cy="150" r="55" fill="url(#solGlow)" opacity="0.2"/>
+
+          <defs>
+            <linearGradient id="solGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1894E8"/>
+              <stop offset="100%" stop-color="#9F72FF"/>
+            </linearGradient>
+            <radialGradient id="solGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#9F72FF" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#9F72FF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <!-- Visa callout -->
+      <div class="solution__callout reveal">
+        "Think of Arc as Visa's VisaNet for crypto. Invisible. Instant. Free."
+      </div>
+
+      <!-- Key stat counters -->
+      <div class="solution__stats reveal">
+        <div class="stat-pill">
+          <span class="stat-pill__number counter" data-target="1">0</span>
+          <span class="stat-pill__label">Balance</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill__number counter" data-target="0" data-suffix="">0</span>
+          <span class="stat-pill__label">Gas</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill__label" style="font-size:1.5rem;font-weight:800">Any</span>
+          <span class="stat-pill__label">Token</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       4. HOW IT WORKS — Deposit & Payout Flows
        ============================================ -->
   <section class="how-it-works" id="how-it-works">
     <div class="container">
       <p class="section-label reveal" style="text-align:center">How It Works</p>
-      <h2 class="section-title reveal" style="text-align:center">Cross-chain in <span class="gradient-text">one click</span></h2>
-      <p class="section-subtitle reveal" style="text-align:center">Circle MSCA + Gateway protocol handles everything under the hood.</p>
+      <h2 class="section-title reveal" style="text-align:center">Cross-chain in <span class="gradient-text">four steps</span></h2>
+      <p class="section-subtitle reveal" style="text-align:center">Deposit any token, settle on Arc, pay out anywhere.</p>
 
       <!-- Flow SVG Diagram -->
       <div class="flow-diagram reveal">
         <svg viewBox="0 0 960 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Source -->
-          <rect x="10" y="35" width="120" height="55" rx="10" fill="#fff" stroke="#627eea" stroke-width="2"/>
-          <text x="70" y="58" text-anchor="middle" fill="#1c132c" font-size="11" font-weight="700" font-family="Inter">Source Chain</text>
-          <text x="70" y="76" text-anchor="middle" fill="#627eea" font-size="10" font-family="JetBrains Mono">Ethereum</text>
+          <!-- Deposit -->
+          <rect x="10" y="30" width="190" height="65" rx="12" fill="#fff" stroke="#627eea" stroke-width="2"/>
+          <text x="105" y="55" text-anchor="middle" fill="#1c132c" font-size="12" font-weight="700" font-family="Inter">1. Deposit</text>
+          <text x="105" y="75" text-anchor="middle" fill="#627eea" font-size="9" font-family="JetBrains Mono">Any token, any chain</text>
+          <text x="105" y="88" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">LI.FI swap &rarr; USDC</text>
 
-          <!-- Arrow 1 -->
-          <line x1="135" y1="62" x2="185" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <polygon points="183,57 193,62 183,67" fill="#d1d5db"/>
-          <text x="160" y="90" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">approve()</text>
+          <!-- Arrow -->
+          <line x1="205" y1="62" x2="255" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <polygon points="253,57 263,62 253,67" fill="#d1d5db"/>
 
-          <!-- MSCA -->
-          <rect x="195" y="35" width="120" height="55" rx="10" fill="#fff" stroke="#9F72FF" stroke-width="2"/>
-          <text x="255" y="58" text-anchor="middle" fill="#1c132c" font-size="11" font-weight="700" font-family="Inter">MSCA Wallet</text>
-          <text x="255" y="76" text-anchor="middle" fill="#9F72FF" font-size="10" font-family="JetBrains Mono">ERC-6900</text>
+          <!-- Gateway -->
+          <rect x="265" y="30" width="190" height="65" rx="12" fill="#fff" stroke="#1894E8" stroke-width="2"/>
+          <text x="360" y="55" text-anchor="middle" fill="#1c132c" font-size="12" font-weight="700" font-family="Inter">2. Gateway</text>
+          <text x="360" y="75" text-anchor="middle" fill="#DC2626" font-size="9" font-weight="600" font-family="Inter">CCTP V2: BURN &rarr; MINT</text>
+          <text x="360" y="88" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">attestation ~1-3 min</text>
 
-          <!-- Arrow 2 -->
-          <line x1="320" y1="62" x2="370" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <polygon points="368,57 378,62 368,67" fill="#d1d5db"/>
-          <text x="345" y="90" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">depositForBurn()</text>
+          <!-- Arrow -->
+          <line x1="460" y1="62" x2="510" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <polygon points="508,57 518,62 508,67" fill="#d1d5db"/>
 
-          <!-- Gateway Burn -->
-          <rect x="380" y="35" width="120" height="55" rx="10" fill="#fff" stroke="#1894E8" stroke-width="2"/>
-          <text x="440" y="55" text-anchor="middle" fill="#1c132c" font-size="11" font-weight="700" font-family="Inter">Gateway</text>
-          <text x="440" y="72" text-anchor="middle" fill="#DC2626" font-size="10" font-weight="600" font-family="Inter">BURN</text>
+          <!-- Internal -->
+          <rect x="520" y="30" width="190" height="65" rx="12" fill="#F8F9FC" stroke="url(#hubGrad2)" stroke-width="2.5"/>
+          <text x="615" y="52" text-anchor="middle" fill="#1c132c" font-size="12" font-weight="700" font-family="Inter">3. Internal</text>
+          <text x="615" y="68" text-anchor="middle" fill="#62E2A4" font-size="9" font-weight="600" font-family="Inter">Instant &amp; Free on Arc</text>
+          <rect x="575" y="74" width="80" height="18" rx="9" fill="#D1FAE5"/>
+          <text x="615" y="87" text-anchor="middle" fill="#059669" font-size="8" font-weight="700" font-family="Inter">$0 FREE</text>
+          <circle cx="615" cy="62" r="45" fill="url(#hubGlow2)" opacity="0.15"/>
 
-          <!-- Arrow 3 -->
-          <line x1="505" y1="62" x2="555" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <polygon points="553,57 563,62 553,67" fill="#d1d5db"/>
-          <text x="530" y="90" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">attestation</text>
+          <!-- Arrow -->
+          <line x1="715" y1="62" x2="765" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <polygon points="763,57 773,62 763,67" fill="#d1d5db"/>
 
-          <!-- Arc Hub -->
-          <rect x="565" y="30" width="120" height="65" rx="12" fill="#F8F9FC" stroke="url(#hubGrad2)" stroke-width="2.5"/>
-          <text x="625" y="58" text-anchor="middle" fill="#1c132c" font-size="12" font-weight="800" font-family="Inter">OmniFlow</text>
-          <text x="625" y="76" text-anchor="middle" fill="#9F72FF" font-size="9" font-family="JetBrains Mono">Arc Hub</text>
-          <!-- Hub glow -->
-          <circle cx="625" cy="62" r="45" fill="url(#hubGlow2)" opacity="0.2"/>
-
-          <!-- Arrow 4 -->
-          <line x1="690" y1="62" x2="740" y2="62" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <polygon points="738,57 748,62 738,67" fill="#d1d5db"/>
-          <text x="715" y="90" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">receiveMessage()</text>
-
-          <!-- Gateway Mint -->
-          <rect x="750" y="35" width="120" height="55" rx="10" fill="#fff" stroke="#1894E8" stroke-width="2"/>
-          <text x="810" y="55" text-anchor="middle" fill="#1c132c" font-size="11" font-weight="700" font-family="Inter">Gateway</text>
-          <text x="810" y="72" text-anchor="middle" fill="#62E2A4" font-size="10" font-weight="600" font-family="Inter">MINT</text>
-
-          <!-- Arrow 5 (not in original plan but added for completeness to Dest) -->
+          <!-- Payout -->
+          <rect x="775" y="30" width="175" height="65" rx="12" fill="#fff" stroke="#9F72FF" stroke-width="2"/>
+          <text x="862" y="55" text-anchor="middle" fill="#1c132c" font-size="12" font-weight="700" font-family="Inter">4. Payout</text>
+          <text x="862" y="75" text-anchor="middle" fill="#9F72FF" font-size="9" font-weight="600" font-family="Inter">Arc &rarr; Destination</text>
+          <text x="862" y="88" text-anchor="middle" fill="#6b7280" font-size="8" font-family="JetBrains Mono">LI.FI swap optional</text>
 
           <!-- Particles -->
           <circle r="4" fill="#1894E8" opacity="0.7">
-            <animateMotion dur="3s" repeatCount="indefinite" path="M 70 62 L 880 62"/>
+            <animateMotion dur="3s" repeatCount="indefinite" path="M 105 62 L 862 62"/>
           </circle>
           <circle r="4" fill="#9F72FF" opacity="0.6">
-            <animateMotion dur="3s" begin="1s" repeatCount="indefinite" path="M 70 62 L 880 62"/>
+            <animateMotion dur="3s" begin="1s" repeatCount="indefinite" path="M 105 62 L 862 62"/>
           </circle>
           <circle r="3" fill="#62E2A4" opacity="0.6">
-            <animateMotion dur="3s" begin="2s" repeatCount="indefinite" path="M 70 62 L 880 62"/>
+            <animateMotion dur="3s" begin="2s" repeatCount="indefinite" path="M 105 62 L 862 62"/>
           </circle>
 
           <defs>
@@ -324,50 +392,19 @@
         </svg>
       </div>
 
-      <!-- Step cards -->
-      <div class="steps-grid">
-        <div class="step-card reveal reveal--delay-1">
-          <div class="step-card__number">1</div>
-          <h4 class="step-card__title">User initiates transfer</h4>
-          <p class="step-card__desc">Specify recipient, destination chain, and amount. OmniFlow handles routing.</p>
-          <span class="step-card__code">omni.send()</span>
-        </div>
-        <div class="step-card reveal reveal--delay-2">
-          <div class="step-card__number">2</div>
-          <h4 class="step-card__title">MSCA approves &amp; burns</h4>
-          <p class="step-card__desc">Smart account approves USDC and calls Circle Gateway to burn tokens on source chain.</p>
-          <span class="step-card__code">depositForBurn()</span>
-        </div>
-        <div class="step-card reveal reveal--delay-3">
-          <div class="step-card__number">3</div>
-          <h4 class="step-card__title">Attestation &amp; mint</h4>
-          <p class="step-card__desc">Circle attests the burn. Gateway mints equivalent USDC on destination chain.</p>
-          <span class="step-card__code">receiveMessage()</span>
-        </div>
-        <div class="step-card reveal reveal--delay-4">
-          <div class="step-card__number">4</div>
-          <h4 class="step-card__title">Route optimization</h4>
-          <p class="step-card__desc">LI.FI integration finds the cheapest route when direct Gateway path isn't available.</p>
-          <span class="step-card__code">lifi.getQuote()</span>
-        </div>
-        <div class="step-card reveal reveal--delay-5">
-          <div class="step-card__number">5</div>
-          <h4 class="step-card__title">Batch execution</h4>
-          <p class="step-card__desc">Multiple transfers are batched into a single transaction via MSCA's modular execution.</p>
-          <span class="step-card__code">executeBatch()</span>
-        </div>
-        <div class="step-card reveal reveal--delay-6">
-          <div class="step-card__number">6</div>
-          <h4 class="step-card__title">Delivery confirmation</h4>
-          <p class="step-card__desc">Real-time status tracking. Funds arrive on destination chain, ready to use.</p>
-          <span class="step-card__code">status: "completed"</span>
-        </div>
+      <!-- Timing bar -->
+      <div class="flow-timing reveal">
+        <span>Deposit: ~1-3 min</span>
+        <span>|</span>
+        <span class="timing-instant">Internal: instant</span>
+        <span>|</span>
+        <span>Payout: ~1-3 min</span>
       </div>
     </div>
   </section>
 
   <!-- ============================================
-       FEATURES — Grid 3x2
+       5. FEATURES — 8 cards (4x2 grid)
        ============================================ -->
   <section class="features" id="features">
     <div class="container">
@@ -381,26 +418,26 @@
           <div class="feature-card__icon feature-card__icon--gas">
             <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="10" height="16" rx="1" stroke="#ff8844" stroke-width="2"/><path d="M14 8L18 6V16L14 18" stroke="#ff8844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="7" width="4" height="4" fill="#ff8844" opacity="0.4"/></svg>
           </div>
-          <h3 class="feature-card__title">Gasless Transfers</h3>
-          <p class="feature-card__desc">Users never pay gas. Paymaster sponsors all transactions through ERC-4337 infrastructure.</p>
+          <h3 class="feature-card__title">Gasless via Gas Station</h3>
+          <p class="feature-card__desc">Zero gas, all sponsored. Circle Gas Station covers every transaction. No native tokens needed.</p>
         </div>
 
-        <!-- Non-custodial -->
+        <!-- Non-custodial Passkey -->
         <div class="feature-card reveal reveal--delay-2">
           <div class="feature-card__icon feature-card__icon--shield">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7V12C4 16.4 7.4 20.5 12 21.5C16.6 20.5 20 16.4 20 12V7L12 3Z" stroke="#9F72FF" stroke-width="2" fill="none"/><path d="M9 12L11 14L15 10" stroke="#9F72FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3 class="feature-card__title">Non-custodial</h3>
-          <p class="feature-card__desc">Your keys, your funds. MSCA smart accounts keep you in full control at all times.</p>
+          <h3 class="feature-card__title">Non-Custodial (Passkey)</h3>
+          <p class="feature-card__desc">TouchID/FaceID, no seed phrases. Keys in device secure enclave. Full self-custody.</p>
         </div>
 
-        <!-- Modular -->
+        <!-- Modular AA -->
         <div class="feature-card reveal reveal--delay-3">
           <div class="feature-card__icon feature-card__icon--plug">
             <svg viewBox="0 0 24 24" fill="none"><path d="M9 3V7M15 3V7M6 7H18V11C18 14.3 15.3 17 12 17C8.7 17 6 14.3 6 11V7Z" stroke="#1894E8" stroke-width="2" stroke-linecap="round"/><path d="M12 17V21" stroke="#1894E8" stroke-width="2" stroke-linecap="round"/></svg>
           </div>
-          <h3 class="feature-card__title">Modular Architecture</h3>
-          <p class="feature-card__desc">Plug-and-play input/output modules. Swap bridges, add new chains, or integrate DEXes.</p>
+          <h3 class="feature-card__title">Modular AA (MSCA)</h3>
+          <p class="feature-card__desc">ERC-4337 + ERC-6900. Plug any logic module. Atomic batching of approve + swap + bridge.</p>
         </div>
 
         <!-- Batch -->
@@ -409,32 +446,147 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="#62E2A4" stroke-width="2.5" stroke-linecap="round"/></svg>
           </div>
           <h3 class="feature-card__title">Batch Payouts</h3>
-          <p class="feature-card__desc">Send to multiple recipients on different chains in a single transaction. Perfect for payroll.</p>
+          <p class="feature-card__desc">50 recipients, 5 chains, one API call. Volume discount at 0.25%.</p>
         </div>
 
-        <!-- ENS -->
+        <!-- Any-Token LI.FI -->
         <div class="feature-card reveal reveal--delay-5">
+          <div class="feature-card__icon feature-card__icon--swap">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M14 6L20 12L14 18" stroke="#ff8844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12H4M10 18L4 12L10 6" stroke="#ff8844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
+          </div>
+          <h3 class="feature-card__title">Any-Token via LI.FI</h3>
+          <p class="feature-card__desc">Deposit ETH, receive DAI, settle in USDC. LI.FI aggregates DEXes for optimal swaps.</p>
+        </div>
+
+        <!-- ENS (highlighted — full row) -->
+        <div class="feature-card feature-card--highlight reveal reveal--delay-6">
           <div class="feature-card__icon feature-card__icon--ens">
             <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="2" stroke="#1894E8" stroke-width="2"/><path d="M3 10H21" stroke="#1894E8" stroke-width="2"/><circle cx="17" cy="15" r="1.5" fill="#1894E8"/></svg>
           </div>
-          <h3 class="feature-card__title">ENS Resolution</h3>
-          <p class="feature-card__desc">Send to human-readable names. Resolve ENS on any chain automatically.</p>
-        </div>
-
-        <!-- Chain Abstraction -->
-        <div class="feature-card reveal reveal--delay-6">
-          <div class="feature-card__icon feature-card__icon--chain">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M14 6L20 12L14 18" stroke="#9F72FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="feature-card__content">
+            <span class="feature-card__badge">Most Novel</span>
+            <h3 class="feature-card__title">ENS Payment Preferences</h3>
+            <p class="feature-card__desc">Set preferred chain, token, slippage once in ENS records. Every payment auto-routes correctly.</p>
           </div>
-          <h3 class="feature-card__title">Chain Abstraction</h3>
-          <p class="feature-card__desc">Users don't need to know which chain they're on. OmniFlow handles routing transparently.</p>
+          <div class="ens-workflow">
+            <span class="ens-step--highlight">alice.eth</span>
+            <span class="ens-arrow">&rarr;</span>
+            <span class="ens-step">read prefs</span>
+            <span class="ens-arrow">&rarr;</span>
+            <span class="ens-step--highlight">auto-route</span>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ============================================
-       CODE EXAMPLE — API Showcase
+       6. BATCH PAYOUT DEMO — Animated Visual
+       ============================================ -->
+  <section class="batch-demo" id="batch-demo">
+    <div class="container">
+      <p class="section-label reveal" style="text-align:center">Batch Payouts</p>
+      <h2 class="section-title reveal" style="text-align:center">One API Call. Five Chains. <span class="gradient-text">$12,000 Sent.</span></h2>
+      <p class="section-subtitle reveal" style="text-align:center">Watch 5 payouts execute across 3 chains in a single API call.</p>
+
+      <div class="batch-demo__table reveal" id="batch-table">
+        <!-- Row 1 -->
+        <div class="batch-row" data-row="0">
+          <div class="batch-row__recipient">
+            <span class="batch-row__name">alice.eth</span>
+            <span class="batch-row__detail">Payment Preferences: Base, USDC</span>
+          </div>
+          <div class="batch-row__chain">
+            <svg viewBox="0 0 32 32" fill="none" width="20" height="20"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+            Base
+          </div>
+          <div class="batch-row__token">USDC</div>
+          <div class="batch-row__amount">$5,000</div>
+          <div class="batch-row__status" data-status="pending">Pending</div>
+        </div>
+        <!-- Row 2 -->
+        <div class="batch-row" data-row="1">
+          <div class="batch-row__recipient">
+            <span class="batch-row__name">bob.eth</span>
+            <span class="batch-row__detail">Prefers ETH on Arbitrum</span>
+          </div>
+          <div class="batch-row__chain">
+            <svg viewBox="0 0 32 32" fill="none" width="20" height="20"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#28a0f0" opacity="0.85"/><path d="M12,20 L16,10 L20,20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Arbitrum
+          </div>
+          <div class="batch-row__token">ETH</div>
+          <div class="batch-row__amount">$3,000</div>
+          <div class="batch-row__status" data-status="pending">Pending</div>
+        </div>
+        <!-- Row 3 -->
+        <div class="batch-row" data-row="2">
+          <div class="batch-row__recipient">
+            <span class="batch-row__name">carol.eth</span>
+            <span class="batch-row__detail">Default: USDC on Ethereum</span>
+          </div>
+          <div class="batch-row__chain">
+            <svg viewBox="0 0 32 32" fill="none" width="20" height="20"><polygon points="16,2 26,16 16,22 6,16" fill="#627eea" opacity="0.9"/><polygon points="16,22 26,16 16,30 6,16" fill="#627eea" opacity="0.6"/></svg>
+            Ethereum
+          </div>
+          <div class="batch-row__token">USDC</div>
+          <div class="batch-row__amount">$2,000</div>
+          <div class="batch-row__status" data-status="pending">Pending</div>
+        </div>
+        <!-- Row 4 -->
+        <div class="batch-row" data-row="3">
+          <div class="batch-row__recipient">
+            <span class="batch-row__name">dave.eth</span>
+            <span class="batch-row__detail">Prefers DAI on Base</span>
+          </div>
+          <div class="batch-row__chain">
+            <svg viewBox="0 0 32 32" fill="none" width="20" height="20"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+            Base
+          </div>
+          <div class="batch-row__token">DAI</div>
+          <div class="batch-row__amount">$1,500</div>
+          <div class="batch-row__status" data-status="pending">Pending</div>
+        </div>
+        <!-- Row 5 — Arc (highlighted) -->
+        <div class="batch-row batch-row--arc" data-row="4">
+          <div class="batch-row__recipient">
+            <span class="batch-row__name">eve.eth</span>
+            <span class="batch-row__detail">Internal OmniFlow account</span>
+          </div>
+          <div class="batch-row__chain">
+            <svg viewBox="0 0 32 32" fill="none" width="20" height="20"><circle cx="16" cy="16" r="14" fill="url(#batchArcGrad)"/><text x="16" y="20" text-anchor="middle" fill="#fff" font-size="8" font-weight="700" font-family="Inter">ARC</text>
+            <defs><linearGradient id="batchArcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1894E8"/><stop offset="100%" stop-color="#9F72FF"/></linearGradient></defs></svg>
+            Arc (Free)<span class="batch-row__fee-badge">$0 fee</span>
+          </div>
+          <div class="batch-row__token">USDC</div>
+          <div class="batch-row__amount">$500</div>
+          <div class="batch-row__status" data-status="pending">Pending</div>
+        </div>
+      </div>
+
+      <div class="batch-demo__footer reveal">
+        <div class="batch-timer">
+          <span class="batch-timer__label">Execution time:</span>
+          <span id="batch-timer-value">0.0s</span>
+        </div>
+        <div class="batch-gas-saved">
+          Gas saved: ~$47
+        </div>
+      </div>
+
+      <div class="batch-demo__summary reveal">
+        <span class="batch-stat">5 recipients</span>
+        <span class="batch-stat-divider">&middot;</span>
+        <span class="batch-stat">3 chains</span>
+        <span class="batch-stat-divider">&middot;</span>
+        <span class="batch-stat">1 API call</span>
+        <span class="batch-stat-divider">&middot;</span>
+        <span class="batch-stat batch-stat--accent">Internal: $0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       7. DEVELOPER API — Code Typewriter
        ============================================ -->
   <section class="code-section" id="code">
     <div class="container">
@@ -444,6 +596,18 @@
           <p class="section-label">Developer API</p>
           <h2>Ship cross-chain payments in <span class="gradient-text">minutes</span></h2>
           <p>A clean, typed SDK that handles all the complexity of cross-chain USDC transfers. Batch payouts, ENS resolution, and gas sponsorship — all in a single call.</p>
+
+          <div class="code-section__modes">
+            <div class="code-mode code-mode--active" data-mode="api">
+              <span class="code-mode__label">API Mode</span>
+              <span class="code-mode__desc">Stripe-like REST API</span>
+            </div>
+            <div class="code-mode" data-mode="sdk">
+              <span class="code-mode__label">SDK Mode</span>
+              <span class="code-mode__desc">Self-custody Passkey</span>
+            </div>
+          </div>
+
           <ul class="code-section__features">
             <li>
               <svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 7" stroke="#62E2A4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -459,41 +623,58 @@
             </li>
             <li>
               <svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 7" stroke="#62E2A4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Real-time transfer status tracking
+              Webhook-driven async operations
             </li>
           </ul>
         </div>
 
-        <!-- Code block side -->
-        <div class="code-block reveal">
-          <div class="code-block__header">
-            <div class="code-block__dots">
-              <span></span><span></span><span></span>
+        <!-- Code blocks side -->
+        <div class="code-blocks-stack">
+          <!-- API Mode code block -->
+          <div class="code-block reveal" id="code-block-api">
+            <div class="code-block__header">
+              <div class="code-block__dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="code-block__filename">payout.ts</span>
+              <span class="code-block__mode-badge">API Mode</span>
             </div>
-            <span class="code-block__filename">payout.ts</span>
+            <div class="code-block__body" id="typewriter-code"></div>
           </div>
-          <div class="code-block__body" id="typewriter-code"></div>
+
+          <!-- SDK Mode code block -->
+          <div class="code-block reveal" id="code-block-sdk" style="margin-top: 20px;">
+            <div class="code-block__header">
+              <div class="code-block__dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="code-block__filename">passkey.ts</span>
+              <span class="code-block__mode-badge code-block__mode-badge--sdk">SDK Mode</span>
+            </div>
+            <div class="code-block__body" id="typewriter-code-sdk"></div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ============================================
-       ARCHITECTURE — Modular Diagram
+       8. ARCHITECTURE — Modular I/O
        ============================================ -->
   <section class="architecture" id="architecture">
     <div class="container">
       <p class="section-label reveal" style="text-align:center">Architecture</p>
       <h2 class="section-title reveal" style="text-align:center">Modular by <span class="gradient-text">design</span></h2>
-      <p class="section-subtitle reveal" style="text-align:center">Swap any module without touching the core. Add new chains, bridges, or output formats in minutes.</p>
+      <p class="section-subtitle reveal" style="text-align:center">Add any logic as a module. Swap bridges, chains, or DEXes without touching the core.</p>
 
       <div class="arch-diagram reveal">
         <!-- Input modules -->
         <div class="arch-column arch-input">
           <div class="arch-column__label">Input Modules</div>
           <div class="arch-module" data-module="circle-gateway">Circle Gateway</div>
-          <div class="arch-module" data-module="lifi-bridge">LI.FI Bridge</div>
+          <div class="arch-module" data-module="lifi-swap">LI.FI Swap</div>
           <div class="arch-module" data-module="direct-transfer">Direct Transfer</div>
+          <div class="arch-module" data-module="ens-router">ENS Router</div>
         </div>
 
         <!-- Arrow -->
@@ -502,7 +683,7 @@
         <!-- Core -->
         <div class="arch-core">
           <div class="arch-core__title">OmniFlow Core</div>
-          <div class="arch-core__sub">MSCA + Router + Resolver</div>
+          <div class="arch-core__sub">MSCA + Router + Gas Station + Resolver</div>
         </div>
 
         <!-- Arrow -->
@@ -513,6 +694,7 @@
           <div class="arch-column__label">Output Modules</div>
           <div class="arch-module" data-module="single-payout">Single Payout</div>
           <div class="arch-module" data-module="batch-payout">Batch Payout</div>
+          <div class="arch-module" data-module="internal-transfer">Internal Transfer</div>
           <div class="arch-module" data-module="streaming">Streaming</div>
         </div>
       </div>
@@ -520,28 +702,115 @@
       <!-- Tags -->
       <div class="arch-tags reveal">
         <span class="arch-tag" data-module="circle-gateway">Circle Gateway</span>
-        <span class="arch-tag" data-module="lifi-bridge">LI.FI</span>
+        <span class="arch-tag" data-module="lifi-swap">LI.FI</span>
         <span class="arch-tag" data-module="direct-transfer">Direct</span>
+        <span class="arch-tag" data-module="ens-router">ENS</span>
         <span class="arch-tag" data-module="single-payout">Single</span>
         <span class="arch-tag" data-module="batch-payout">Batch</span>
+        <span class="arch-tag" data-module="internal-transfer">Internal</span>
         <span class="arch-tag" data-module="streaming">Streaming</span>
-        <span class="arch-tag" data-module="ens">ENS</span>
         <span class="arch-tag" data-module="paymaster">Paymaster</span>
       </div>
     </div>
   </section>
 
   <!-- ============================================
-       CTA + FOOTER
+       9. INTEGRATIONS & TECH STACK
+       ============================================ -->
+  <section class="integrations" id="integrations">
+    <div class="container">
+      <p class="section-label reveal" style="text-align:center">Tech Stack</p>
+      <h2 class="section-title reveal" style="text-align:center">Built on <span class="gradient-text">Circle</span></h2>
+      <p class="section-subtitle reveal" style="text-align:center">Built on Circle. Powered by open standards.</p>
+
+      <!-- Circle products -->
+      <div class="integrations__row reveal">
+        <div class="integration-card integration-card--circle integration-card--arc-large">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#1894E8" stroke-width="2"/><text x="20" y="25" text-anchor="middle" fill="#1894E8" font-size="12" font-weight="700" font-family="Inter">Arc</text></svg>
+          </div>
+          <span class="integration-card__name">Arc</span>
+          <span class="integration-card__role">Settlement Layer</span>
+          <span class="prize-indicator prize-indicator--arc">$10K Prize</span>
+        </div>
+        <div class="integration-card integration-card--circle">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="4" y="12" width="32" height="16" rx="4" stroke="#1894E8" stroke-width="2"/><path d="M12 20H28" stroke="#1894E8" stroke-width="2" stroke-dasharray="4 2"/></svg>
+          </div>
+          <span class="integration-card__name">Gateway</span>
+          <span class="integration-card__role">Cross-chain CCTP</span>
+        </div>
+        <div class="integration-card integration-card--circle">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="8" y="6" width="24" height="28" rx="4" stroke="#1894E8" stroke-width="2"/><path d="M14 16H26M14 22H22" stroke="#1894E8" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="integration-card__name">Wallets</span>
+          <span class="integration-card__role">MSCA Accounts</span>
+        </div>
+        <div class="integration-card integration-card--circle">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="10" height="16" rx="1" stroke="#1894E8" stroke-width="2"/><path d="M14 8L18 6V16L14 18" stroke="#1894E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="22" y1="12" x2="36" y2="12" stroke="#1894E8" stroke-width="2" stroke-dasharray="3 2"/><text x="29" y="28" text-anchor="middle" fill="#1894E8" font-size="8" font-weight="600" font-family="Inter">FREE</text></svg>
+          </div>
+          <span class="integration-card__name">Gas Station</span>
+          <span class="integration-card__role">Sponsored Gas</span>
+        </div>
+        <div class="integration-card integration-card--circle">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="6" y="8" width="28" height="24" rx="4" stroke="#1894E8" stroke-width="2"/><path d="M12 16L18 22L28 12" stroke="#1894E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="integration-card__name">Bundler</span>
+          <span class="integration-card__role">UserOp Submission</span>
+        </div>
+      </div>
+
+      <!-- Partner integrations -->
+      <div class="integrations__row integrations__row--partners reveal">
+        <div class="integration-card integration-card--partner">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="8" fill="#E8F4FD"/><text x="20" y="25" text-anchor="middle" fill="#1894E8" font-size="11" font-weight="800" font-family="Inter">LI.FI</text></svg>
+          </div>
+          <span class="integration-card__name">LI.FI</span>
+          <span class="integration-card__role">Any-token swaps</span>
+          <span class="prize-indicator prize-indicator--lifi">$6K Prize</span>
+        </div>
+        <div class="integration-card integration-card--partner">
+          <div class="integration-card__icon">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="8" fill="#E8F4FD"/><text x="20" y="25" text-anchor="middle" fill="#1894E8" font-size="11" font-weight="800" font-family="Inter">ENS</text></svg>
+          </div>
+          <span class="integration-card__name">ENS</span>
+          <span class="integration-card__role">Payment Preferences</span>
+          <span class="prize-indicator prize-indicator--ens">$5K Prize</span>
+        </div>
+      </div>
+
+      <!-- Tech badges -->
+      <div class="integrations__badges reveal">
+        <span class="tech-badge">ERC-4337</span>
+        <span class="tech-badge">ERC-6900</span>
+        <span class="tech-badge">CCTP V2</span>
+        <span class="tech-badge">WebAuthn</span>
+        <span class="tech-badge">CREATE2</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       10. CTA + FOOTER
        ============================================ -->
   <section class="cta-section" id="cta">
     <div class="container">
       <div class="cta-card reveal">
-        <h2>Ready to unify your payments?</h2>
-        <p>Start building with OmniFlow today. One integration, every chain.</p>
+        <h2>OmniFlow is live. Try it now.</h2>
+        <p>Cross-chain USDC payment orchestration, powered by Circle.</p>
+        <div class="cta-metrics">
+          <span>12+ chains</span>
+          <span>$0 gas</span>
+          <span>50 recipients per batch</span>
+          <span>Mainnet ready</span>
+        </div>
         <div class="cta-card__buttons">
-          <a href="#code" class="btn btn--white">View Documentation</a>
-          <a href="https://github.com" class="btn btn--outline-white" target="_blank" rel="noopener">GitHub &rarr;</a>
+          <a href="/app/" class="btn btn--white">Try the Dashboard &rarr;</a>
+          <a href="https://github.com/gliry/payments" class="btn btn--outline-white" target="_blank" rel="noopener">GitHub &rarr;</a>
         </div>
       </div>
     </div>
