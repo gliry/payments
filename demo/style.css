@@ -511,54 +511,21 @@ h1, h2, h3, h4, h5, h6 {
   display: inline;
 }
 
-/* Pain cards — 2x2 grid */
+/* Pain pills */
 .problem__pains {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.pain-card {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 20px 24px;
-  border-radius: var(--card-radius);
-  background: linear-gradient(135deg, #fff5f5, #fff0f0);
-  border: 1px solid rgba(248, 113, 113, 0.2);
-}
-
-.pain-card__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #f87171, #ef4444);
-  display: flex;
-  align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.pain-card__icon svg {
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-}
-
-.pain-card__text {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #991b1b;
-}
-
-.pain-card__sub {
+.pain-pill {
+  padding: 10px 20px;
+  border-radius: 50px;
+  background: #e5e7eb;
+  color: #6b7280;
   font-size: 0.85rem;
-  font-weight: 500;
-  color: #b91c1c;
-  opacity: 0.7;
-  margin-top: 3px;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
@@ -597,16 +564,9 @@ h1, h2, h3, h4, h5, h6 {
   height: auto;
 }
 
-.converge-circle {
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+.usdc-fly {
+  opacity: 0;
 }
-
-.solution__visual.converged .converge-circle[data-index="0"] { transform: translate(270px, 0); }
-.solution__visual.converged .converge-circle[data-index="1"] { transform: translate(180px, 90px); }
-.solution__visual.converged .converge-circle[data-index="2"] { transform: translate(180px, -90px); }
-.solution__visual.converged .converge-circle[data-index="3"] { transform: translate(-180px, 90px); }
-.solution__visual.converged .converge-circle[data-index="4"] { transform: translate(-180px, -90px); }
-.solution__visual.converged .converge-circle[data-index="5"] { transform: translate(-270px, 0); }
 
 /* Solution stats */
 .solution__stats {

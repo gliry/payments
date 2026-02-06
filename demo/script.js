@@ -453,24 +453,69 @@
     }
   }
 
-  /* --- 9. Solution convergence animation --- */
+  /* --- 9. Solution — USDC tokens fly to hub (cycling) --- */
   const convergenceVisual = document.getElementById('convergence-visual');
   if (convergenceVisual) {
+    const usdcTokens = convergenceVisual.querySelectorAll('.usdc-fly');
+    var FLIGHT_DURATION = 3000;
+    var STAGGER = 400;
+
+    function animateToken(token, delay) {
+      var from = token.getAttribute('data-from').split(',');
+      var to = token.getAttribute('data-to').split(',');
+      var startX = parseFloat(from[0]);
+      var startY = parseFloat(from[1]);
+      var endX = parseFloat(to[0]);
+      var endY = parseFloat(to[1]);
+
+      setTimeout(function () {
+        token.setAttribute('x', startX);
+        token.setAttribute('y', startY);
+        token.style.opacity = '1';
+
+        var start = performance.now();
+        function step(now) {
+          var t = Math.min((now - start) / FLIGHT_DURATION, 1);
+          // ease-in-out
+          var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          var x = startX + (endX - startX) * ease;
+          var y = startY + (endY - startY) * ease;
+          token.setAttribute('x', x);
+          token.setAttribute('y', y);
+          token.style.opacity = t < 0.9 ? '1' : String(1 - (t - 0.9) / 0.1);
+
+          if (t < 1) {
+            requestAnimationFrame(step);
+          } else {
+            token.style.opacity = '0';
+          }
+        }
+        requestAnimationFrame(step);
+      }, delay);
+    }
+
+    function flyAllTokens() {
+      usdcTokens.forEach(function (token, i) {
+        animateToken(token, i * STAGGER);
+      });
+      // Total cycle: last token starts + flight duration + small gap
+      var totalCycle = (usdcTokens.length - 1) * STAGGER + FLIGHT_DURATION + 500;
+      setTimeout(flyAllTokens, totalCycle);
+    }
+
     if (isVideoMode) {
-      convergenceVisual.classList.add('converged');
+      flyAllTokens();
     } else {
-      const convergenceObserver = new IntersectionObserver(
-        (entries) => {
+      var convObserver = new IntersectionObserver(
+        function (entries) {
           if (entries[0].isIntersecting) {
-            setTimeout(() => {
-              convergenceVisual.classList.add('converged');
-            }, 200);
-            convergenceObserver.unobserve(convergenceVisual);
+            flyAllTokens();
+            convObserver.unobserve(convergenceVisual);
           }
         },
-        { threshold: 0.4 }
+        { threshold: 0.3 }
       );
-      convergenceObserver.observe(convergenceVisual);
+      convObserver.observe(convergenceVisual);
     }
   }
 
