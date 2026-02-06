@@ -3,7 +3,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../node_modules/.prisma/client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -110,6 +110,7 @@ enum OperationType {
   COLLECT
   SEND
   BRIDGE
+  BATCH_SEND
 }
 
 enum OperationStatus {
