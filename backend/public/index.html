@@ -63,6 +63,9 @@
     .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
     .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
 
+    .btn-danger { background: rgba(214,48,49,0.3); color: #ff7675; }
+    .btn-danger:hover:not(:disabled) { background: rgba(214,48,49,0.45); }
+
     .btn-sm { padding: 8px 14px; font-size: 13px; }
 
     .row { display: flex; gap: 10px; align-items: flex-end; }
@@ -89,7 +92,7 @@
       background: rgba(0,0,0,0.3);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 8px;
-      max-height: 300px; overflow: auto;
+      max-height: 600px; overflow: auto;
     }
     .response-box pre {
       font-family: 'Monaco','Menlo','Consolas', monospace;
@@ -100,11 +103,14 @@
     .res-ok { color: #00b894; }
     .res-err { color: #ff7675; }
 
-    .endpoint-group { margin-bottom: 14px; }
+    .endpoint-group { margin-bottom: 18px; }
     .endpoint-group h3 {
       font-size: 13px; color: #ddd; margin-bottom: 8px;
       padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.07);
     }
+
+    .form-row { margin-top: 10px; }
+    .form-row label { margin-bottom: 4px; }
 
     .loading {
       display: inline-block; width: 14px; height: 14px;
@@ -123,6 +129,8 @@
     .status-msg.info { background: rgba(108,92,231,0.15); border: 1px solid rgba(108,92,231,0.25); color: #a29bfe; }
     .status-msg.success { background: rgba(0,184,148,0.15); border: 1px solid rgba(0,184,148,0.25); color: #00b894; }
     .status-msg.error { background: rgba(214,48,49,0.15); border: 1px solid rgba(214,48,49,0.25); color: #ff7675; }
+
+    .sep { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 12px 0; }
   </style>
 </head>
 <body>
@@ -164,32 +172,181 @@
     <div class="card hidden" id="explorerCard">
       <h2>API Explorer</h2>
 
+      <!-- Auth -->
       <div class="endpoint-group">
         <h3>Auth</h3>
         <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/auth/me')">GET /auth/me</button>
       </div>
 
+      <!-- Wallet -->
       <div class="endpoint-group">
         <h3>Wallet</h3>
         <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet')">GET /wallet</button>
         <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet/balances')">GET /wallet/balances</button>
+
+        <div class="form-row">
+          <label>Prepare delegate</label>
+          <div class="row">
+            <select id="delegateChain">
+              <option value="base">base</option>
+              <option value="arbitrum">arbitrum</option>
+              <option value="avalanche">avalanche</option>
+            </select>
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doPrepareDelegate()">POST delegate</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Submit delegate (confirm tx)</label>
+          <div class="row">
+            <select id="delegateSubmitChain">
+              <option value="base">base</option>
+              <option value="arbitrum">arbitrum</option>
+              <option value="avalanche">avalanche</option>
+            </select>
+            <input type="text" id="delegateTxHash" placeholder="0x..." style="margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doSubmitDelegate()">POST submit</button>
+          </div>
+        </div>
       </div>
 
+      <!-- Operations -->
       <div class="endpoint-group">
         <h3>Operations</h3>
         <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/operations')">GET /operations</button>
 
-        <div style="margin-top: 10px;">
+        <!-- Collect -->
+        <div class="form-row">
           <label>Collect: source chains (comma-separated)</label>
           <div class="row">
-            <input type="text" id="collectChains" placeholder="base-sepolia,avalanche-fuji" style="margin-bottom:0" />
+            <input type="text" id="collectChains" placeholder="arbitrum,avalanche" style="margin-bottom:0" />
             <input type="text" id="collectAmount" placeholder="1.0" style="max-width:100px;margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doCollect()">POST collect</button>
           </div>
         </div>
+
+        <hr class="sep">
+
+        <!-- Send -->
+        <div class="form-row">
+          <label>Send USDC to address</label>
+          <div class="row">
+            <input type="text" id="sendAddress" placeholder="0xRecipient..." style="margin-bottom:0" />
+          </div>
+          <div class="row" style="margin-top:6px">
+            <select id="sendDestChain">
+              <option value="base">base</option>
+              <option value="arbitrum">arbitrum</option>
+              <option value="avalanche">avalanche</option>
+              <option value="optimism">optimism</option>
+              <option value="polygon">polygon</option>
+              <option value="ethereum">ethereum</option>
+            </select>
+            <input type="text" id="sendAmount" placeholder="10.00" style="max-width:100px;margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doSend()">POST send</button>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <!-- Bridge -->
+        <div class="form-row">
+          <label>Bridge USDC between chains</label>
+          <div class="row">
+            <div>
+              <label style="font-size:11px">From</label>
+              <select id="bridgeFrom">
+                <option value="base">base</option>
+                <option value="arbitrum">arbitrum</option>
+                <option value="avalanche">avalanche</option>
+                <option value="ethereum">ethereum</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px">To</label>
+              <select id="bridgeTo">
+                <option value="arbitrum">arbitrum</option>
+                <option value="base">base</option>
+                <option value="avalanche">avalanche</option>
+                <option value="ethereum">ethereum</option>
+              </select>
+            </div>
+            <input type="text" id="bridgeAmount" placeholder="50.00" style="max-width:100px;margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doBridge()">POST bridge</button>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <!-- Batch Send -->
+        <div class="form-row">
+          <label>Batch Send — recipients JSON array</label>
+          <input type="text" id="batchRecipients"
+            placeholder='[{"address":"0xAAA...","chain":"arbitrum","amount":"50"},{"address":"0xBBB...","chain":"base","amount":"100"}]' />
+          <div class="row">
+            <div>
+              <label style="font-size:11px">Source chain (optional)</label>
+              <select id="batchSourceChain">
+                <option value="">default (base)</option>
+                <option value="base">base</option>
+                <option value="arbitrum">arbitrum</option>
+                <option value="avalanche">avalanche</option>
+              </select>
+            </div>
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doBatchSend()">POST batch-send</button>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <!-- Operation detail + submit -->
+        <div class="form-row">
+          <label>Operation by ID</label>
+          <div class="row">
+            <input type="text" id="opId" placeholder="operation UUID" style="margin-bottom:0" />
+            <button class="btn btn-sm btn-secondary" style="flex:none"
+              onclick="doGetOp()">GET</button>
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doSubmitOp()">POST submit</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Submit signatures (JSON: [{"stepId":"...","txHash":"0x..."}])</label>
+          <input type="text" id="opSignatures" placeholder='[{"stepId":"...","txHash":"0x..."}]' />
+        </div>
       </div>
 
+      <!-- Webhooks -->
+      <div class="endpoint-group">
+        <h3>Webhooks</h3>
+        <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/webhooks')">GET /webhooks</button>
+
+        <div class="form-row">
+          <label>Register webhook</label>
+          <div class="row">
+            <input type="text" id="webhookUrl" placeholder="https://example.com/webhook" style="margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doCreateWebhook()">POST create</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Delete webhook</label>
+          <div class="row">
+            <input type="text" id="webhookDeleteId" placeholder="webhook UUID" style="margin-bottom:0" />
+            <button class="btn btn-sm btn-danger" style="flex:none"
+              onclick="doDeleteWebhook()">DELETE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response -->
       <div id="apiResponse" class="response-box hidden">
         <div class="res-status" id="resStatus"></div>
         <pre id="resBody"></pre>
@@ -199,24 +356,51 @@
   </div>
 
   <script type="module">
-    // ── Circle SDK imports ──────────────────────────────
+    // ── SDK imports ────────────────────────────────────
     let toPasskeyTransport, toWebAuthnCredential, WebAuthnMode;
+    let toCircleSmartAccount, toModularTransport;
+    let toWebAuthnAccount, createBundlerClient;
+    let createPublicClient, defineChain;
 
     try {
       const sdk = await import('https://esm.sh/@circle-fin/modular-wallets-core@1');
       toPasskeyTransport = sdk.toPasskeyTransport;
       toWebAuthnCredential = sdk.toWebAuthnCredential;
       WebAuthnMode = sdk.WebAuthnMode;
-      console.log('Circle SDK loaded');
+      toCircleSmartAccount = sdk.toCircleSmartAccount;
+      toModularTransport = sdk.toModularTransport;
+
+      const viem = await import('https://esm.sh/viem@2');
+      createPublicClient = viem.createPublicClient;
+      defineChain = viem.defineChain;
+
+      const viemAA = await import('https://esm.sh/viem@2/account-abstraction');
+      toWebAuthnAccount = viemAA.toWebAuthnAccount;
+      createBundlerClient = viemAA.createBundlerClient;
+
+      console.log('Circle SDK + viem loaded');
     } catch (err) {
       console.error('SDK load error:', err);
-      showAuthStatus('Failed to load Circle SDK: ' + err.message, 'error');
+      showAuthStatus('Failed to load SDK: ' + err.message, 'error');
     }
 
     const CIRCLE_CLIENT_URL = 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl';
-    const CIRCLE_CLIENT_KEY = 'TEST_CLIENT_KEY:3a7c33087a5778dae06374364113e8de:324e884310a56ba506340bec23de86f2';
-
+    const CIRCLE_CLIENT_KEY = 'LIVE_CLIENT_KEY:f7e1a0016e9696cc77499fc2036e0268:2a54d0893cc73933ac0123eaa1ea26e4';
     const API = ''; // relative — same origin
+
+    // ── Chain configs for UserOp signing ─────────────
+    const BUNDLER_RPCS = {
+      base: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/base',
+      arbitrum: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/arbitrum',
+      avalanche: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/avalanche',
+    };
+
+    const CHAINS = {};
+    if (defineChain) {
+      CHAINS.base = defineChain({ id: 8453, name: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.base.org'] } } });
+      CHAINS.arbitrum = defineChain({ id: 42161, name: 'Arbitrum One', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } } });
+      CHAINS.avalanche = defineChain({ id: 43114, name: 'Avalanche', nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 }, rpcUrls: { default: { http: ['https://api.avax.network/ext/bc/C/rpc'] } } });
+    }
 
     // ── State ───────────────────────────────────────────
     let jwt = localStorage.getItem('omniflow_jwt') || null;
@@ -274,6 +458,9 @@
         });
 
         console.log('Credential registered:', credential.id);
+        localStorage.setItem('omniflow_credential', JSON.stringify({
+          id: credential.id, publicKey: credential.publicKey,
+        }));
         showAuthStatus('<span class="loading"></span>Sending to backend...', 'info');
 
         const res = await fetch(`${API}/v1/auth/register`, {
@@ -322,6 +509,9 @@
         });
 
         console.log('Credential login:', credential.id);
+        localStorage.setItem('omniflow_credential', JSON.stringify({
+          id: credential.id, publicKey: credential.publicKey,
+        }));
         showAuthStatus('<span class="loading"></span>Sending to backend...', 'info');
 
         const res = await fetch(`${API}/v1/auth/login`, {
@@ -357,6 +547,9 @@
       const resStatus = document.getElementById('resStatus');
       const resBody = document.getElementById('resBody');
 
+      // Remove any previous sign buttons
+      resBox.querySelectorAll('.sign-btn').forEach(b => b.remove());
+
       resBox.classList.remove('hidden');
       resStatus.className = 'res-status';
       resStatus.textContent = `${method} ${path} ...`;
@@ -378,14 +571,252 @@
         resStatus.textContent = `${method} ${path}  \u2014  ${res.status} ${res.statusText}`;
         resStatus.classList.add(res.ok ? 'res-ok' : 'res-err');
         resBody.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+
+        // Auto-detect signRequests and show Sign button
+        if (res.ok && data && data.signRequests && data.signRequests.length > 0) {
+          showSignButton(resBox, data.id, data.signRequests);
+        }
+
+        return data;
       } catch (err) {
         resStatus.textContent = `${method} ${path}  \u2014  ERROR`;
         resStatus.classList.add('res-err');
         resBody.textContent = err.message;
+        return null;
       }
     }
 
-    // ── Collect ─────────────────────────────────────────
+    function showSignButton(container, operationId, signRequests) {
+      const clientSteps = signRequests.filter(r => !r.serverSide);
+      const label = clientSteps.length > 0
+        ? `Sign & Execute (${clientSteps.length} UserOps)`
+        : 'Submit (server-side steps only)';
+
+      const signBtn = document.createElement('button');
+      signBtn.className = 'btn btn-primary sign-btn';
+      signBtn.style.marginTop = '12px';
+      signBtn.style.display = 'block';
+      signBtn.textContent = label;
+      signBtn.onclick = () => {
+        signBtn.remove();
+        handleSignRequests(operationId, signRequests);
+      };
+      container.appendChild(signBtn);
+    }
+
+    // ── Sign & Execute UserOps ─────────────────────────
+    async function handleSignRequests(operationId, signRequests) {
+      const resBox = document.getElementById('apiResponse');
+      const resStatus = document.getElementById('resStatus');
+      const resBody = document.getElementById('resBody');
+
+      const credJson = localStorage.getItem('omniflow_credential');
+      if (!credJson) {
+        resBody.textContent += '\n\nERROR: No credential stored. Please re-login.';
+        resStatus.className = 'res-status res-err';
+        return;
+      }
+      const cred = JSON.parse(credJson);
+
+      const clientSteps = signRequests.filter(r => !r.serverSide);
+
+      if (clientSteps.length === 0) {
+        resBody.textContent += '\n\nNo client signing needed — submitting to server...';
+        const result = await submitSignatures(operationId, []);
+        handleSubmitResult(resBox, resStatus, resBody, operationId, result);
+        return;
+      }
+
+      resStatus.textContent = 'Signing UserOperations with Passkey...';
+      resStatus.className = 'res-status';
+
+      const owner = toWebAuthnAccount({
+        credential: { id: cred.id, publicKey: cred.publicKey },
+      });
+
+      const signatures = [];
+
+      for (let i = 0; i < clientSteps.length; i++) {
+        const req = clientSteps[i];
+        resBody.textContent += `\n\n[${i + 1}/${clientSteps.length}] ${req.description || req.type} (${req.chain})...`;
+
+        try {
+          const chain = CHAINS[req.chain];
+          const bundlerUrl = BUNDLER_RPCS[req.chain];
+
+          if (!chain || !bundlerUrl) {
+            resBody.textContent += `\n  SKIP: no config for chain "${req.chain}"`;
+            continue;
+          }
+
+          const transport = toModularTransport(bundlerUrl, CIRCLE_CLIENT_KEY);
+          const client = createPublicClient({ chain, transport });
+          const account = await toCircleSmartAccount({ client, owner });
+
+          const bundlerClient = createBundlerClient({
+            account,
+            client,
+            transport,
+          });
+
+          resBody.textContent += '\n  Sending UserOp...';
+
+          const hash = await bundlerClient.sendUserOperation({
+            calls: req.calls.map(c => ({
+              to: c.to,
+              data: c.data,
+              ...(c.value ? { value: BigInt(c.value) } : {}),
+            })),
+          });
+
+          resBody.textContent += `\n  UserOp: ${hash}`;
+          resBody.textContent += '\n  Waiting for receipt...';
+
+          const receipt = await bundlerClient.waitForUserOperationReceipt({ hash });
+          const txHash = receipt.receipt.transactionHash;
+
+          resBody.textContent += `\n  TX: ${txHash}`;
+          signatures.push({ stepId: req.stepId, txHash });
+        } catch (err) {
+          resBody.textContent += `\n  ERROR: ${err.message}`;
+          console.error('Sign error for step', req.stepId, err);
+        }
+      }
+
+      if (signatures.length > 0) {
+        resBody.textContent += `\n\nSubmitting ${signatures.length} signature(s)...`;
+        const result = await submitSignatures(operationId, signatures);
+        handleSubmitResult(resBox, resStatus, resBody, operationId, result);
+      } else {
+        resStatus.textContent = 'No signatures collected';
+        resStatus.className = 'res-status res-err';
+      }
+    }
+
+    async function submitSignatures(operationId, signatures) {
+      try {
+        const res = await fetch(`${API}/v1/operations/${operationId}/submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwt}`,
+          },
+          body: JSON.stringify({ signatures }),
+        });
+        return await res.json();
+      } catch (err) {
+        return { error: err.message };
+      }
+    }
+
+    function handleSubmitResult(resBox, resStatus, resBody, operationId, result) {
+      resBody.textContent += '\n\n--- Submit Response ---\n';
+      resBody.textContent += JSON.stringify(result, null, 2);
+
+      if (result.error) {
+        resStatus.textContent = 'Submit failed';
+        resStatus.className = 'res-status res-err';
+        return;
+      }
+
+      resStatus.textContent = `Operation ${result.status || 'submitted'}`;
+      resStatus.className = 'res-status res-ok';
+
+      // Phase 2: if more signRequests, show another Sign button
+      if (result.signRequests && result.signRequests.length > 0) {
+        showSignButton(resBox, operationId, result.signRequests);
+      }
+    }
+
+    // ── Wallet: Delegate (with auto-sign) ──────────────
+    async function doPrepareDelegate() {
+      const chain = document.getElementById('delegateChain').value;
+      const data = await apiCall('POST', '/v1/wallet/delegate', { chain });
+
+      // Delegate returns { calls, chain, delegateSetupId } — offer to sign
+      if (data && data.calls && data.calls.length > 0) {
+        const resBox = document.getElementById('apiResponse');
+        const signBtn = document.createElement('button');
+        signBtn.className = 'btn btn-primary sign-btn';
+        signBtn.style.marginTop = '12px';
+        signBtn.style.display = 'block';
+        signBtn.textContent = `Sign Delegate TX (${chain})`;
+        signBtn.onclick = () => {
+          signBtn.remove();
+          signDelegateAndSubmit(chain, data.calls);
+        };
+        resBox.appendChild(signBtn);
+      }
+    }
+
+    async function signDelegateAndSubmit(chain, calls) {
+      const resBody = document.getElementById('resBody');
+      const resStatus = document.getElementById('resStatus');
+
+      const credJson = localStorage.getItem('omniflow_credential');
+      if (!credJson) {
+        resBody.textContent += '\n\nERROR: No credential stored. Please re-login.';
+        return;
+      }
+      const cred = JSON.parse(credJson);
+      const chainDef = CHAINS[chain];
+      const bundlerUrl = BUNDLER_RPCS[chain];
+
+      if (!chainDef || !bundlerUrl) {
+        resBody.textContent += `\n\nERROR: No config for chain "${chain}"`;
+        return;
+      }
+
+      try {
+        resBody.textContent += '\n\nSigning delegate UserOp...';
+        resStatus.textContent = 'Signing with Passkey...';
+        resStatus.className = 'res-status';
+
+        const owner = toWebAuthnAccount({
+          credential: { id: cred.id, publicKey: cred.publicKey },
+        });
+
+        const transport = toModularTransport(bundlerUrl, CIRCLE_CLIENT_KEY);
+        const client = createPublicClient({ chain: chainDef, transport });
+        const account = await toCircleSmartAccount({ client, owner });
+
+        const bundlerClient = createBundlerClient({ account, client, transport });
+
+        const hash = await bundlerClient.sendUserOperation({
+          calls: calls.map(c => ({
+            to: c.to,
+            data: c.data,
+            ...(c.value ? { value: BigInt(c.value) } : {}),
+          })),
+        });
+
+        resBody.textContent += `\nUserOp: ${hash}`;
+        resBody.textContent += '\nWaiting for receipt...';
+
+        const receipt = await bundlerClient.waitForUserOperationReceipt({ hash });
+        const txHash = receipt.receipt.transactionHash;
+
+        resBody.textContent += `\nTX: ${txHash}`;
+        resBody.textContent += '\n\nSubmitting to backend for verification...';
+
+        // Auto-submit delegate confirmation
+        await apiCall('POST', '/v1/wallet/delegate/submit', { chain, txHash });
+      } catch (err) {
+        resBody.textContent += `\nERROR: ${err.message}`;
+        resStatus.textContent = 'Delegate signing failed';
+        resStatus.className = 'res-status res-err';
+        console.error('Delegate sign error:', err);
+      }
+    }
+
+    async function doSubmitDelegate() {
+      const chain = document.getElementById('delegateSubmitChain').value;
+      const txHash = document.getElementById('delegateTxHash').value.trim();
+      if (!txHash) { alert('Enter tx hash'); return; }
+      await apiCall('POST', '/v1/wallet/delegate/submit', { chain, txHash });
+    }
+
+    // ── Operations: Collect ─────────────────────────────
     async function doCollect() {
       const chains = document.getElementById('collectChains').value.trim();
       const amount = document.getElementById('collectAmount').value.trim();
@@ -397,11 +828,108 @@
       });
     }
 
+    // ── Operations: Send ────────────────────────────────
+    async function doSend() {
+      const destinationAddress = document.getElementById('sendAddress').value.trim();
+      const destinationChain = document.getElementById('sendDestChain').value;
+      const amount = document.getElementById('sendAmount').value.trim();
+      if (!destinationAddress) { alert('Enter recipient address'); return; }
+      if (!amount) { alert('Enter amount'); return; }
+
+      await apiCall('POST', '/v1/operations/send', {
+        destinationAddress,
+        destinationChain,
+        amount,
+      });
+    }
+
+    // ── Operations: Bridge ──────────────────────────────
+    async function doBridge() {
+      const sourceChain = document.getElementById('bridgeFrom').value;
+      const destinationChain = document.getElementById('bridgeTo').value;
+      const amount = document.getElementById('bridgeAmount').value.trim();
+      if (!amount) { alert('Enter amount'); return; }
+
+      await apiCall('POST', '/v1/operations/bridge', {
+        sourceChain,
+        destinationChain,
+        amount,
+      });
+    }
+
+    // ── Operations: Batch Send ─────────────────────────
+    async function doBatchSend() {
+      const raw = document.getElementById('batchRecipients').value.trim();
+      if (!raw) { alert('Enter recipients JSON array'); return; }
+
+      let recipients;
+      try {
+        recipients = JSON.parse(raw);
+      } catch {
+        alert('Invalid JSON in recipients field');
+        return;
+      }
+
+      const sourceChain = document.getElementById('batchSourceChain').value || undefined;
+      const body = { recipients };
+      if (sourceChain) body.sourceChain = sourceChain;
+
+      await apiCall('POST', '/v1/operations/batch-send', body);
+    }
+
+    // ── Operations: Get by ID / Submit ──────────────────
+    async function doGetOp() {
+      const id = document.getElementById('opId').value.trim();
+      if (!id) { alert('Enter operation ID'); return; }
+      await apiCall('GET', `/v1/operations/${id}`);
+    }
+
+    async function doSubmitOp() {
+      const id = document.getElementById('opId').value.trim();
+      const sigsRaw = document.getElementById('opSignatures').value.trim();
+      if (!id) { alert('Enter operation ID'); return; }
+      if (!sigsRaw) { alert('Enter signatures JSON'); return; }
+
+      let signatures;
+      try {
+        signatures = JSON.parse(sigsRaw);
+      } catch {
+        alert('Invalid JSON in signatures field');
+        return;
+      }
+
+      await apiCall('POST', `/v1/operations/${id}/submit`, { signatures });
+    }
+
+    // ── Webhooks ────────────────────────────────────────
+    async function doCreateWebhook() {
+      const url = document.getElementById('webhookUrl').value.trim();
+      if (!url) { alert('Enter webhook URL'); return; }
+      await apiCall('POST', '/v1/webhooks', { url });
+    }
+
+    async function doDeleteWebhook() {
+      const id = document.getElementById('webhookDeleteId').value.trim();
+      if (!id) { alert('Enter webhook ID'); return; }
+      await apiCall('DELETE', `/v1/webhooks/${id}`);
+    }
+
     // ── Expose to window for onclick ────────────────────
     window.doRegister = doRegister;
     window.doLogin = doLogin;
     window.apiCall = apiCall;
+    window.doPrepareDelegate = doPrepareDelegate;
+    window.doSubmitDelegate = doSubmitDelegate;
     window.doCollect = doCollect;
+    window.doSend = doSend;
+    window.doBridge = doBridge;
+    window.doGetOp = doGetOp;
+    window.doSubmitOp = doSubmitOp;
+    window.doBatchSend = doBatchSend;
+    window.handleSignRequests = handleSignRequests;
+    window.signDelegateAndSubmit = signDelegateAndSubmit;
+    window.doCreateWebhook = doCreateWebhook;
+    window.doDeleteWebhook = doDeleteWebhook;
   </script>
 </body>
 </html>
