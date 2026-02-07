@@ -188,9 +188,11 @@
           <label>Prepare delegate</label>
           <div class="row">
             <select id="delegateChain">
-              <option value="base">base</option>
-              <option value="arbitrum">arbitrum</option>
+              <option value="polygon">polygon</option>
               <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
             </select>
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doPrepareDelegate()">POST delegate</button>
@@ -201,9 +203,11 @@
           <label>Submit delegate (confirm tx)</label>
           <div class="row">
             <select id="delegateSubmitChain">
-              <option value="base">base</option>
-              <option value="arbitrum">arbitrum</option>
+              <option value="polygon">polygon</option>
               <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
             </select>
             <input type="text" id="delegateTxHash" placeholder="0x..." style="margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
@@ -238,12 +242,11 @@
           </div>
           <div class="row" style="margin-top:6px">
             <select id="sendDestChain">
-              <option value="base">base</option>
-              <option value="arbitrum">arbitrum</option>
-              <option value="avalanche">avalanche</option>
-              <option value="optimism">optimism</option>
               <option value="polygon">polygon</option>
-              <option value="ethereum">ethereum</option>
+              <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
             </select>
             <input type="text" id="sendAmount" placeholder="10.00" style="max-width:100px;margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
@@ -260,19 +263,21 @@
             <div>
               <label style="font-size:11px">From</label>
               <select id="bridgeFrom">
-                <option value="base">base</option>
-                <option value="arbitrum">arbitrum</option>
+                <option value="polygon">polygon</option>
                 <option value="avalanche">avalanche</option>
-                <option value="ethereum">ethereum</option>
+                <option value="base">base</option>
+                <option value="optimism">optimism</option>
+                <option value="arbitrum">arbitrum</option>
               </select>
             </div>
             <div>
               <label style="font-size:11px">To</label>
               <select id="bridgeTo">
-                <option value="arbitrum">arbitrum</option>
-                <option value="base">base</option>
                 <option value="avalanche">avalanche</option>
-                <option value="ethereum">ethereum</option>
+                <option value="polygon">polygon</option>
+                <option value="base">base</option>
+                <option value="optimism">optimism</option>
+                <option value="arbitrum">arbitrum</option>
               </select>
             </div>
             <input type="text" id="bridgeAmount" placeholder="50.00" style="max-width:100px;margin-bottom:0" />
@@ -292,10 +297,12 @@
             <div>
               <label style="font-size:11px">Source chain (optional)</label>
               <select id="batchSourceChain">
-                <option value="">default (base)</option>
-                <option value="base">base</option>
-                <option value="arbitrum">arbitrum</option>
+                <option value="">default (polygon)</option>
+                <option value="polygon">polygon</option>
                 <option value="avalanche">avalanche</option>
+                <option value="base">base</option>
+                <option value="optimism">optimism</option>
+                <option value="arbitrum">arbitrum</option>
               </select>
             </div>
             <button class="btn btn-sm btn-primary" style="flex:none"
@@ -726,10 +733,58 @@
       resStatus.textContent = `Operation ${result.status || 'submitted'}`;
       resStatus.className = 'res-status res-ok';
 
-      // Phase 2: if more signRequests, show another Sign button
-      if (result.signRequests && result.signRequests.length > 0) {
-        showSignButton(resBox, operationId, result.signRequests);
+      // If PROCESSING — server handles burn intent + mint, auto-poll for completion
+      if (result.status === 'PROCESSING') {
+        resBody.textContent += '\n\n⏳ Server is processing burn intent + mint (waiting for chain finality)...';
+        resBody.textContent += '\nPolling every 15s for completion...';
+        pollOperationStatus(resBox, resStatus, resBody, operationId);
       }
+    }
+
+    async function pollOperationStatus(resBox, resStatus, resBody, operationId) {
+      let attempts = 0;
+      const maxAttempts = 80; // 80 * 15s = 20 min
+      const interval = 15_000;
+
+      const poll = async () => {
+        attempts++;
+        try {
+          const res = await fetch(`${API}/v1/operations/${operationId}`, {
+            headers: { Authorization: `Bearer ${jwt}` },
+          });
+          const data = await res.json();
+
+          if (data.status === 'COMPLETED') {
+            resBody.textContent += `\n\n✅ Operation COMPLETED! (after ${attempts * 15}s)`;
+            resBody.textContent += '\n' + JSON.stringify(data, null, 2);
+            resStatus.textContent = 'Operation COMPLETED';
+            resStatus.className = 'res-status res-ok';
+            return;
+          }
+
+          if (data.status === 'FAILED') {
+            resBody.textContent += `\n\n❌ Operation FAILED: ${data.errorMessage || 'unknown'}`;
+            resStatus.textContent = 'Operation FAILED';
+            resStatus.className = 'res-status res-err';
+            return;
+          }
+
+          // Still processing
+          const stepsInfo = (data.steps || []).map(s => `${s.type}:${s.status}`).join(', ');
+          resBody.textContent += `\n  [${attempts * 15}s] ${data.status} — steps: ${stepsInfo}`;
+
+          if (attempts < maxAttempts) {
+            setTimeout(poll, interval);
+          } else {
+            resBody.textContent += '\n\n⚠️ Polling timeout (20 min). Check status manually.';
+          }
+        } catch (err) {
+          resBody.textContent += `\n  Poll error: ${err.message}`;
+          if (attempts < maxAttempts) setTimeout(poll, interval);
+        }
+      };
+
+      setTimeout(poll, interval);
     }
 
     // ── Wallet: Delegate (with auto-sign) ──────────────

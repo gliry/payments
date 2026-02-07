@@ -5,6 +5,7 @@ export interface ChainConfig {
   explorer: string;
   gatewayDomain?: number;
   aaSupported?: boolean;
+  finalitySeconds: number;
   nativeCurrency: {
     name: string;
     symbol: string;
@@ -24,6 +25,7 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     explorer: 'https://polygonscan.com',
     gatewayDomain: 7,
     aaSupported: true,
+    finalitySeconds: 180,
     nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
   },
   avalanche: {
@@ -33,6 +35,7 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     explorer: 'https://snowtrace.io',
     gatewayDomain: 1,
     aaSupported: true,
+    finalitySeconds: 30,
     nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
   },
   base: {
@@ -42,6 +45,7 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     explorer: 'https://basescan.org',
     gatewayDomain: 6,
     aaSupported: true,
+    finalitySeconds: 1200,
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   },
   optimism: {
@@ -51,6 +55,7 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     explorer: 'https://optimistic.etherscan.io',
     gatewayDomain: 2,
     aaSupported: true,
+    finalitySeconds: 1200,
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   },
   arbitrum: {
@@ -60,6 +65,7 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     explorer: 'https://arbiscan.io',
     gatewayDomain: 3,
     aaSupported: true,
+    finalitySeconds: 1200,
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   },
 };

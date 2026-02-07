@@ -1,5 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createPublicClient, http, maxUint256, toHex } from 'viem';
+import {
+  createPublicClient,
+  createWalletClient,
+  defineChain,
+  http,
+  maxUint256,
+  toHex,
+} from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
   GATEWAY_API,
@@ -10,6 +17,7 @@ import {
   getDomain,
 } from '../config/gateway';
 import { ALL_CHAINS, GATEWAY_CHAINS } from '../config/chains';
+import { GATEWAY_MINTER_ABI } from './gateway.operations';
 import type {
   BurnIntent,
   BurnIntentSpec,
@@ -278,6 +286,47 @@ export class GatewayService {
       );
       return 0n;
     }
+  }
+
+  async executeMint(
+    destinationChain: string,
+    attestation: string,
+    operatorSignature: string,
+    relayerPrivateKey: string,
+  ): Promise<string> {
+    const chain = ALL_CHAINS[destinationChain];
+    if (!chain) throw new Error(`Unknown chain: ${destinationChain}`);
+
+    const account = privateKeyToAccount(
+      relayerPrivateKey as `0x${string}`,
+    );
+
+    const viemChain = defineChain({
+      id: chain.chainId,
+      name: destinationChain,
+      nativeCurrency: chain.nativeCurrency,
+      rpcUrls: { default: { http: [chain.rpc] } },
+    });
+
+    const client = createWalletClient({
+      account,
+      chain: viemChain,
+      transport: http(chain.rpc),
+    });
+
+    this.logger.log(
+      `Executing mint on ${destinationChain} via relayer ${account.address}`,
+    );
+
+    const txHash = await client.writeContract({
+      address: GATEWAY_MINTER as `0x${string}`,
+      abi: GATEWAY_MINTER_ABI,
+      functionName: 'gatewayMint',
+      args: [attestation as `0x${string}`, operatorSignature as `0x${string}`],
+    });
+
+    this.logger.log(`Mint tx sent on ${destinationChain}: ${txHash}`);
+    return txHash;
   }
 
   private getUsdcAddress(chainKey: string): string {

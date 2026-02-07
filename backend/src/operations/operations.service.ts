@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { parseUnits, formatUnits } from 'viem';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CircleService } from '../circle/circle.service';
@@ -34,6 +35,7 @@ export class OperationsService {
     private readonly circleService: CircleService,
     private readonly gatewayService: GatewayService,
     private readonly authService: AuthService,
+    private readonly configService: ConfigService,
   ) {}
 
   async prepareCollect(userId: string, dto: PrepareCollectDto) {
@@ -570,19 +572,15 @@ export class OperationsService {
 
     if (!operation) throw new NotFoundException('Operation not found');
 
-    if (
-      operation.status !== 'AWAITING_SIGNATURE' &&
-      operation.status !== 'AWAITING_SIGNATURE_PHASE2'
-    ) {
+    if (operation.status !== 'AWAITING_SIGNATURE') {
       throw new BadRequestException(
         `Operation is in ${operation.status} state, cannot submit signatures`,
       );
     }
 
     const user = await this.getUser(userId);
-    const isPhase2 = operation.status === 'AWAITING_SIGNATURE_PHASE2';
 
-    // Update submitted steps
+    // Mark submitted steps as CONFIRMED
     for (const sig of dto.signatures) {
       await this.prisma.operationStep.update({
         where: { id: sig.stepId },
@@ -594,26 +592,18 @@ export class OperationsService {
       });
     }
 
-    if (isPhase2) {
-      // Phase 2 submitted — mark operation as completed
-      await this.prisma.operation.update({
-        where: { id: operationId },
-        data: {
-          status: 'COMPLETED',
-          completedAt: new Date(),
-        },
-      });
-
-      return this.getOperation(userId, operationId);
-    }
-
-    // Phase 1 submitted — process burn intents server-side
+    // Eagerly try burn intents + server-side mint
     const burnSteps = operation.steps.filter(
       (s) => s.type === 'BURN_INTENT' && s.status === 'PENDING',
     );
 
     const delegateKey = this.authService.getDelegatePrivateKey(user);
-    const mintCallsData: any[] = [];
+    const relayerKey = this.configService.get<string>('RELAYER_PRIVATE_KEY');
+    const mintSteps = operation.steps.filter(
+      (s) => s.type === 'MINT' && s.status === 'PENDING',
+    );
+
+    let mintIndex = 0;
 
     for (const step of burnSteps) {
       const intentData = step.burnIntentData as any;
@@ -638,77 +628,61 @@ export class OperationsService {
           },
         });
 
-        mintCallsData.push({
-          attestation: transfer.attestation,
-          operatorSignature: transfer.signature,
-          destinationChain: intentData.destinationChain,
-        });
+        // Eagerly try server-side mint
+        if (relayerKey && mintIndex < mintSteps.length) {
+          const mintStep = mintSteps[mintIndex];
+          try {
+            const txHash = await this.gatewayService.executeMint(
+              intentData.destinationChain,
+              transfer.attestation,
+              transfer.signature,
+              relayerKey,
+            );
+
+            await this.prisma.operationStep.update({
+              where: { id: mintStep.id },
+              data: {
+                status: 'CONFIRMED',
+                txHash,
+                completedAt: new Date(),
+              },
+            });
+
+            this.logger.log(`Eager mint succeeded on ${intentData.destinationChain}: ${txHash}`);
+          } catch (mintError) {
+            this.logger.warn(
+              `Eager mint failed on ${intentData.destinationChain}, worker will retry: ${mintError.message}`,
+            );
+          }
+          mintIndex++;
+        }
       } catch (error) {
-        await this.prisma.operationStep.update({
-          where: { id: step.id },
-          data: {
-            status: 'FAILED',
-            errorMessage: error.message,
-          },
-        });
-
-        await this.prisma.operation.update({
-          where: { id: operationId },
-          data: { status: 'FAILED', errorMessage: error.message },
-        });
-
-        return this.getOperation(userId, operationId);
+        // Burn intent failed (deposit likely not finalized yet) — leave PENDING for worker
+        this.logger.warn(
+          `Burn intent failed for ${intentData.sourceChain}→${intentData.destinationChain}, worker will retry: ${error.message}`,
+        );
       }
     }
 
-    // Build Phase 2 sign requests (mint)
-    const mintSteps = operation.steps.filter(
-      (s) => s.type === 'MINT' && s.status === 'PENDING',
+    // Determine final status
+    const freshSteps = await this.prisma.operationStep.findMany({
+      where: { operationId },
+    });
+
+    const allDone = freshSteps.every(
+      (s) => s.status === 'CONFIRMED' || s.status === 'SKIPPED',
     );
 
-    const phase2SignRequests: any[] = [];
-
-    for (let i = 0; i < mintCallsData.length && i < mintSteps.length; i++) {
-      const mintData = mintCallsData[i];
-      const mintStep = mintSteps[i];
-
-      const calls = this.circleService.buildMintCallData(
-        mintData.attestation,
-        mintData.operatorSignature,
-      );
-
-      await this.prisma.operationStep.update({
-        where: { id: mintStep.id },
-        data: {
-          status: 'AWAITING_SIGNATURE',
-          callData: calls.map((c) => ({ to: c.to, data: c.data })),
-        },
-      });
-
-      phase2SignRequests.push({
-        stepId: mintStep.id,
-        chain: mintData.destinationChain,
-        type: 'MINT',
-        calls: calls.map((c) => ({ to: c.to, data: c.data })),
-        description: `Mint USDC on ${mintData.destinationChain}`,
-      });
-    }
-
-    if (phase2SignRequests.length > 0) {
+    if (allDone) {
       await this.prisma.operation.update({
         where: { id: operationId },
-        data: {
-          status: 'AWAITING_SIGNATURE_PHASE2',
-          signRequests: phase2SignRequests,
-        },
+        data: { status: 'COMPLETED', completedAt: new Date() },
       });
     } else {
+      // Pending steps remain — background worker will continue
       await this.prisma.operation.update({
         where: { id: operationId },
-        data: {
-          status: 'COMPLETED',
-          completedAt: new Date(),
-        },
+        data: { status: 'PROCESSING' },
       });
     }
 
