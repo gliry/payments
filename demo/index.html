@@ -387,8 +387,8 @@
           <div class="feature-card__icon feature-card__icon--gas">
             <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="10" height="16" rx="1" stroke="#ff8844" stroke-width="2"/><path d="M14 8L18 6V16L14 18" stroke="#ff8844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="7" width="4" height="4" fill="#ff8844" opacity="0.4"/></svg>
           </div>
-          <h3 class="feature-card__title">Gasless via Gas Station</h3>
-          <p class="feature-card__desc">Zero gas, all sponsored. Circle Gas Station covers every transaction. No native tokens needed.</p>
+          <h3 class="feature-card__title">Gasless</h3>
+          <p class="feature-card__desc">No any native coin needed.</p>
         </div>
 
         <!-- Non-custodial Passkey -->
@@ -396,8 +396,8 @@
           <div class="feature-card__icon feature-card__icon--shield">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7V12C4 16.4 7.4 20.5 12 21.5C16.6 20.5 20 16.4 20 12V7L12 3Z" stroke="#9F72FF" stroke-width="2" fill="none"/><path d="M9 12L11 14L15 10" stroke="#9F72FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3 class="feature-card__title">Non-Custodial (Passkey)</h3>
-          <p class="feature-card__desc">TouchID/FaceID, no seed phrases. Keys in device secure enclave. Full self-custody.</p>
+          <h3 class="feature-card__title">Non-Custodial</h3>
+          <p class="feature-card__desc">Self-custody by TouchID/FaceID, no seed phrases.</p>
         </div>
 
         <!-- Modular AA -->
@@ -406,7 +406,7 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M9 3V7M15 3V7M6 7H18V11C18 14.3 15.3 17 12 17C8.7 17 6 14.3 6 11V7Z" stroke="#1894E8" stroke-width="2" stroke-linecap="round"/><path d="M12 17V21" stroke="#1894E8" stroke-width="2" stroke-linecap="round"/></svg>
           </div>
           <h3 class="feature-card__title">Modular AA (MSCA)</h3>
-          <p class="feature-card__desc">ERC-4337 + ERC-6900. Plug any logic module. Atomic batching of approve + swap + bridge.</p>
+          <p class="feature-card__desc">ERC-4337 + ERC-6900. Plug any logic module.</p>
         </div>
 
         <!-- Batch -->
@@ -415,7 +415,7 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="#62E2A4" stroke-width="2.5" stroke-linecap="round"/></svg>
           </div>
           <h3 class="feature-card__title">Batch Payouts</h3>
-          <p class="feature-card__desc">50 recipients, 5 chains, one API call. Volume discount at 0.25%.</p>
+          <p class="feature-card__desc">By 1 API call.</p>
         </div>
 
         <!-- Any-Token LI.FI -->
@@ -424,7 +424,7 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M4 12H20M14 6L20 12L14 18" stroke="#ff8844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12H4M10 18L4 12L10 6" stroke="#ff8844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/></svg>
           </div>
           <h3 class="feature-card__title">Any-Token via LI.FI</h3>
-          <p class="feature-card__desc">Deposit ETH, receive DAI, settle in USDC. LI.FI aggregates DEXes for optimal swaps.</p>
+          <p class="feature-card__desc">LI.FI aggregates DEXes for optimal swaps.</p>
         </div>
 
         <!-- ENS -->
@@ -433,7 +433,7 @@
             <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="2" stroke="#1894E8" stroke-width="2"/><path d="M3 10H21" stroke="#1894E8" stroke-width="2"/><circle cx="17" cy="15" r="1.5" fill="#1894E8"/></svg>
           </div>
           <h3 class="feature-card__title">ENS Payment Preferences</h3>
-          <p class="feature-card__desc">Set preferred chain, token, slippage once in ENS records. Every payment auto-routes correctly.</p>
+          <p class="feature-card__desc">Set preferred chain, token once in ENS records. Every payment auto-routes correctly.</p>
         </div>
       </div>
     </div>
@@ -514,32 +514,22 @@
           <div class="batch-row__chain">
             <svg viewBox="0 0 32 32" fill="none" width="20" height="20"><circle cx="16" cy="16" r="14" fill="url(#batchArcGrad)"/><text x="16" y="20" text-anchor="middle" fill="#fff" font-size="8" font-weight="700" font-family="Inter">ARC</text>
             <defs><linearGradient id="batchArcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1894E8"/><stop offset="100%" stop-color="#9F72FF"/></linearGradient></defs></svg>
-            Arc (Free)<span class="batch-row__fee-badge">$0 fee</span>
-          </div>
+            Arc          </div>
           <div class="batch-row__token">USDC</div>
           <div class="batch-row__amount">$500</div>
           <div class="batch-row__status" data-status="pending">Pending</div>
         </div>
       </div>
 
-      <div class="batch-demo__footer reveal">
-        <div class="batch-timer">
-          <span class="batch-timer__label">Execution time:</span>
-          <span id="batch-timer-value">0.0s</span>
-        </div>
-        <div class="batch-gas-saved">
-          Gas saved: ~$47
-        </div>
-      </div>
 
       <div class="batch-demo__summary reveal">
-        <span class="batch-stat">5 recipients</span>
+        <span class="batch-stat"><span class="batch-counter" data-target="5">0</span> recipients</span>
         <span class="batch-stat-divider">&middot;</span>
-        <span class="batch-stat">3 chains</span>
+        <span class="batch-stat"><span class="batch-counter" data-target="3">0</span> chains</span>
         <span class="batch-stat-divider">&middot;</span>
-        <span class="batch-stat">1 API call</span>
+        <span class="batch-stat"><span class="batch-counter" data-target="3">0</span> tokens</span>
         <span class="batch-stat-divider">&middot;</span>
-        <span class="batch-stat batch-stat--accent">Internal: $0</span>
+        <span class="batch-stat batch-stat--highlight"><span class="batch-counter-static">1</span>&nbsp;API call</span>
       </div>
     </div>
   </section>

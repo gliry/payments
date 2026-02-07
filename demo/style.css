@@ -995,7 +995,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Arc row highlight */
 .batch-row--arc {
-  background: linear-gradient(135deg, rgba(24, 148, 232, 0.04), rgba(159, 114, 255, 0.04));
+  background: transparent;
 }
 
 .batch-row__fee-badge {
@@ -1032,6 +1032,36 @@ h1, h2, h3, h4, h5, h6 {
 .batch-stat-divider {
   color: #d1d5db;
   font-size: 1.5rem;
+}
+
+.batch-stat--highlight {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 50px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+}
+
+.batch-stat--highlight .batch-counter-static {
+  min-width: auto;
+  text-align: left;
+}
+
+.batch-counter, .batch-counter-static {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  display: inline-block;
+  min-width: 2.2em;
+  text-align: right;
+}
+
+.batch-counter.batch-counter--any {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 @media (max-width: 768px) {

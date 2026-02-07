@@ -548,26 +548,34 @@
     function animateBatchRows() {
       animateBatchTimer();
 
+      var stagger = 500;
+      var totalTableTime = (rows.length - 1) * stagger + 1200;
+
       rows.forEach((row, i) => {
         const statusEl = row.querySelector('.batch-row__status');
 
-        // Show row with stagger (300ms)
+        // Show row with stagger
         setTimeout(() => {
           row.classList.add('batch-row--visible');
-        }, i * 300);
+        }, i * stagger);
 
-        // Processing state (400ms after show)
+        // Processing state
         setTimeout(() => {
           statusEl.setAttribute('data-status', 'processing');
           statusEl.textContent = 'Processing';
-        }, i * 300 + 400);
+        }, i * stagger + 600);
 
-        // Confirmed state (800ms after show)
+        // Confirmed state
         setTimeout(() => {
           statusEl.setAttribute('data-status', 'confirmed');
           statusEl.textContent = 'Confirmed';
-        }, i * 300 + 800);
+        }, i * stagger + 1200);
       });
+
+      // Start counters after table animation finishes
+      setTimeout(function () {
+        animateBatchCounters();
+      }, totalTableTime + 400);
     }
 
     if (isVideoMode) {
@@ -593,6 +601,39 @@
 
       batchObserver.observe(batchTable);
     }
+  }
+
+  /* --- 10b. Batch summary counters (count up → "any") --- */
+  const batchCounters = document.querySelectorAll('.batch-counter');
+
+  function animateBatchCounters() {
+    batchCounters.forEach(function (el) {
+      var duration = 2500;
+      var maxNum = 999;
+      var start = performance.now();
+
+      function tick(now) {
+        var t = Math.min((now - start) / duration, 1);
+        var ease = 1 - Math.pow(1 - t, 3);
+        var val = Math.round(ease * maxNum);
+        el.textContent = val;
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          el.textContent = 'any';
+          el.classList.add('batch-counter--any');
+        }
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  if (isVideoMode && batchCounters.length > 0) {
+    batchCounters.forEach(function (el) {
+      el.textContent = 'any';
+      el.classList.add('batch-counter--any');
+    });
   }
 
   /* --- 11. Autoscroll mode --- */
