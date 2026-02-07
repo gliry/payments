@@ -6,7 +6,7 @@ export class PrepareBridgeDto {
   @IsString()
   sourceChain: string;
 
-  @ApiProperty({ example: 'base' })
+  @ApiProperty({ example: 'polygon' })
   @IsString()
   destinationChain: string;
 

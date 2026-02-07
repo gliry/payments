@@ -1,7 +1,7 @@
 import { GATEWAY_CHAINS } from './chains';
 
-export const GATEWAY_WALLET = '0x0077777d7EBA4688BDeF3E311b846F25870A19B9';
-export const GATEWAY_MINTER = '0x0022222ABE238Cc2C7Bb1f21003F0a260052475B';
+export const GATEWAY_WALLET = '0x77777777Dcc4d5A8B6E418Fd04D8997ef11000eE';
+export const GATEWAY_MINTER = '0x2222222d7164433c4C09B0b0D809a9b52C04C205';
 export const GATEWAY_API = 'https://gateway-api.circle.com';
 
 export const GATEWAY_DOMAINS: Record<string, number> = Object.fromEntries(

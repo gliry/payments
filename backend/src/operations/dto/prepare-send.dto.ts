@@ -14,7 +14,7 @@ export class PrepareSendDto {
   @IsString()
   amount: string;
 
-  @ApiProperty({ example: 'base', required: false })
+  @ApiProperty({ example: 'polygon', required: false })
   @IsOptional()
   @IsString()
   sourceChain?: string;

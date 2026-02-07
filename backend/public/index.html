@@ -390,16 +390,20 @@
 
     // ── Chain configs for UserOp signing ─────────────
     const BUNDLER_RPCS = {
-      base: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/base',
-      arbitrum: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/arbitrum',
+      polygon: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/polygon',
       avalanche: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/avalanche',
+      base: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/base',
+      optimism: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/optimism',
+      arbitrum: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/arbitrum',
     };
 
     const CHAINS = {};
     if (defineChain) {
-      CHAINS.base = defineChain({ id: 8453, name: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.base.org'] } } });
-      CHAINS.arbitrum = defineChain({ id: 42161, name: 'Arbitrum One', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } } });
+      CHAINS.polygon = defineChain({ id: 137, name: 'Polygon', nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 }, rpcUrls: { default: { http: ['https://polygon-rpc.com'] } } });
       CHAINS.avalanche = defineChain({ id: 43114, name: 'Avalanche', nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 }, rpcUrls: { default: { http: ['https://api.avax.network/ext/bc/C/rpc'] } } });
+      CHAINS.base = defineChain({ id: 8453, name: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.base.org'] } } });
+      CHAINS.optimism = defineChain({ id: 10, name: 'OP Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } } });
+      CHAINS.arbitrum = defineChain({ id: 42161, name: 'Arbitrum One', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } } });
     }
 
     // ── State ───────────────────────────────────────────

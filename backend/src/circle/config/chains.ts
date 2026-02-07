@@ -14,17 +14,17 @@ export interface ChainConfig {
 
 /**
  * Chains supporting BOTH Circle AA and Gateway (full cross-chain flow)
- * Base = hub chain (temporary replacement for Arc mainnet)
+ * Polygon = hub chain (primary liquidity hub)
  */
 export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
-  base: {
-    chainId: 8453,
-    rpc: 'https://mainnet.base.org',
-    usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-    explorer: 'https://basescan.org',
-    gatewayDomain: 6,
+  polygon: {
+    chainId: 137,
+    rpc: 'https://polygon-rpc.com',
+    usdc: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+    explorer: 'https://polygonscan.com',
+    gatewayDomain: 7,
     aaSupported: true,
-    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
   },
   avalanche: {
     chainId: 43114,
@@ -34,6 +34,24 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
     gatewayDomain: 1,
     aaSupported: true,
     nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
+  },
+  base: {
+    chainId: 8453,
+    rpc: 'https://mainnet.base.org',
+    usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    explorer: 'https://basescan.org',
+    gatewayDomain: 6,
+    aaSupported: true,
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+  },
+  optimism: {
+    chainId: 10,
+    rpc: 'https://mainnet.optimism.io',
+    usdc: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+    explorer: 'https://optimistic.etherscan.io',
+    gatewayDomain: 2,
+    aaSupported: true,
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
   },
   arbitrum: {
     chainId: 42161,
@@ -49,43 +67,17 @@ export const AA_GATEWAY_CHAINS: Record<string, ChainConfig> = {
 /**
  * Chains supporting Circle AA only (no Gateway)
  */
-export const AA_ONLY_CHAINS: Record<string, ChainConfig> = {
-  optimism: {
-    chainId: 10,
-    rpc: 'https://mainnet.optimism.io',
-    usdc: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
-    explorer: 'https://optimistic.etherscan.io',
-    aaSupported: true,
-    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-  },
-  polygon: {
-    chainId: 137,
-    rpc: 'https://polygon-rpc.com',
-    usdc: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
-    explorer: 'https://polygonscan.com',
-    aaSupported: true,
-    nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
-  },
-};
+export const AA_ONLY_CHAINS: Record<string, ChainConfig> = {};
 
 /**
  * Chains supporting Gateway only (no AA)
  */
-export const GATEWAY_ONLY_CHAINS: Record<string, ChainConfig> = {
-  ethereum: {
-    chainId: 1,
-    rpc: 'https://eth.drpc.org',
-    usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    explorer: 'https://etherscan.io',
-    gatewayDomain: 0,
-    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-  },
-};
+export const GATEWAY_ONLY_CHAINS: Record<string, ChainConfig> = {};
 
 /**
- * Hub chain key (Base replaces Arc as the liquidity hub)
+ * Hub chain key (Polygon = primary liquidity hub)
  */
-export const HUB_CHAIN = 'base';
+export const HUB_CHAIN = 'polygon';
 
 export const GATEWAY_CHAINS: Record<string, ChainConfig> = {
   ...AA_GATEWAY_CHAINS,

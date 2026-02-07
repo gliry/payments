@@ -12,6 +12,7 @@ import { AuthService } from '../auth/auth.service';
 import {
   AA_GATEWAY_CHAINS,
   GATEWAY_CHAINS,
+  HUB_CHAIN,
   getUsdcAddress,
 } from '../circle/config/chains';
 import { USDC_DECIMALS } from '../circle/gateway/gateway.types';
@@ -37,7 +38,7 @@ export class OperationsService {
 
   async prepareCollect(userId: string, dto: PrepareCollectDto) {
     const user = await this.getUser(userId);
-    const destination = dto.destination || 'base';
+    const destination = dto.destination || HUB_CHAIN;
 
     this.validateGatewayChain(destination);
     for (const chain of dto.sourceChains) {
@@ -187,7 +188,7 @@ export class OperationsService {
 
   async prepareSend(userId: string, dto: PrepareSendDto) {
     const user = await this.getUser(userId);
-    const sourceChain = dto.sourceChain || 'base';
+    const sourceChain = dto.sourceChain || HUB_CHAIN;
 
     this.validateGatewayChain(sourceChain);
     this.validateGatewayChain(dto.destinationChain);
@@ -195,7 +196,7 @@ export class OperationsService {
     const amountRaw = parseUnits(dto.amount, USDC_DECIMALS);
     const isInternal =
       sourceChain === dto.destinationChain &&
-      sourceChain === 'base';
+      sourceChain === HUB_CHAIN;
 
     const feePercent = isInternal ? '0' : CROSS_CHAIN_FEE_PERCENT;
     const feeRaw = isInternal
@@ -240,7 +241,7 @@ export class OperationsService {
         data: {
           operationId: operation.id,
           stepIndex: stepIndex++,
-          chain: 'base',
+          chain: HUB_CHAIN,
           type: 'TRANSFER',
           status: 'AWAITING_SIGNATURE',
           callData: {
@@ -253,9 +254,9 @@ export class OperationsService {
 
       signRequests.push({
         stepId: step.id,
-        chain: 'base',
+        chain: HUB_CHAIN,
         type: 'TRANSFER',
-        description: `Transfer ${dto.amount} USDC to ${dto.destinationAddress} on Arc`,
+        description: `Transfer ${dto.amount} USDC to ${dto.destinationAddress} on ${HUB_CHAIN}`,
       });
     } else {
       // Cross-chain: burn on source → mint on destination
@@ -424,7 +425,7 @@ export class OperationsService {
 
   async prepareBatchSend(userId: string, dto: PrepareBatchSendDto) {
     const user = await this.getUser(userId);
-    const sourceChain = dto.sourceChain || 'base';
+    const sourceChain = dto.sourceChain || HUB_CHAIN;
 
     if (dto.recipients.length === 0) {
       throw new BadRequestException('At least one recipient is required');
@@ -485,14 +486,14 @@ export class OperationsService {
 
     for (const r of recipientDetails) {
       const isInternal =
-        sourceChain === r.chain && sourceChain === 'base';
+        sourceChain === r.chain && sourceChain === HUB_CHAIN;
 
       if (isInternal) {
         const step = await this.prisma.operationStep.create({
           data: {
             operationId: operation.id,
             stepIndex: stepIndex++,
-            chain: 'base',
+            chain: HUB_CHAIN,
             type: 'TRANSFER',
             status: 'AWAITING_SIGNATURE',
             callData: {
@@ -505,7 +506,7 @@ export class OperationsService {
 
         signRequests.push({
           stepId: step.id,
-          chain: 'base',
+          chain: HUB_CHAIN,
           type: 'TRANSFER',
           description: `Transfer ${r.amount} USDC to ${r.address}`,
         });

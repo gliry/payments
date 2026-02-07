@@ -29,13 +29,13 @@ import {
 import type { UserOperationCall } from './gateway/gateway.types';
 import { USDC_DECIMALS } from './gateway/gateway.types';
 
-// Base mainnet chain definition for viem (hub chain)
-const baseMainnet = defineChain({
-  id: 8453,
-  name: 'Base',
-  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+// Polygon mainnet chain definition for viem (hub chain)
+const polygonMainnet = defineChain({
+  id: 137,
+  name: 'Polygon',
+  nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
   rpcUrls: {
-    default: { http: ['https://mainnet.base.org'] },
+    default: { http: ['https://polygon-rpc.com'] },
   },
 });
 
@@ -63,8 +63,8 @@ export class CircleService {
     credentialId: string,
     publicKey: string,
   ): Promise<string> {
-    const clientKey = this.configService.getOrThrow<string>('CIRCLE_CLIENT_KEY');
-    const bundlerRpc = CIRCLE_BUNDLER_RPCS['base'];
+    const clientKey = this.configService.getOrThrow<string>('CLIENT_KEY');
+    const bundlerRpc = CIRCLE_BUNDLER_RPCS['polygon'];
 
     const transport = toModularTransport(
       `${bundlerRpc}`,
@@ -72,7 +72,7 @@ export class CircleService {
     );
 
     const client = createPublicClient({
-      chain: baseMainnet,
+      chain: polygonMainnet,
       transport,
     });
 

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'; // generatePrivateKey: TODO restore
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CircleService } from '../circle/circle.service';
 import {
@@ -57,7 +57,10 @@ export class AuthService {
     }
 
     // Generate server-side delegate EOA for Gateway burn intent signing
-    const delegatePrivateKey = generatePrivateKey();
+    // TODO: restore per-user delegate generation after testing
+    // const delegatePrivateKey = generatePrivateKey();
+    // const delegateAccount = privateKeyToAccount(delegatePrivateKey);
+    const delegatePrivateKey = this.configService.getOrThrow<string>('SHARED_DELEGATE_PRIVATE_KEY') as `0x${string}`;
     const delegateAccount = privateKeyToAccount(delegatePrivateKey);
 
     const encryptionKey = this.configService.getOrThrow<string>(

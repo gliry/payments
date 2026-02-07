@@ -21,7 +21,7 @@ export class PrepareBatchSendDto {
     type: [BatchRecipient],
     example: [
       { address: '0xAAA...', chain: 'arbitrum', amount: '50.00' },
-      { address: '0xBBB...', chain: 'base', amount: '100.00' },
+      { address: '0xBBB...', chain: 'polygon', amount: '100.00' },
     ],
   })
   @IsArray()
@@ -29,7 +29,7 @@ export class PrepareBatchSendDto {
   @Type(() => BatchRecipient)
   recipients: BatchRecipient[];
 
-  @ApiProperty({ example: 'base', required: false })
+  @ApiProperty({ example: 'polygon', required: false })
   @IsOptional()
   @IsString()
   sourceChain?: string;

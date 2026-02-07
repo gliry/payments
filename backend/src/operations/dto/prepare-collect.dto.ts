@@ -7,7 +7,7 @@ export class PrepareCollectDto {
   @IsString({ each: true })
   sourceChains: string[];
 
-  @ApiProperty({ example: 'base', required: false })
+  @ApiProperty({ example: 'polygon', required: false })
   @IsOptional()
   @IsString()
   destination?: string;
