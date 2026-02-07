@@ -231,6 +231,36 @@ export class OperationsService {
       : (amountRaw * BigInt(Math.round(parseFloat(feePercent) * 10000))) /
         10000n;
 
+    // Check if auto-deposit to Gateway is needed for cross-chain sends
+    let needsDeposit = false;
+    let depositAmount = 0n;
+
+    if (!isInternal) {
+      const requiredBalance = grossDepositAmount(amountRaw);
+      const gatewayBalances = await this.gatewayService.getBalance(
+        user.walletAddress,
+      );
+      const gatewayBalance =
+        gatewayBalances.find((b) => b.chain === sourceChain)?.balance ?? 0n;
+
+      if (gatewayBalance < requiredBalance) {
+        const shortfall = requiredBalance - gatewayBalance;
+        const onChainBalance =
+          await this.gatewayService.getOnChainBalance(sourceChain, user.walletAddress);
+
+        if (onChainBalance + gatewayBalance < requiredBalance) {
+          const maxBurn = netBurnAmount(onChainBalance + gatewayBalance);
+          throw new BadRequestException(
+            `Insufficient USDC on ${sourceChain}: on-chain ${formatUnits(onChainBalance, USDC_DECIMALS)} + Gateway ${formatUnits(gatewayBalance, USDC_DECIMALS)} = ${formatUnits(onChainBalance + gatewayBalance, USDC_DECIMALS)} USDC, need ~${formatUnits(requiredBalance, USDC_DECIMALS)} USDC. Max sendable: ~${formatUnits(maxBurn, USDC_DECIMALS)} USDC`,
+          );
+        }
+
+        // Deposit just enough to cover shortfall (or full on-chain balance if less)
+        depositAmount = onChainBalance < shortfall ? onChainBalance : shortfall;
+        needsDeposit = true;
+      }
+    }
+
     const operation = await this.prisma.operation.create({
       data: {
         userId,
@@ -251,7 +281,9 @@ export class OperationsService {
           destination: dto.destinationAddress,
           destinationChain: dto.destinationChain,
           sourceChain,
-          estimatedTime: isInternal ? 'instant' : '3-5 minutes',
+          needsDeposit,
+          depositAmount: needsDeposit ? formatUnits(depositAmount, USDC_DECIMALS) : undefined,
+          estimatedTime: isInternal ? 'instant' : needsDeposit ? '15-25 minutes' : '3-5 minutes',
         },
         feeAmount: formatUnits(feeRaw, USDC_DECIMALS),
         feePercent,
@@ -262,8 +294,6 @@ export class OperationsService {
     let stepIndex = 0;
 
     if (isInternal) {
-      // Direct transfer on Arc — single UserOp
-      // For now, the client handles this directly
       const step = await this.prisma.operationStep.create({
         data: {
           operationId: operation.id,
@@ -286,6 +316,37 @@ export class OperationsService {
         description: `Transfer ${dto.amount} USDC to ${dto.destinationAddress} on ${HUB_CHAIN}`,
       });
     } else {
+      // Auto-deposit to Gateway if needed
+      if (needsDeposit) {
+        const calls = this.circleService.buildDepositCallData(
+          sourceChain,
+          depositAmount,
+        );
+
+        const depositStep = await this.prisma.operationStep.create({
+          data: {
+            operationId: operation.id,
+            stepIndex: stepIndex++,
+            chain: sourceChain,
+            type: 'APPROVE_AND_DEPOSIT',
+            status: 'AWAITING_SIGNATURE',
+            callData: calls.map((c) => ({
+              to: c.to,
+              data: c.data,
+              value: c.value?.toString(),
+            })),
+          },
+        });
+
+        signRequests.push({
+          stepId: depositStep.id,
+          chain: sourceChain,
+          type: 'APPROVE_AND_DEPOSIT',
+          calls: calls.map((c) => ({ to: c.to, data: c.data })),
+          description: `Approve and deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC to Gateway on ${sourceChain}`,
+        });
+      }
+
       // Cross-chain: burn on source → mint on destination
       const burnStep = await this.prisma.operationStep.create({
         data: {
@@ -304,7 +365,7 @@ export class OperationsService {
         },
       });
 
-      const mintStep = await this.prisma.operationStep.create({
+      await this.prisma.operationStep.create({
         data: {
           operationId: operation.id,
           stepIndex: stepIndex++,
@@ -314,12 +375,11 @@ export class OperationsService {
         },
       });
 
-      // For send, server signs burn intent immediately (no deposit needed if balance already in Gateway)
       signRequests.push({
         stepId: burnStep.id,
         chain: sourceChain,
         type: 'BURN_INTENT',
-        description: `Server will sign burn intent for ${dto.amount} USDC from ${sourceChain}`,
+        description: `Burn ${dto.amount} USDC → ${dto.destinationAddress} on ${dto.destinationChain}`,
         serverSide: true,
       });
     }
@@ -489,6 +549,41 @@ export class OperationsService {
       (totalRaw * BigInt(Math.round(parseFloat(BATCH_FEE_PERCENT) * 10000))) /
       10000n;
 
+    // Check if auto-deposit to Gateway is needed
+    const crossChainTotal = recipientDetails
+      .filter(
+        (r) => !(sourceChain === r.chain && sourceChain === HUB_CHAIN),
+      )
+      .reduce((sum, r) => sum + r.amountRaw, 0n);
+
+    let needsDeposit = false;
+    let depositAmount = 0n;
+
+    if (crossChainTotal > 0n) {
+      const requiredBalance = grossDepositAmount(crossChainTotal);
+      const gatewayBalances = await this.gatewayService.getBalance(
+        user.walletAddress,
+      );
+      const gatewayBalance =
+        gatewayBalances.find((b) => b.chain === sourceChain)?.balance ?? 0n;
+
+      if (gatewayBalance < requiredBalance) {
+        const shortfall = requiredBalance - gatewayBalance;
+        const onChainBalance =
+          await this.gatewayService.getOnChainBalance(sourceChain, user.walletAddress);
+
+        if (onChainBalance + gatewayBalance < requiredBalance) {
+          const maxBurn = netBurnAmount(onChainBalance + gatewayBalance);
+          throw new BadRequestException(
+            `Insufficient USDC on ${sourceChain}: on-chain ${formatUnits(onChainBalance, USDC_DECIMALS)} + Gateway ${formatUnits(gatewayBalance, USDC_DECIMALS)} = ${formatUnits(onChainBalance + gatewayBalance, USDC_DECIMALS)} USDC, need ~${formatUnits(requiredBalance, USDC_DECIMALS)} USDC. Max sendable: ~${formatUnits(maxBurn, USDC_DECIMALS)} USDC`,
+          );
+        }
+
+        depositAmount = onChainBalance < shortfall ? onChainBalance : shortfall;
+        needsDeposit = true;
+      }
+    }
+
     const operation = await this.prisma.operation.create({
       data: {
         userId,
@@ -515,7 +610,9 @@ export class OperationsService {
           feePercent: BATCH_FEE_PERCENT,
           totalDeducted: formatUnits(totalRaw + feeRaw, USDC_DECIMALS),
           sourceChain,
-          estimatedTime: '3-5 minutes',
+          needsDeposit,
+          depositAmount: needsDeposit ? formatUnits(depositAmount, USDC_DECIMALS) : undefined,
+          estimatedTime: needsDeposit ? '15-25 minutes' : '3-5 minutes',
         },
         feeAmount: formatUnits(feeRaw, USDC_DECIMALS),
         feePercent: BATCH_FEE_PERCENT,
@@ -524,6 +621,37 @@ export class OperationsService {
 
     const signRequests: any[] = [];
     let stepIndex = 0;
+
+    // Auto-deposit to Gateway if needed (before any burn intents)
+    if (needsDeposit) {
+      const calls = this.circleService.buildDepositCallData(
+        sourceChain,
+        depositAmount,
+      );
+
+      const depositStep = await this.prisma.operationStep.create({
+        data: {
+          operationId: operation.id,
+          stepIndex: stepIndex++,
+          chain: sourceChain,
+          type: 'APPROVE_AND_DEPOSIT',
+          status: 'AWAITING_SIGNATURE',
+          callData: calls.map((c) => ({
+            to: c.to,
+            data: c.data,
+            value: c.value?.toString(),
+          })),
+        },
+      });
+
+      signRequests.push({
+        stepId: depositStep.id,
+        chain: sourceChain,
+        type: 'APPROVE_AND_DEPOSIT',
+        calls: calls.map((c) => ({ to: c.to, data: c.data })),
+        description: `Approve and deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC to Gateway on ${sourceChain}`,
+      });
+    }
 
     for (const r of recipientDetails) {
       const isInternal =
