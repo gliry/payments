@@ -233,6 +233,15 @@ export class WalletService {
       burnAmount = (sourceBalance * 10000n) / 10205n;
     }
 
+    // Minimum viable withdraw: burn amount must cover Gateway maxFee (0.05 USDC = 50000)
+    // plus the amount itself. With 3% maxFee, need at least ~0.10 USDC balance.
+    const MIN_WITHDRAW_BALANCE = 100_000n; // 0.10 USDC
+    if (sourceBalance < MIN_WITHDRAW_BALANCE) {
+      throw new BadRequestException(
+        `Gateway balance on ${sourceChain} too small to withdraw: ${formatUnits(sourceBalance, USDC_DECIMALS)} USDC (minimum ~0.10 USDC)`,
+      );
+    }
+
     if (burnAmount === 0n) {
       throw new BadRequestException('Amount too small to withdraw');
     }
@@ -244,14 +253,21 @@ export class WalletService {
     // 1. Sign and submit burn intent
     const delegateKey = this.authService.getDelegatePrivateKey(user);
 
-    const { transfer } = await this.circleService.submitBurnIntent(
-      sourceChain,
-      dto.chain,
-      burnAmount,
-      user.walletAddress,
-      user.walletAddress,
-      delegateKey,
-    );
+    let transfer: { attestation: string; signature: string };
+    try {
+      ({ transfer } = await this.circleService.submitBurnIntent(
+        sourceChain,
+        dto.chain,
+        burnAmount,
+        user.walletAddress,
+        user.walletAddress,
+        delegateKey,
+      ));
+    } catch (err) {
+      throw new BadRequestException(
+        `Burn intent failed: ${err.message}`,
+      );
+    }
 
     this.logger.log(`Burn intent confirmed: attestation=${transfer.attestation?.slice(0, 20)}...`);
 
