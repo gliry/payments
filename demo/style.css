@@ -749,24 +749,6 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 12px 32px rgba(0,0,0,0.08);
 }
 
-/* ENS highlighted card — full row */
-.feature-card--highlight {
-  grid-column: 1 / -1;
-  border: 2px solid var(--color-primary);
-  box-shadow: 0 0 20px rgba(24, 148, 232, 0.12), 0 1px 6px rgba(0,0,0,0.04);
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 20px 28px;
-}
-
-.feature-card--highlight:hover {
-  box-shadow: 0 0 30px rgba(24, 148, 232, 0.2), 0 12px 32px rgba(0,0,0,0.08);
-}
-
-.feature-card--highlight .feature-card__content {
-  flex: 1;
-}
 
 .ens-workflow {
   display: flex;
