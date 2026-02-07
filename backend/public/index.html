@@ -214,6 +214,22 @@
               onclick="doSubmitDelegate()">POST submit</button>
           </div>
         </div>
+
+        <div class="form-row">
+          <label>Withdraw from Gateway (burn + mint to chain)</label>
+          <div class="row">
+            <select id="withdrawChain">
+              <option value="polygon">polygon</option>
+              <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
+            </select>
+            <input type="text" id="withdrawAmount" placeholder="amount (empty=all)" style="max-width:130px;margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doWithdraw()">POST withdraw</button>
+          </div>
+        </div>
       </div>
 
       <!-- Operations -->
@@ -901,6 +917,14 @@
       await apiCall('POST', '/v1/wallet/delegate/submit', { chain, txHash });
     }
 
+    async function doWithdraw() {
+      const chain = document.getElementById('withdrawChain').value;
+      const amount = document.getElementById('withdrawAmount').value.trim();
+      const body = { chain };
+      if (amount) body.amount = amount;
+      await apiCall('POST', '/v1/wallet/withdraw', body);
+    }
+
     // ── Operations: Collect ─────────────────────────────
     async function doCollect() {
       const chains = document.getElementById('collectChains').value.trim();
@@ -1003,6 +1027,7 @@
     window.apiCall = apiCall;
     window.doPrepareDelegate = doPrepareDelegate;
     window.doSubmitDelegate = doSubmitDelegate;
+    window.doWithdraw = doWithdraw;
     window.doCollect = doCollect;
     window.doSend = doSend;
     window.doBridge = doBridge;

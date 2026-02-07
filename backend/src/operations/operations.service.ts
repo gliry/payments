@@ -67,34 +67,36 @@ export class OperationsService {
       this.validateGatewayChain(chain);
     }
 
-    const gatewayBalances =
-      await this.gatewayService.getBalance(user.walletAddress);
-    const balanceMap: Record<string, bigint> = {};
-    for (const b of gatewayBalances) {
-      balanceMap[b.chain] = b.balance;
-    }
+    // Read on-chain USDC balances (wallet balance, NOT Gateway balance)
+    // Collect deposits on-chain USDC to Gateway first, then burns to destination
+    const onChainBalances =
+      await this.circleService.getMultiChainBalances(user.walletAddress);
 
-    const sources: Array<{ chain: string; amount: bigint }> = [];
-    let totalAmount = 0n;
+    const sources: Array<{
+      chain: string;
+      depositAmount: bigint; // full on-chain balance to deposit to Gateway
+      burnAmount: bigint;    // net amount to burn (after Gateway ~2% fee)
+    }> = [];
+    let totalBurnAmount = 0n;
 
     for (const chain of dto.sourceChains) {
-      const balance = balanceMap[chain] || 0n;
-      if (balance > 0n) {
-        // Reduce burn amount to account for Gateway fee (~2%) so amount + fee <= balance
-        const burnAmount = netBurnAmount(balance);
-        sources.push({ chain, amount: burnAmount });
-        totalAmount += burnAmount;
+      const onChainBalance = onChainBalances[chain] || 0n;
+      if (onChainBalance > 0n) {
+        // Deposit full on-chain balance, burn net amount (leaves room for Gateway fee)
+        const burnAmount = netBurnAmount(onChainBalance);
+        sources.push({ chain, depositAmount: onChainBalance, burnAmount });
+        totalBurnAmount += burnAmount;
       }
     }
 
     if (sources.length === 0) {
       throw new BadRequestException(
-        'No Gateway balance found on specified chains',
+        'No on-chain USDC balance found on specified chains',
       );
     }
 
     const feePercent = parseFloat(BATCH_FEE_PERCENT);
-    const feeRaw = (totalAmount * BigInt(Math.round(feePercent * 10000))) / 10000n;
+    const feeRaw = (totalBurnAmount * BigInt(Math.round(feePercent * 10000))) / 10000n;
 
     const operation = await this.prisma.operation.create({
       data: {
@@ -108,10 +110,11 @@ export class OperationsService {
         summary: {
           sources: sources.map((s) => ({
             chain: s.chain,
-            amount: formatUnits(s.amount, USDC_DECIMALS),
+            deposit: formatUnits(s.depositAmount, USDC_DECIMALS),
+            amount: formatUnits(s.burnAmount, USDC_DECIMALS),
           })),
           destination,
-          totalAmount: formatUnits(totalAmount, USDC_DECIMALS),
+          totalAmount: formatUnits(totalBurnAmount, USDC_DECIMALS),
           fee: formatUnits(feeRaw, USDC_DECIMALS),
           feePercent: BATCH_FEE_PERCENT,
           estimatedTime: '15-20 minutes',
@@ -131,11 +134,11 @@ export class OperationsService {
 
     let stepIndex = 0;
 
-    // Phase 1 steps: APPROVE_AND_DEPOSIT per source chain
+    // Phase 1 steps: APPROVE_AND_DEPOSIT per source chain (deposit full on-chain balance)
     for (const source of sources) {
       const calls = this.circleService.buildDepositCallData(
         source.chain,
-        source.amount,
+        source.depositAmount, // deposit full on-chain balance to Gateway
       );
 
       const step = await this.prisma.operationStep.create({
@@ -161,11 +164,11 @@ export class OperationsService {
           to: c.to,
           data: c.data,
         })),
-        description: `Approve and deposit ${formatUnits(source.amount, USDC_DECIMALS)} USDC on ${source.chain}`,
+        description: `Approve and deposit ${formatUnits(source.depositAmount, USDC_DECIMALS)} USDC on ${source.chain}`,
       });
     }
 
-    // Future steps (server-side, created as PENDING)
+    // Future steps (server-side, created as PENDING): burn net amount from Gateway
     for (const source of sources) {
       await this.prisma.operationStep.create({
         data: {
@@ -177,7 +180,7 @@ export class OperationsService {
           burnIntentData: {
             sourceChain: source.chain,
             destinationChain: destination,
-            amount: source.amount.toString(),
+            amount: source.burnAmount.toString(), // burn net amount (leaves room for ~2% fee)
             depositor: user.walletAddress,
             recipient: user.walletAddress,
           },

@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
 import { PrepareDelegateDto } from './dto/prepare-delegate.dto';
 import { SubmitDelegateDto } from './dto/submit-delegate.dto';
+import { WithdrawDto } from './dto/withdraw.dto';
 import {
   AuthGuard,
   CurrentUser,
@@ -44,5 +45,14 @@ export class WalletController {
     @Body() dto: SubmitDelegateDto,
   ) {
     return this.walletService.submitDelegate(user.id, dto);
+  }
+
+  @Post('withdraw')
+  @ApiOperation({ summary: 'Withdraw USDC from Gateway to a specific chain' })
+  withdraw(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: WithdrawDto,
+  ) {
+    return this.walletService.withdraw(user.id, dto);
   }
 }
