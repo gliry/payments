@@ -127,30 +127,29 @@ export class OperationsService {
     const signRequests: any[] = [];
     let stepIndex = 0;
 
-    // Auto-add delegate on source chains if not yet authorized
-    const chainsNeedingDelegate = await this.getChainsNeedingDelegate(
-      sources.map((s) => s.chain),
-      user.walletAddress,
-      user.delegateAddress,
+    // Check which source chains need delegate setup
+    const chainsNeedingDelegate = new Set(
+      await this.getChainsNeedingDelegate(
+        sources.map((s) => s.chain),
+        user.walletAddress,
+        user.delegateAddress,
+      ),
     );
 
-    if (chainsNeedingDelegate.length > 0) {
-      const delegateResult = await this.createDelegateSteps(
-        operation.id,
-        chainsNeedingDelegate,
-        user.delegateAddress,
-        stepIndex,
-      );
-      signRequests.push(...delegateResult.signRequests);
-      stepIndex = delegateResult.nextStepIndex;
-    }
-
-    // Phase 1 steps: APPROVE_AND_DEPOSIT per source chain (deposit full on-chain balance)
+    // Phase 1 steps: APPROVE_AND_DEPOSIT per source chain (+ addDelegate if needed, all in one UserOp)
     for (const source of sources) {
-      const calls = this.circleService.buildDepositCallData(
+      const depositCalls = this.circleService.buildDepositCallData(
         source.chain,
-        source.depositAmount, // deposit full on-chain balance to Gateway
+        source.depositAmount,
       );
+
+      // Prepend addDelegate calls if delegate not yet authorized on this chain
+      const allCalls = chainsNeedingDelegate.has(source.chain)
+        ? [
+            ...this.circleService.buildDelegateCallData(source.chain, user.delegateAddress),
+            ...depositCalls,
+          ]
+        : depositCalls;
 
       const step = await this.prisma.operationStep.create({
         data: {
@@ -159,7 +158,7 @@ export class OperationsService {
           chain: source.chain,
           type: 'APPROVE_AND_DEPOSIT',
           status: 'AWAITING_SIGNATURE',
-          callData: calls.map((c) => ({
+          callData: allCalls.map((c) => ({
             to: c.to,
             data: c.data,
             value: c.value?.toString(),
@@ -167,15 +166,19 @@ export class OperationsService {
         },
       });
 
+      const desc = chainsNeedingDelegate.has(source.chain)
+        ? `Add delegate + approve and deposit ${formatUnits(source.depositAmount, USDC_DECIMALS)} USDC on ${source.chain}`
+        : `Approve and deposit ${formatUnits(source.depositAmount, USDC_DECIMALS)} USDC on ${source.chain}`;
+
       signRequests.push({
         stepId: step.id,
         chain: source.chain,
         type: 'APPROVE_AND_DEPOSIT',
-        calls: calls.map((c) => ({
+        calls: allCalls.map((c) => ({
           to: c.to,
           data: c.data,
         })),
-        description: `Approve and deposit ${formatUnits(source.depositAmount, USDC_DECIMALS)} USDC on ${source.chain}`,
+        description: desc,
       });
     }
 
@@ -327,29 +330,27 @@ export class OperationsService {
         description: `Transfer ${dto.amount} USDC to ${dto.destinationAddress} on ${HUB_CHAIN}`,
       });
     } else {
-      // Auto-add delegate on source chain if not yet authorized
-      const chainsNeedingDelegate = await this.getChainsNeedingDelegate(
-        [sourceChain],
-        user.walletAddress,
-        user.delegateAddress,
-      );
-      if (chainsNeedingDelegate.length > 0) {
-        const delegateResult = await this.createDelegateSteps(
-          operation.id,
-          chainsNeedingDelegate,
+      // Check if delegate needs to be added on source chain
+      const delegateNeeded = (
+        await this.getChainsNeedingDelegate(
+          [sourceChain],
+          user.walletAddress,
           user.delegateAddress,
-          stepIndex,
-        );
-        signRequests.push(...delegateResult.signRequests);
-        stepIndex = delegateResult.nextStepIndex;
-      }
+        )
+      ).length > 0;
 
-      // Auto-deposit to Gateway if needed
       if (needsDeposit) {
-        const calls = this.circleService.buildDepositCallData(
+        // Merge delegate + deposit into one UserOp
+        const depositCalls = this.circleService.buildDepositCallData(
           sourceChain,
           depositAmount,
         );
+        const allCalls = delegateNeeded
+          ? [
+              ...this.circleService.buildDelegateCallData(sourceChain, user.delegateAddress),
+              ...depositCalls,
+            ]
+          : depositCalls;
 
         const depositStep = await this.prisma.operationStep.create({
           data: {
@@ -358,7 +359,7 @@ export class OperationsService {
             chain: sourceChain,
             type: 'APPROVE_AND_DEPOSIT',
             status: 'AWAITING_SIGNATURE',
-            callData: calls.map((c) => ({
+            callData: allCalls.map((c) => ({
               to: c.to,
               data: c.data,
               value: c.value?.toString(),
@@ -366,12 +367,41 @@ export class OperationsService {
           },
         });
 
+        const desc = delegateNeeded
+          ? `Add delegate + deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC on ${sourceChain}`
+          : `Approve and deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC on ${sourceChain}`;
+
         signRequests.push({
           stepId: depositStep.id,
           chain: sourceChain,
           type: 'APPROVE_AND_DEPOSIT',
-          calls: calls.map((c) => ({ to: c.to, data: c.data })),
-          description: `Approve and deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC to Gateway on ${sourceChain}`,
+          calls: allCalls.map((c) => ({ to: c.to, data: c.data })),
+          description: desc,
+        });
+      } else if (delegateNeeded) {
+        // No deposit needed but delegate is — standalone addDelegate UserOp
+        const delegateCalls = this.circleService.buildDelegateCallData(
+          sourceChain,
+          user.delegateAddress,
+        );
+
+        const delegateStep = await this.prisma.operationStep.create({
+          data: {
+            operationId: operation.id,
+            stepIndex: stepIndex++,
+            chain: sourceChain,
+            type: 'ADD_DELEGATE',
+            status: 'AWAITING_SIGNATURE',
+            callData: delegateCalls.map((c) => ({ to: c.to, data: c.data })),
+          },
+        });
+
+        signRequests.push({
+          stepId: delegateStep.id,
+          chain: sourceChain,
+          type: 'ADD_DELEGATE',
+          calls: delegateCalls.map((c) => ({ to: c.to, data: c.data })),
+          description: `Add delegate on ${sourceChain}`,
         });
       }
 
@@ -481,28 +511,26 @@ export class OperationsService {
     const signRequests: any[] = [];
     let stepIndex = 0;
 
-    // Auto-add delegate on source chain if not yet authorized
-    const chainsNeedingDelegate = await this.getChainsNeedingDelegate(
-      [dto.sourceChain],
-      user.walletAddress,
-      user.delegateAddress,
-    );
-    if (chainsNeedingDelegate.length > 0) {
-      const delegateResult = await this.createDelegateSteps(
-        operation.id,
-        chainsNeedingDelegate,
+    // Check if delegate needs to be added on source chain
+    const delegateNeeded = (
+      await this.getChainsNeedingDelegate(
+        [dto.sourceChain],
+        user.walletAddress,
         user.delegateAddress,
-        stepIndex,
-      );
-      signRequests.push(...delegateResult.signRequests);
-      stepIndex = delegateResult.nextStepIndex;
-    }
+      )
+    ).length > 0;
 
-    // Step: Approve + Deposit on source (deposit extra to cover Gateway fee)
+    // Merge delegate + deposit into one UserOp
     const depositCalls = this.circleService.buildDepositCallData(
       dto.sourceChain,
       depositAmount,
     );
+    const allCalls = delegateNeeded
+      ? [
+          ...this.circleService.buildDelegateCallData(dto.sourceChain, user.delegateAddress),
+          ...depositCalls,
+        ]
+      : depositCalls;
 
     const depositStep = await this.prisma.operationStep.create({
       data: {
@@ -511,19 +539,23 @@ export class OperationsService {
         chain: dto.sourceChain,
         type: 'APPROVE_AND_DEPOSIT',
         status: 'AWAITING_SIGNATURE',
-        callData: depositCalls.map((c) => ({
+        callData: allCalls.map((c) => ({
           to: c.to,
           data: c.data,
         })),
       },
     });
 
+    const desc = delegateNeeded
+      ? `Add delegate + deposit ${dto.amount} USDC on ${dto.sourceChain}`
+      : `Approve and deposit ${dto.amount} USDC on ${dto.sourceChain}`;
+
     signRequests.push({
       stepId: depositStep.id,
       chain: dto.sourceChain,
       type: 'APPROVE_AND_DEPOSIT',
-      calls: depositCalls.map((c) => ({ to: c.to, data: c.data })),
-      description: `Approve and deposit ${dto.amount} USDC on ${dto.sourceChain}`,
+      calls: allCalls.map((c) => ({ to: c.to, data: c.data })),
+      description: desc,
     });
 
     // Step 2: Burn intent (server-side)
@@ -667,31 +699,27 @@ export class OperationsService {
     const signRequests: any[] = [];
     let stepIndex = 0;
 
-    // Auto-add delegate on source chain if not yet authorized (only if cross-chain sends exist)
-    if (crossChainTotal > 0n) {
-      const chainsNeedingDelegate = await this.getChainsNeedingDelegate(
+    // Check if delegate needs to be added on source chain
+    const delegateNeeded =
+      crossChainTotal > 0n &&
+      (await this.getChainsNeedingDelegate(
         [sourceChain],
         user.walletAddress,
         user.delegateAddress,
-      );
-      if (chainsNeedingDelegate.length > 0) {
-        const delegateResult = await this.createDelegateSteps(
-          operation.id,
-          chainsNeedingDelegate,
-          user.delegateAddress,
-          stepIndex,
-        );
-        signRequests.push(...delegateResult.signRequests);
-        stepIndex = delegateResult.nextStepIndex;
-      }
-    }
+      )).length > 0;
 
-    // Auto-deposit to Gateway if needed (before any burn intents)
     if (needsDeposit) {
-      const calls = this.circleService.buildDepositCallData(
+      // Merge delegate + deposit into one UserOp
+      const depositCalls = this.circleService.buildDepositCallData(
         sourceChain,
         depositAmount,
       );
+      const allCalls = delegateNeeded
+        ? [
+            ...this.circleService.buildDelegateCallData(sourceChain, user.delegateAddress),
+            ...depositCalls,
+          ]
+        : depositCalls;
 
       const depositStep = await this.prisma.operationStep.create({
         data: {
@@ -700,7 +728,7 @@ export class OperationsService {
           chain: sourceChain,
           type: 'APPROVE_AND_DEPOSIT',
           status: 'AWAITING_SIGNATURE',
-          callData: calls.map((c) => ({
+          callData: allCalls.map((c) => ({
             to: c.to,
             data: c.data,
             value: c.value?.toString(),
@@ -708,12 +736,41 @@ export class OperationsService {
         },
       });
 
+      const desc = delegateNeeded
+        ? `Add delegate + deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC on ${sourceChain}`
+        : `Approve and deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC on ${sourceChain}`;
+
       signRequests.push({
         stepId: depositStep.id,
         chain: sourceChain,
         type: 'APPROVE_AND_DEPOSIT',
-        calls: calls.map((c) => ({ to: c.to, data: c.data })),
-        description: `Approve and deposit ${formatUnits(depositAmount, USDC_DECIMALS)} USDC to Gateway on ${sourceChain}`,
+        calls: allCalls.map((c) => ({ to: c.to, data: c.data })),
+        description: desc,
+      });
+    } else if (delegateNeeded) {
+      // No deposit needed but delegate is — standalone addDelegate UserOp
+      const delegateCalls = this.circleService.buildDelegateCallData(
+        sourceChain,
+        user.delegateAddress,
+      );
+
+      const delegateStep = await this.prisma.operationStep.create({
+        data: {
+          operationId: operation.id,
+          stepIndex: stepIndex++,
+          chain: sourceChain,
+          type: 'ADD_DELEGATE',
+          status: 'AWAITING_SIGNATURE',
+          callData: delegateCalls.map((c) => ({ to: c.to, data: c.data })),
+        },
+      });
+
+      signRequests.push({
+        stepId: delegateStep.id,
+        chain: sourceChain,
+        type: 'ADD_DELEGATE',
+        calls: delegateCalls.map((c) => ({ to: c.to, data: c.data })),
+        description: `Add delegate on ${sourceChain}`,
       });
     }
 
@@ -1022,53 +1079,6 @@ export class OperationsService {
       }
     }
     return needsDelegate;
-  }
-
-  /**
-   * Create ADD_DELEGATE operation steps and sign requests for chains that need it.
-   */
-  private async createDelegateSteps(
-    operationId: string,
-    chains: string[],
-    delegateAddress: string,
-    stepIndex: number,
-  ): Promise<{
-    signRequests: any[];
-    nextStepIndex: number;
-  }> {
-    const signRequests: any[] = [];
-    let idx = stepIndex;
-
-    for (const chain of chains) {
-      const calls = this.circleService.buildDelegateCallData(
-        chain,
-        delegateAddress,
-      );
-
-      const step = await this.prisma.operationStep.create({
-        data: {
-          operationId,
-          stepIndex: idx++,
-          chain,
-          type: 'ADD_DELEGATE',
-          status: 'AWAITING_SIGNATURE',
-          callData: calls.map((c) => ({
-            to: c.to,
-            data: c.data,
-          })),
-        },
-      });
-
-      signRequests.push({
-        stepId: step.id,
-        chain,
-        type: 'ADD_DELEGATE',
-        calls: calls.map((c) => ({ to: c.to, data: c.data })),
-        description: `Add delegate ${delegateAddress} on ${chain}`,
-      });
-    }
-
-    return { signRequests, nextStepIndex: idx };
   }
 
   private async getUser(userId: string) {
