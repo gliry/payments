@@ -345,6 +345,20 @@ export class OperationsService {
     this.validateGatewayChain(dto.destinationChain);
 
     const amountRaw = parseUnits(dto.amount, USDC_DECIMALS);
+    const depositAmount = grossDepositAmount(amountRaw);
+
+    // Check on-chain balance covers deposit + Gateway fee
+    const onChainBalance = await this.gatewayService.getOnChainBalance(
+      dto.sourceChain,
+      user.walletAddress,
+    );
+    if (depositAmount > onChainBalance) {
+      const maxBurn = netBurnAmount(onChainBalance);
+      throw new BadRequestException(
+        `Insufficient USDC on ${dto.sourceChain}: have ${formatUnits(onChainBalance, USDC_DECIMALS)}, need ${formatUnits(depositAmount, USDC_DECIMALS)} (${dto.amount} + ~2% Gateway fee). Max bridgeable: ~${formatUnits(maxBurn, USDC_DECIMALS)} USDC`,
+      );
+    }
+
     const feeRaw =
       (amountRaw *
         BigInt(
@@ -380,7 +394,6 @@ export class OperationsService {
     let stepIndex = 0;
 
     // Step 1: Approve + Deposit on source (deposit extra to cover Gateway fee)
-    const depositAmount = grossDepositAmount(amountRaw);
     const depositCalls = this.circleService.buildDepositCallData(
       dto.sourceChain,
       depositAmount,
