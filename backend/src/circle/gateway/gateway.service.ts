@@ -17,7 +17,7 @@ import {
   getDomain,
 } from '../config/gateway';
 import { ALL_CHAINS, GATEWAY_CHAINS } from '../config/chains';
-import { GATEWAY_MINTER_ABI } from './gateway.operations';
+import { GATEWAY_MINTER_ABI, GATEWAY_WALLET_DELEGATE_ABI } from './gateway.operations';
 import type {
   BurnIntent,
   BurnIntentSpec,
@@ -291,6 +291,37 @@ export class GatewayService {
         `Failed to read balance on ${chainKey}: ${error.message}`,
       );
       return 0n;
+    }
+  }
+
+  async isDelegateAuthorized(
+    chainKey: string,
+    depositorAddress: string,
+    delegateAddress: string,
+  ): Promise<boolean> {
+    const chain = ALL_CHAINS[chainKey];
+    if (!chain) throw new Error(`Unknown chain: ${chainKey}`);
+
+    const client = createPublicClient({
+      transport: http(chain.rpc),
+    });
+
+    try {
+      return await client.readContract({
+        address: GATEWAY_WALLET as `0x${string}`,
+        abi: GATEWAY_WALLET_DELEGATE_ABI,
+        functionName: 'isAuthorizedForBalance',
+        args: [
+          chain.usdc as `0x${string}`,
+          depositorAddress as `0x${string}`,
+          delegateAddress as `0x${string}`,
+        ],
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to check delegate on ${chainKey}: ${error.message}`,
+      );
+      return false;
     }
   }
 
