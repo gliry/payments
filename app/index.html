@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFlow — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%231894E8'/></svg>">
+</head>
+<body>
+
+  <!-- ============================================================
+       SCREEN: Onboarding (fullscreen, no sidebar)
+       ============================================================ -->
+  <section id="screen-onboarding" class="screen-onboarding">
+    <div class="onboarding-card">
+      <div class="onboarding-card__logo">
+        <span class="logo-dot"></span>
+        OmniFlow
+      </div>
+      <p class="onboarding-card__tagline">One Balance. Any Chain.</p>
+
+      <!-- Chain icons: Base, Arbitrum, Avalanche, Optimism, Polygon, Ethereum -->
+      <div class="onboarding-card__chains">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#28a0f0" opacity="0.85"/><path d="M12,20 L16,10 L20,20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" fill="#e84142"/><path d="M10 22 L16 8 L22 22" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="18" x2="20" y2="18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" fill="#ff0420"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">O</text></svg>
+        <svg viewBox="0 0 32 32" fill="none"><polygon points="16,4 28,12 28,20 16,28 4,20 4,12" fill="#8247e5" opacity="0.85"/><polygon points="16,10 22,14 22,18 16,22 10,18 10,14" fill="#fff" opacity="0.3"/></svg>
+        <svg viewBox="0 0 32 32" fill="none"><polygon points="16,2 26,16 16,22 6,16" fill="#627eea" opacity="0.9"/><polygon points="16,22 26,16 16,30 6,16" fill="#627eea" opacity="0.6"/></svg>
+      </div>
+
+      <!-- Value props -->
+      <div class="onboarding-card__features">
+        <span class="onboarding-card__feature">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 7" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          0% internal fees
+        </span>
+        <span class="onboarding-card__feature">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 7" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          6+ chains
+        </span>
+        <span class="onboarding-card__feature">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 7" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Batch payouts
+        </span>
+      </div>
+
+      <!-- Form -->
+      <div class="onboarding-card__form">
+        <input type="text" id="onboarding-username" class="input" placeholder="Email or username" autocomplete="username">
+        <button id="onboarding-register-btn" class="btn btn--primary btn--lg btn--full">
+          Create Wallet with Passkey
+        </button>
+        <button id="onboarding-login-btn" class="btn btn--secondary btn--full">
+          Login to Existing Wallet
+        </button>
+      </div>
+
+      <!-- Status -->
+      <div id="onboarding-status" class="onboarding-card__status"></div>
+
+      <!-- Wallet result -->
+      <div id="onboarding-wallet" class="onboarding-card__wallet">
+        <span class="onboarding-card__wallet-label">Smart Account Address</span>
+        <span id="onboarding-wallet-address" class="onboarding-card__wallet-address"></span>
+        <button id="onboarding-continue-btn" class="btn btn--primary btn--full">Go to Dashboard</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       APP LAYOUT (sidebar + main content)
+       ============================================================ -->
+  <div id="app-layout" class="app-layout" style="display: none;">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="#" class="sidebar__logo">
+        <span class="logo-dot"></span>
+        OmniFlow
+      </a>
+
+      <nav class="sidebar__nav">
+        <div class="sidebar__section-label">Main</div>
+        <a href="#" class="sidebar__link" data-screen="dashboard">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="12" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="16" width="7" height="5" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>
+          Dashboard
+        </a>
+        <a href="#" class="sidebar__link" data-screen="deposit">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Receive
+        </a>
+        <a href="#" class="sidebar__link" data-screen="send">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 20V4m0 0l-6 6m6-6l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Send
+        </a>
+        <a href="#" class="sidebar__link" data-screen="batch">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Batch Send
+          <span class="sidebar__badge">STAR</span>
+        </a>
+
+        <div class="sidebar__section-label" style="margin-top: 12px;">Activity</div>
+        <a href="#" class="sidebar__link" data-screen="history">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          History
+        </a>
+        <a href="#" class="sidebar__link" data-screen="api">
+          <svg viewBox="0 0 24 24" fill="none"><polyline points="16,18 22,12 16,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="8,6 2,12 8,18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          API Explorer
+        </a>
+        <a href="#" class="sidebar__link" data-screen="settings">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/></svg>
+          Settings
+        </a>
+      </nav>
+
+      <!-- Sidebar footer -->
+      <div class="sidebar__footer">
+        <div class="sidebar__user">
+          <div id="sidebar-user-avatar" class="sidebar__user-avatar">U</div>
+          <div class="sidebar__user-info">
+            <div id="sidebar-user-name" class="sidebar__user-name">User</div>
+            <div id="sidebar-user-address" class="sidebar__user-address">0x0000...0000</div>
+          </div>
+        </div>
+        <a href="#" id="sidebar-logout" class="sidebar__link" style="margin-top: 8px; font-size: 0.8125rem;">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="header">
+        <button id="header-menu-btn" class="btn btn--ghost header__menu-btn">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <h1 class="header__title" id="header-title">Dashboard</h1>
+        <div class="header__actions">
+          <span id="header-balance" class="text-mono text-sm" style="color: var(--color-success); font-weight: 600;"></span>
+        </div>
+      </header>
+
+      <!-- Screen: Dashboard -->
+      <div id="screen-dashboard" class="screen">
+        <div class="content" id="dashboard-content"></div>
+      </div>
+
+      <!-- Screen: Deposit -->
+      <div id="screen-deposit" class="screen">
+        <div class="content" id="deposit-content"></div>
+      </div>
+
+      <!-- Screen: Send -->
+      <div id="screen-send" class="screen">
+        <div class="content" id="send-content"></div>
+      </div>
+
+      <!-- Screen: Batch -->
+      <div id="screen-batch" class="screen">
+        <div class="content" id="batch-content"></div>
+      </div>
+
+      <!-- Screen: History -->
+      <div id="screen-history" class="screen">
+        <div class="content" id="history-content"></div>
+      </div>
+
+      <!-- Screen: API Explorer -->
+      <div id="screen-api" class="screen">
+        <div class="content" id="api-content"></div>
+      </div>
+
+      <!-- Screen: Settings -->
+      <div id="screen-settings" class="screen">
+        <div class="content" id="settings-content"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- App entry point -->
+  <script type="module">
+    import { init } from './js/app.js';
+    init().catch(err => console.error('App init error:', err));
+  </script>
+
+</body>
+</html>
