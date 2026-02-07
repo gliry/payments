@@ -223,10 +223,9 @@
 
         <!-- Collect -->
         <div class="form-row">
-          <label>Collect: source chains (comma-separated)</label>
+          <label>Collect: source chains (comma-separated) — collects full balance</label>
           <div class="row">
             <input type="text" id="collectChains" placeholder="arbitrum,avalanche" style="margin-bottom:0" />
-            <input type="text" id="collectAmount" placeholder="1.0" style="max-width:100px;margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doCollect()">POST collect</button>
           </div>
@@ -367,7 +366,7 @@
     let toPasskeyTransport, toWebAuthnCredential, WebAuthnMode;
     let toCircleSmartAccount, toModularTransport;
     let toWebAuthnAccount, createBundlerClient;
-    let createPublicClient, defineChain;
+    let createPublicClient, defineChain, httpTransport;
 
     try {
       const sdk = await import('https://esm.sh/@circle-fin/modular-wallets-core@1');
@@ -380,6 +379,7 @@
       const viem = await import('https://esm.sh/viem@2');
       createPublicClient = viem.createPublicClient;
       defineChain = viem.defineChain;
+      httpTransport = viem.http;
 
       const viemAA = await import('https://esm.sh/viem@2/account-abstraction');
       toWebAuthnAccount = viemAA.toWebAuthnAccount;
@@ -411,6 +411,27 @@
       CHAINS.base = defineChain({ id: 8453, name: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.base.org'] } } });
       CHAINS.optimism = defineChain({ id: 10, name: 'OP Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } } });
       CHAINS.arbitrum = defineChain({ id: 42161, name: 'Arbitrum One', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } } });
+    }
+
+    // ── Fee estimation from native RPC ──────────────────
+    // Circle's modular transport returns low gas prices; fetch eth_gasPrice from chain RPC
+    function nativeFeeEstimator(chain) {
+      return async () => {
+        const rpcUrl = chain.rpcUrls.default.http[0];
+        const res = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }),
+        });
+        const data = await res.json();
+        const gasPrice = BigInt(data.result);
+        // Circle bundler requires both maxFeePerGas and maxPriorityFeePerGas >= 1.5 gwei
+        const floor = 2000000000n;
+        const maxFeePerGas = gasPrice > floor ? gasPrice * 3n / 2n : floor;
+        const maxPriorityFeePerGas = maxFeePerGas;
+        console.log(`Fee estimate for chain ${chain.id}: gasPrice=${gasPrice}, maxFeePerGas=${maxFeePerGas}`);
+        return { maxFeePerGas, maxPriorityFeePerGas };
+      };
     }
 
     // ── State ───────────────────────────────────────────
@@ -668,6 +689,8 @@
             account,
             client,
             transport,
+            paymaster: true,
+            userOperation: { estimateFeesPerGas: nativeFeeEstimator(chain) },
           });
 
           resBody.textContent += '\n  Sending UserOp...';
@@ -839,7 +862,10 @@
         const client = createPublicClient({ chain: chainDef, transport });
         const account = await toCircleSmartAccount({ client, owner });
 
-        const bundlerClient = createBundlerClient({ account, client, transport });
+        const bundlerClient = createBundlerClient({
+          account, client, transport, paymaster: true,
+          userOperation: { estimateFeesPerGas: nativeFeeEstimator(chainDef) },
+        });
 
         const hash = await bundlerClient.sendUserOperation({
           calls: calls.map(c => ({
@@ -878,12 +904,10 @@
     // ── Operations: Collect ─────────────────────────────
     async function doCollect() {
       const chains = document.getElementById('collectChains').value.trim();
-      const amount = document.getElementById('collectAmount').value.trim();
       if (!chains) { alert('Enter source chains'); return; }
 
       await apiCall('POST', '/v1/operations/collect', {
         sourceChains: chains.split(',').map(s => s.trim()),
-        amount: amount || '1',
       });
     }
 

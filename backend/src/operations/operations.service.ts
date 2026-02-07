@@ -26,6 +26,26 @@ import { SubmitOperationDto } from './dto/submit-operation.dto';
 const CROSS_CHAIN_FEE_PERCENT = '0.3';
 const BATCH_FEE_PERCENT = '0.25';
 
+// Gateway charges ~2% fee on burn intents (deducted from depositor balance on top of amount)
+// We use 205 bps (2.05%) with buffer to avoid "insufficient balance" errors
+const GATEWAY_FEE_BPS = 205n;
+
+/** Calculate net amount that can be burned from a given balance (balance covers amount + gateway fee) */
+function netBurnAmount(balance: bigint): bigint {
+  return (balance * 10000n) / (10000n + GATEWAY_FEE_BPS);
+}
+
+/** Calculate how much to deposit so that balance covers burn amount + gateway fee */
+function grossDepositAmount(burnAmount: bigint): bigint {
+  return (burnAmount * (10000n + GATEWAY_FEE_BPS)) / 10000n;
+}
+
+/** Calculate maxFee for burn intent (3% of amount as ceiling, min 50000 = 0.05 USDC) */
+function calcMaxFee(amount: bigint): bigint {
+  const fee = (amount * 300n) / 10000n;
+  return fee > 50000n ? fee : 50000n;
+}
+
 @Injectable()
 export class OperationsService {
   private readonly logger = new Logger(OperationsService.name);
@@ -60,8 +80,10 @@ export class OperationsService {
     for (const chain of dto.sourceChains) {
       const balance = balanceMap[chain] || 0n;
       if (balance > 0n) {
-        sources.push({ chain, amount: balance });
-        totalAmount += balance;
+        // Reduce burn amount to account for Gateway fee (~2%) so amount + fee <= balance
+        const burnAmount = netBurnAmount(balance);
+        sources.push({ chain, amount: burnAmount });
+        totalAmount += burnAmount;
       }
     }
 
@@ -354,10 +376,11 @@ export class OperationsService {
     const signRequests: any[] = [];
     let stepIndex = 0;
 
-    // Step 1: Approve + Deposit on source
+    // Step 1: Approve + Deposit on source (deposit extra to cover Gateway fee)
+    const depositAmount = grossDepositAmount(amountRaw);
     const depositCalls = this.circleService.buildDepositCallData(
       dto.sourceChain,
-      amountRaw,
+      depositAmount,
     );
 
     const depositStep = await this.prisma.operationStep.create({

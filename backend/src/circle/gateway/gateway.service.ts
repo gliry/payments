@@ -115,8 +115,14 @@ export class GatewayService {
     depositor: string,
     recipient: string,
     signer: string,
-    maxFee: bigint = 2_010000n,
+    maxFee?: bigint,
   ): BurnIntent {
+    // Default maxFee: 3% of amount, minimum 0.05 USDC
+    const computedMaxFee = maxFee ?? (() => {
+      const fee = (amount * 300n) / 10000n;
+      return fee > 50000n ? fee : 50000n;
+    })();
+
     const sourceDomain = getDomain(sourceChain);
     const destinationDomain = getDomain(destinationChain);
     const sourceToken = this.getUsdcAddress(sourceChain);
@@ -139,7 +145,7 @@ export class GatewayService {
       hookData: '0x',
     };
 
-    return { maxBlockHeight: maxUint256, maxFee, spec };
+    return { maxBlockHeight: maxUint256, maxFee: computedMaxFee, spec };
   }
 
   async signAndSubmitBurnIntent(
