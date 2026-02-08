@@ -54,9 +54,29 @@ const CHAINS = {
   arbitrum:  { name: 'Arbitrum',  color: '#28a0f0', icon: 'arbitrum' },
   avalanche: { name: 'Avalanche', color: '#e84142', icon: 'avalanche' },
   optimism:  { name: 'Optimism',  color: '#ff0420', icon: 'optimism' },
-  polygon:   { name: 'Polygon',   color: '#8247e5', icon: 'polygon' },
+  polygon:   { name: 'Arc',       color: '#1894E8', icon: 'arc' },
   ethereum:  { name: 'Ethereum',  color: '#627eea', icon: 'ethereum' },
 };
+
+export const CHAIN_CONFIG = {
+  base:      { chainId: 8453,  rpc: 'https://mainnet.base.org',              usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', nativeSymbol: 'ETH',  nativeDecimals: 18 },
+  arbitrum:  { chainId: 42161, rpc: 'https://arb1.arbitrum.io/rpc',          usdc: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', nativeSymbol: 'ETH',  nativeDecimals: 18 },
+  avalanche: { chainId: 43114, rpc: 'https://api.avax.network/ext/bc/C/rpc', usdc: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', nativeSymbol: 'AVAX', nativeDecimals: 18 },
+  ethereum:  { chainId: 1,     rpc: 'https://eth.drpc.org',                  usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', nativeSymbol: 'ETH',  nativeDecimals: 18 },
+  optimism:  { chainId: 10,    rpc: 'https://mainnet.optimism.io',           usdc: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', nativeSymbol: 'ETH',  nativeDecimals: 18 },
+  polygon:   { chainId: 137,   rpc: 'https://polygon-rpc.com',              usdc: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', nativeSymbol: 'USDC', nativeDecimals: 18 },
+};
+
+export function getChainKeyByChainId(chainId) {
+  return Object.entries(CHAIN_CONFIG).find(([, c]) => c.chainId === chainId)?.[0];
+}
+
+export function formatTokenBalance(balance, decimals) {
+  const str = balance.toString().padStart(decimals + 1, '0');
+  const whole = str.slice(0, str.length - decimals) || '0';
+  const frac = str.slice(str.length - decimals, str.length - decimals + 4);
+  return `${whole}.${frac}`;
+}
 
 export function getChainMeta(chain) {
   return CHAINS[chain] || { name: chain, color: '#6b7280', icon: 'ethereum' };
@@ -115,7 +135,7 @@ export function getChainSVG(chain, size = 32) {
     ethereum: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,2 26,16 16,22 6,16" fill="#627eea" opacity="0.9"/><polygon points="16,22 26,16 16,30 6,16" fill="#627eea" opacity="0.6"/></svg>`,
     base: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`,
     arbitrum: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#28a0f0" opacity="0.85"/><path d="M12,20 L16,10 L20,20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    polygon: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,4 28,12 28,20 16,28 4,20 4,12" fill="#8247e5" opacity="0.85"/><polygon points="16,10 22,14 22,18 16,22 10,18 10,14" fill="#fff" opacity="0.3"/></svg>`,
+    polygon: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#1894E8"/><path d="M10 20 Q16 6 22 20" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/><circle cx="16" cy="12" r="2" fill="#fff"/></svg>`,
     avalanche: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#e84142"/><path d="M10 22 L16 8 L22 22" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="18" x2="20" y2="18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
     optimism: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#ff0420"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">O</text></svg>`,
   };

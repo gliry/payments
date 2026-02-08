@@ -18,6 +18,8 @@ function render(balanceData, ops) {
   const user = state.getUser();
   const walletData = state.getWallet();
   const total = parseFloat(balanceData?.total || '0');
+  const gatewayTotal = Object.values(balanceData?.gatewayBalances || {}).reduce((s, v) => s + parseFloat(v || '0'), 0);
+  const onChainTotal = Object.values(balanceData?.onChainBalances || {}).reduce((s, v) => s + parseFloat(v || '0'), 0);
 
   container.innerHTML = `
     <!-- Balance Card -->
@@ -33,6 +35,20 @@ function render(balanceData, ops) {
         </span>
       </div>
     </div>
+
+    ${total > 0 ? `
+    <!-- Balance Breakdown -->
+    <div class="card" style="margin-bottom: 24px; padding: 16px 20px;">
+      <div class="flex items-center justify-between" style="margin-bottom: 8px;">
+        <span class="text-sm text-muted">Gateway (unified)</span>
+        <span class="text-mono" style="font-weight: 600; color: #10B981;">${formatUSDC(gatewayTotal)}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-muted">On-chain (unsorted)</span>
+        <span class="text-mono" style="font-weight: 600; color: #F59E0B;">${formatUSDC(onChainTotal)}</span>
+      </div>
+    </div>
+    ` : ''}
 
     <!-- Quick Actions -->
     <div class="grid-3" style="margin-bottom: 32px;">

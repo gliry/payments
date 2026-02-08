@@ -22,12 +22,13 @@ const ENDPOINTS = {
     { method: 'GET', path: '/v1/wallet/balances', body: null },
     { method: 'POST', path: '/v1/wallet/delegate', body: '{\n  "chain": "base"\n}' },
     { method: 'POST', path: '/v1/wallet/delegate/submit', body: '{\n  "chain": "base",\n  "txHash": "0x..."\n}' },
+    { method: 'POST', path: '/v1/wallet/withdraw', body: '{\n  "chain": "base",\n  "amount": "100"\n}' },
   ],
   'Operations': [
-    { method: 'POST', path: '/v1/operations/send', body: '{\n  "destAddr": "0x...",\n  "destChain": "base",\n  "amount": "100",\n  "srcChain": "base"\n}' },
-    { method: 'POST', path: '/v1/operations/collect', body: '{\n  "sourceChains": ["arbitrum", "polygon"],\n  "dest": "base"\n}' },
-    { method: 'POST', path: '/v1/operations/bridge', body: '{\n  "src": "base",\n  "dest": "arbitrum",\n  "amount": "100"\n}' },
-    { method: 'POST', path: '/v1/operations/batch-send', body: '{\n  "recipients": [\n    {"address": "0x...", "chain": "base", "amount": "50"},\n    {"address": "0x...", "chain": "arbitrum", "amount": "30"}\n  ],\n  "srcChain": "base"\n}' },
+    { method: 'POST', path: '/v1/operations/send', body: '{\n  "destinationAddress": "0x...",\n  "destinationChain": "base",\n  "amount": "100",\n  "sourceChain": "base"\n}' },
+    { method: 'POST', path: '/v1/operations/collect', body: '{\n  "sourceChains": ["arbitrum", "polygon"],\n  "destination": "base"\n}' },
+    { method: 'POST', path: '/v1/operations/bridge', body: '{\n  "sourceChain": "base",\n  "destinationChain": "arbitrum",\n  "amount": "100"\n}' },
+    { method: 'POST', path: '/v1/operations/batch-send', body: '{\n  "recipients": [\n    {"address": "0x...", "chain": "base", "amount": "50"},\n    {"address": "0x...", "chain": "arbitrum", "amount": "30"}\n  ],\n  "sourceChain": "base"\n}' },
     { method: 'GET', path: '/v1/operations', body: null },
     { method: 'GET', path: '/v1/operations/:id', body: null },
     { method: 'POST', path: '/v1/operations/:id/submit', body: '{\n  "signatures": ["0x..."]\n}' },
@@ -138,7 +139,7 @@ function render() {
 function renderCodeSnippets() {
   if (!selectedEndpoint) return '';
   const ep = selectedEndpoint;
-  const url = `http://localhost:3000${ep.path}`;
+  const url = `https://omniflow.up.railway.app${ep.path}`;
 
   const authHeader = '-H "Authorization: Bearer YOUR_TOKEN"';
 
@@ -223,7 +224,7 @@ function setupListeners() {
 
     methodBadge.className = `method-badge method-badge--${ep.method.toLowerCase()}`;
     methodBadge.textContent = ep.method;
-    urlEl.textContent = `http://localhost:3000${ep.path}`;
+    urlEl.textContent = `https://omniflow.up.railway.app${ep.path}`;
     urlDisplay.style.display = 'flex';
 
     if (ep.body && ep.method !== 'GET') {

@@ -4,7 +4,7 @@
 
 import { getToken, clearAll } from './state.js';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'https://omniflow.up.railway.app';
 
 // Global API log — used by API Explorer screen
 window.__apiLog = window.__apiLog || [];
@@ -99,14 +99,15 @@ export const wallet = {
   balances: () => api.get('/v1/wallet/balances'),
   prepareDelegate: (chain) => api.post('/v1/wallet/delegate', { chain }),
   submitDelegate: (chain, txHash) => api.post('/v1/wallet/delegate/submit', { chain, txHash }),
+  withdraw: (chain, amount, sourceChain) => api.post('/v1/wallet/withdraw', { chain, ...(amount ? { amount: String(amount) } : {}), ...(sourceChain ? { sourceChain } : {}) }),
 };
 
 // Operations endpoints
 export const operations = {
-  send: (destAddr, destChain, amount, srcChain) => api.post('/v1/operations/send', { destAddr, destChain, amount: String(amount), ...(srcChain ? { srcChain } : {}) }),
-  collect: (sourceChains, dest) => api.post('/v1/operations/collect', { sourceChains, ...(dest ? { dest } : {}) }),
-  bridge: (src, dest, amount) => api.post('/v1/operations/bridge', { src, dest, amount: String(amount) }),
-  batchSend: (recipients, srcChain) => api.post('/v1/operations/batch-send', { recipients, ...(srcChain ? { srcChain } : {}) }),
+  send: (destAddr, destChain, amount, srcChain) => api.post('/v1/operations/send', { destinationAddress: destAddr, destinationChain: destChain, amount: String(amount), ...(srcChain ? { sourceChain: srcChain } : {}) }),
+  collect: (sourceChains, dest) => api.post('/v1/operations/collect', { sourceChains, ...(dest ? { destination: dest } : {}) }),
+  bridge: (src, dest, amount) => api.post('/v1/operations/bridge', { sourceChain: src, destinationChain: dest, amount: String(amount) }),
+  batchSend: (recipients, srcChain) => api.post('/v1/operations/batch-send', { recipients, ...(srcChain ? { sourceChain: srcChain } : {}) }),
   list: (type, status, limit, offset) => {
     const params = new URLSearchParams();
     if (type) params.set('type', type);

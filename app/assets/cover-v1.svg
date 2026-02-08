@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8F9FC"/>
+      <stop offset="50%" style="stop-color:#F1EBFF"/>
+      <stop offset="100%" style="stop-color:#E8F4FD"/>
+    </linearGradient>
+    <linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1894E8"/>
+      <stop offset="100%" style="stop-color:#9F72FF"/>
+    </linearGradient>
+    <linearGradient id="as" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1894E8;stop-opacity:0.12"/>
+      <stop offset="100%" style="stop-color:#9F72FF;stop-opacity:0.12"/>
+    </linearGradient>
+    <linearGradient id="ao" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1894E8;stop-opacity:0.06"/>
+      <stop offset="100%" style="stop-color:#9F72FF;stop-opacity:0.06"/>
+    </linearGradient>
+    <radialGradient id="cg" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </radialGradient>
+    <filter id="ds">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1894E8" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+
+  <!-- Right side: hub-and-spoke -->
+  <circle cx="920" cy="360" r="220" fill="url(#ao)"/>
+  <circle cx="920" cy="360" r="200" fill="none" stroke="url(#as)" stroke-width="2.5"/>
+  <circle cx="920" cy="360" r="155" fill="none" stroke="url(#as)" stroke-width="3"/>
+
+  <!-- Curved flow lines -->
+  <path d="M920,160 Q920,360 1093,460" fill="none" stroke="url(#a)" stroke-width="1.2" opacity="0.12"/>
+  <path d="M1093,260 Q920,360 747,460" fill="none" stroke="url(#a)" stroke-width="1.2" opacity="0.12"/>
+  <path d="M747,260 Q920,360 920,560" fill="none" stroke="url(#a)" stroke-width="1.2" opacity="0.12"/>
+
+  <!-- Center hub -->
+  <circle cx="920" cy="360" r="52" fill="url(#a)" filter="url(#ds)"/>
+  <circle cx="920" cy="360" r="52" fill="url(#cg)"/>
+  <text x="920" y="355" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="18" fill="#FFFFFF">Omni</text>
+  <text x="920" y="375" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="13" fill="rgba(255,255,255,0.85)" letter-spacing="2">FLOW</text>
+
+  <!-- Chain nodes -->
+  <circle cx="920" cy="160" r="16" fill="#0052ff" opacity="0.9"/>
+  <circle cx="1093" cy="260" r="14" fill="#28a0f0" opacity="0.85"/>
+  <circle cx="1093" cy="460" r="15" fill="#e84142" opacity="0.85"/>
+  <circle cx="920" cy="560" r="14" fill="#627eea" opacity="0.9"/>
+  <circle cx="747" cy="460" r="13" fill="#8247e5" opacity="0.85"/>
+  <circle cx="747" cy="260" r="14" fill="#ff0420" opacity="0.85"/>
+
+  <!-- Left side: text -->
+  <circle cx="80" cy="202" r="7" fill="url(#a)"/>
+  <text x="96" y="210" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="28" fill="#1c132c">OmniFlow</text>
+
+  <text x="80" y="295" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="52" fill="#1c132c">One API.</text>
+  <text x="80" y="355" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="52" fill="#1c132c">One Balance.</text>
+  <text x="80" y="415" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="52" fill="url(#a)">Any Chain.</text>
+
+  <text x="80" y="465" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="17" fill="#6b7280">Payments orchestration protocol built on Circle's Arc</text>
+
+  <!-- Feature pills -->
+  <rect x="80" y="505" width="96" height="30" rx="15" fill="#E8F4FD"/>
+  <text x="128" y="525" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#1894E8">Gasless</text>
+  <rect x="188" y="505" width="132" height="30" rx="15" fill="#F1EBFF"/>
+  <text x="254" y="525" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#9F72FF">Non-custodial</text>
+  <rect x="332" y="505" width="110" height="30" rx="15" fill="#FFF7ED"/>
+  <text x="387" y="525" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#D97706">Any Token</text>
+  <rect x="454" y="505" width="140" height="30" rx="15" fill="#E6FAF0"/>
+  <text x="524" y="525" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#059669">Batch Payouts</text>
+
+  <!-- HackMoney badge -->
+  <rect x="80" y="570" width="200" height="26" rx="13" fill="rgba(28,19,44,0.05)"/>
+  <text x="180" y="588" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="11" fill="#6b7280">HackMoney 2026 · ETHGlobal</text>
+</svg>

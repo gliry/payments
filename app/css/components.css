@@ -1370,3 +1370,212 @@ textarea.input {
   text-align: center;
   padding: 4px 0;
 }
+
+/* ============================================================================
+   Top Up (External Wallet Deposit)
+   ============================================================================ */
+
+.wallet-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+.wallet-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.wallet-badge__disconnect {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0 0 0 4px;
+  font-size: 0.75rem;
+  transition: color 0.15s;
+}
+
+.wallet-badge__disconnect:hover {
+  color: var(--color-error);
+}
+
+.topup-balance-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.topup-balance-row:hover {
+  background: var(--color-bg-soft);
+  border-color: var(--color-border);
+}
+
+.topup-balance-row__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topup-balance-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.topup-balance-row__symbol {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.topup-balance-row__chain {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.topup-balance-row__amount {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.topup-exec-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px 0;
+}
+
+.topup-exec-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  position: relative;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.topup-exec-step + .topup-exec-step {
+  border-top: 1px solid var(--color-border);
+}
+
+.topup-exec-step__indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-bg-soft);
+  border: 2px solid var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.topup-exec-step.active .topup-exec-step__indicator {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.topup-exec-step.active {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.topup-exec-step.done .topup-exec-step__indicator {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: white;
+}
+
+.topup-exec-step.done {
+  color: var(--color-success);
+}
+
+.topup-exec-step__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.topup-selected-token {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--color-bg-soft);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.topup-selected-token__icon {
+  width: 32px;
+  height: 32px;
+}
+
+.topup-selected-token__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.topup-selected-token__chain {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.topup-amount-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.topup-amount-wrapper .input {
+  flex: 1;
+}
+
+.topup-max-btn {
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: var(--color-primary);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.topup-max-btn:hover {
+  background: rgba(24, 148, 232, 0.08);
+  border-color: var(--color-primary);
+}

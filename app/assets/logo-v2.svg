@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1894E8"/>
+      <stop offset="100%" style="stop-color:#9F72FF"/>
+    </linearGradient>
+    <linearGradient id="ring-outer" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1894E8;stop-opacity:0.35"/>
+      <stop offset="100%" style="stop-color:#9F72FF;stop-opacity:0.35"/>
+    </linearGradient>
+    <linearGradient id="ring-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1894E8;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#9F72FF;stop-opacity:0.15"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-strong">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1894E8" flood-opacity="0.3"/>
+    </filter>
+    <radialGradient id="center-glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- White background with subtle gradient -->
+  <rect width="512" height="512" rx="96" fill="#FFFFFF"/>
+
+  <!-- Ambient glow behind center -->
+  <circle cx="256" cy="256" r="120" fill="url(#main)" opacity="0.06" filter="url(#glow-strong)"/>
+
+  <!-- Outer orbit ring — thick, soft -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#ring-mid)" stroke-width="40"/>
+
+  <!-- Middle orbit ring -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="url(#ring-outer)" stroke-width="4"/>
+
+  <!-- Orbiting dots (chain nodes) -->
+  <circle cx="256" cy="76" r="14" fill="#0052ff" opacity="0.9"/>
+  <circle cx="412" cy="166" r="12" fill="#28a0f0" opacity="0.85"/>
+  <circle cx="412" cy="346" r="13" fill="#e84142" opacity="0.85"/>
+  <circle cx="256" cy="436" r="12" fill="#627eea" opacity="0.9"/>
+  <circle cx="100" cy="346" r="11" fill="#8247e5" opacity="0.85"/>
+  <circle cx="100" cy="166" r="12" fill="#ff0420" opacity="0.85"/>
+
+
+  <!-- Curved flow lines (arcs connecting nodes through center) -->
+  <path d="M256,76 Q256,256 412,346" fill="none" stroke="url(#main)" stroke-width="1.5" opacity="0.15"/>
+  <path d="M412,166 Q256,256 100,346" fill="none" stroke="url(#main)" stroke-width="1.5" opacity="0.15"/>
+  <path d="M100,166 Q256,256 256,436" fill="none" stroke="url(#main)" stroke-width="1.5" opacity="0.15"/>
+
+  <!-- Center hub — layered for depth -->
+  <circle cx="256" cy="256" r="62" fill="url(#main)" filter="url(#shadow)"/>
+  <circle cx="256" cy="256" r="62" fill="url(#center-glow)"/>
+
+  <!-- Center text -->
+  <text x="256" y="250" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="30" fill="#FFFFFF" letter-spacing="-1">Omni</text>
+  <text x="256" y="278" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="18" fill="rgba(255,255,255,0.85)" letter-spacing="3">FLOW</text>
+</svg>
