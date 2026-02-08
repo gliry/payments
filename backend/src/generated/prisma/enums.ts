@@ -24,7 +24,8 @@ export const OperationType = {
   COLLECT: 'COLLECT',
   SEND: 'SEND',
   BRIDGE: 'BRIDGE',
-  BATCH_SEND: 'BATCH_SEND'
+  BATCH_SEND: 'BATCH_SEND',
+  SWAP_DEPOSIT: 'SWAP_DEPOSIT'
 } as const
 
 export type OperationType = (typeof OperationType)[keyof typeof OperationType]
@@ -53,7 +54,8 @@ export const StepType = {
   BURN_INTENT: 'BURN_INTENT',
   WAIT_ATTESTATION: 'WAIT_ATTESTATION',
   MINT: 'MINT',
-  TRANSFER: 'TRANSFER'
+  TRANSFER: 'TRANSFER',
+  LIFI_SWAP: 'LIFI_SWAP'
 } as const
 
 export type StepType = (typeof StepType)[keyof typeof StepType]

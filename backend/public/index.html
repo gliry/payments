@@ -257,7 +257,7 @@
 
         <!-- Send -->
         <div class="form-row">
-          <label>Send USDC to address</label>
+          <label>Send USDC to address (optional: swap to output token via LiFi)</label>
           <div class="row">
             <input type="text" id="sendAddress" placeholder="0xRecipient..." style="margin-bottom:0" />
           </div>
@@ -272,6 +272,11 @@
             <input type="text" id="sendAmount" placeholder="10.00" style="max-width:100px;margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doSend()">POST send</button>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <input type="text" id="sendOutputToken" placeholder="Output token 0x... (optional — LiFi swap)" style="margin-bottom:0" />
+            <input type="text" id="sendOutputDecimals" placeholder="18" value="" style="max-width:60px;margin-bottom:0" title="Output token decimals" />
+            <input type="text" id="sendSlippage" placeholder="0.005" value="" style="max-width:70px;margin-bottom:0" title="Slippage" />
           </div>
         </div>
 
@@ -328,6 +333,30 @@
             </div>
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doBatchSend()">POST batch-send</button>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <!-- Swap & Deposit (Any Token → USDC → Gateway) -->
+        <div class="form-row">
+          <label>Swap & Deposit: any token → USDC → Gateway (via LiFi)</label>
+          <div class="row">
+            <select id="swapDepositChain">
+              <option value="polygon">polygon</option>
+              <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
+            </select>
+            <input type="text" id="swapDepositToken" placeholder="Token address 0x..." style="margin-bottom:0" />
+          </div>
+          <div class="row" style="margin-top:6px">
+            <input type="text" id="swapDepositAmount" placeholder="0.5" style="max-width:100px;margin-bottom:0" />
+            <input type="text" id="swapDepositDecimals" placeholder="18" value="18" style="max-width:60px;margin-bottom:0" title="Token decimals" />
+            <input type="text" id="swapDepositSlippage" placeholder="0.005" value="" style="max-width:70px;margin-bottom:0" title="Slippage" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doSwapDeposit()">POST swap-deposit</button>
           </div>
         </div>
 
@@ -447,9 +476,8 @@
         });
         const data = await res.json();
         const gasPrice = BigInt(data.result);
-        // Circle bundler requires both maxFeePerGas and maxPriorityFeePerGas >= 1.5 gwei
-        const floor = 2000000000n;
-        const maxFeePerGas = gasPrice > floor ? gasPrice * 3n / 2n : floor;
+        // 2x buffer over actual gas price; minimum 100k wei to avoid zero
+        const maxFeePerGas = gasPrice > 100000n ? gasPrice * 2n : 100000n;
         const maxPriorityFeePerGas = maxFeePerGas;
         console.log(`Fee estimate for chain ${chain.id}: gasPrice=${gasPrice}, maxFeePerGas=${maxFeePerGas}`);
         return { maxFeePerGas, maxPriorityFeePerGas };
@@ -814,6 +842,16 @@
             return;
           }
 
+          // AWAITING_SIGNATURE = worker prepared a LiFi swap, needs second user signature
+          if (data.status === 'AWAITING_SIGNATURE' && data.signRequests && data.signRequests.length > 0) {
+            resBody.textContent += `\n\n🔑 Operation needs your signature for swap step!`;
+            resBody.textContent += '\n' + JSON.stringify(data, null, 2);
+            resStatus.textContent = 'Awaiting Signature (swap)';
+            resStatus.className = 'res-status';
+            showSignButton(resBox, data.id, data.signRequests);
+            return;
+          }
+
           // Still processing
           const stepsInfo = (data.steps || []).map(s => `${s.type}:${s.status}`).join(', ');
           resBody.textContent += `\n  [${attempts * 15}s] ${data.status} — steps: ${stepsInfo}`;
@@ -948,11 +986,19 @@
       if (!destinationAddress) { alert('Enter recipient address'); return; }
       if (!amount) { alert('Enter amount'); return; }
 
-      await apiCall('POST', '/v1/operations/send', {
-        destinationAddress,
-        destinationChain,
-        amount,
-      });
+      const body = { destinationAddress, destinationChain, amount };
+
+      // Optional LiFi swap output token
+      const outputToken = document.getElementById('sendOutputToken').value.trim();
+      if (outputToken) {
+        body.outputToken = outputToken;
+        const decimals = document.getElementById('sendOutputDecimals').value.trim();
+        if (decimals) body.outputTokenDecimals = parseInt(decimals, 10);
+        const slippage = document.getElementById('sendSlippage').value.trim();
+        if (slippage) body.slippage = parseFloat(slippage);
+      }
+
+      await apiCall('POST', '/v1/operations/send', body);
     }
 
     // ── Operations: Bridge ──────────────────────────────
@@ -1010,6 +1056,24 @@
       await apiCall('POST', '/v1/operations/batch-send', body);
     }
 
+    // ── Operations: Swap & Deposit ─────────────────────
+    async function doSwapDeposit() {
+      const sourceChain = document.getElementById('swapDepositChain').value;
+      const sourceToken = document.getElementById('swapDepositToken').value.trim();
+      const amount = document.getElementById('swapDepositAmount').value.trim();
+      if (!sourceToken) { alert('Enter source token address'); return; }
+      if (!amount) { alert('Enter amount'); return; }
+
+      const body = { sourceChain, sourceToken, amount };
+
+      const decimals = document.getElementById('swapDepositDecimals').value.trim();
+      if (decimals) body.tokenDecimals = parseInt(decimals, 10);
+      const slippage = document.getElementById('swapDepositSlippage').value.trim();
+      if (slippage) body.slippage = parseFloat(slippage);
+
+      await apiCall('POST', '/v1/operations/swap-deposit', body);
+    }
+
     // ── Operations: Get by ID / Submit ──────────────────
     async function doGetOp() {
       const id = document.getElementById('opId').value.trim();
@@ -1060,6 +1124,7 @@
     window.doGetOp = doGetOp;
     window.doSubmitOp = doSubmitOp;
     window.doBatchSend = doBatchSend;
+    window.doSwapDeposit = doSwapDeposit;
     window.addRecipientRow = addRecipientRow;
     window.handleSignRequests = handleSignRequests;
     window.signDelegateAndSubmit = signDelegateAndSubmit;

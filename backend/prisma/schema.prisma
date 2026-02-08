@@ -111,6 +111,7 @@ enum OperationType {
   SEND
   BRIDGE
   BATCH_SEND
+  SWAP_DEPOSIT
 }
 
 enum OperationStatus {
@@ -162,6 +163,7 @@ enum StepType {
   WAIT_ATTESTATION
   MINT
   TRANSFER
+  LIFI_SWAP
 }
 
 enum StepStatus {

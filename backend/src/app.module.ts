@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
 import { OperationsModule } from './operations/operations.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { LifiModule } from './lifi/lifi.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     CircleModule,
+    LifiModule,
     AuthModule,
     WalletModule,
     OperationsModule,

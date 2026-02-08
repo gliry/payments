@@ -9,9 +9,11 @@ import { parseUnits, formatUnits } from 'viem';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CircleService } from '../circle/circle.service';
 import { GatewayService } from '../circle/gateway/gateway.service';
+import { LifiService } from '../lifi/lifi.service';
 import { AuthService } from '../auth/auth.service';
 import {
   AA_GATEWAY_CHAINS,
+  ALL_CHAINS,
   GATEWAY_CHAINS,
   HUB_CHAIN,
   getUsdcAddress,
@@ -21,6 +23,7 @@ import { PrepareCollectDto } from './dto/prepare-collect.dto';
 import { PrepareSendDto } from './dto/prepare-send.dto';
 import { PrepareBridgeDto } from './dto/prepare-bridge.dto';
 import { PrepareBatchSendDto } from './dto/prepare-batch-send.dto';
+import { PrepareSwapDepositDto } from './dto/prepare-swap-deposit.dto';
 import { SubmitOperationDto } from './dto/submit-operation.dto';
 
 const CROSS_CHAIN_FEE_PERCENT = '0.3';
@@ -54,6 +57,7 @@ export class OperationsService {
     private readonly prisma: PrismaService,
     private readonly circleService: CircleService,
     private readonly gatewayService: GatewayService,
+    private readonly lifiService: LifiService,
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
@@ -221,6 +225,180 @@ export class OperationsService {
     return {
       id: operation.id,
       type: 'COLLECT',
+      status: 'AWAITING_SIGNATURE',
+      summary: operation.summary,
+      signRequests,
+    };
+  }
+
+  async prepareSwapDeposit(userId: string, dto: PrepareSwapDepositDto) {
+    const user = await this.getUser(userId);
+    const chainKey = dto.sourceChain;
+
+    if (!(chainKey in AA_GATEWAY_CHAINS)) {
+      throw new BadRequestException(
+        `Chain ${chainKey} does not support AA + Gateway. Supported: ${Object.keys(AA_GATEWAY_CHAINS).join(', ')}`,
+      );
+    }
+
+    const chain = ALL_CHAINS[chainKey];
+    const usdcAddress = getUsdcAddress(chainKey);
+    const decimals = dto.tokenDecimals ?? 18;
+    const slippage = dto.slippage ?? 0.005;
+
+    // Parse amount in source token units
+    const sourceAmount = parseUnits(dto.amount, decimals);
+
+    // Get LiFi quote: sourceToken → USDC on same chain
+    const quote = await this.lifiService.getQuote({
+      fromChain: chain.chainId,
+      toChain: chain.chainId,
+      fromToken: dto.sourceToken,
+      toToken: usdcAddress,
+      fromAmount: sourceAmount.toString(),
+      fromAddress: user.walletAddress,
+      slippage,
+    });
+
+    // Use toAmountMin (accounts for slippage) as deposit amount
+    const depositAmount = BigInt(quote.estimate.toAmountMin);
+
+    // Build combined calls: [approve→LiFi, swap, approve→Gateway, deposit]
+    const swapAndDepositCalls = this.lifiService.buildSwapAndDepositCalls(
+      quote,
+      dto.sourceToken,
+      sourceAmount,
+      chainKey,
+      depositAmount,
+    );
+
+    // Check if delegate needs setup — prepend if so
+    const chainsNeedingDelegate = await this.getChainsNeedingDelegate(
+      [chainKey],
+      user.walletAddress,
+      user.delegateAddress,
+    );
+    const delegateNeeded = chainsNeedingDelegate.length > 0;
+
+    const allCalls = delegateNeeded
+      ? [
+          ...this.circleService.buildDelegateCallData(chainKey, user.delegateAddress),
+          ...swapAndDepositCalls,
+        ]
+      : swapAndDepositCalls;
+
+    // If source chain is already the hub, no burn/mint needed
+    const needsBurnMint = chainKey !== HUB_CHAIN;
+    const burnAmount = needsBurnMint ? netBurnAmount(depositAmount) : 0n;
+
+    const operation = await this.prisma.operation.create({
+      data: {
+        userId,
+        type: 'SWAP_DEPOSIT',
+        status: 'AWAITING_SIGNATURE',
+        params: {
+          sourceChain: chainKey,
+          sourceToken: dto.sourceToken,
+          amount: dto.amount,
+          tokenDecimals: decimals,
+          slippage,
+        },
+        summary: {
+          action: 'swap-deposit',
+          inputToken: quote.action.fromToken.symbol,
+          inputAmount: dto.amount,
+          estimatedUsdc: formatUnits(BigInt(quote.estimate.toAmount), USDC_DECIMALS),
+          minimumUsdc: formatUnits(depositAmount, USDC_DECIMALS),
+          slippage: `${slippage * 100}%`,
+          sourceChain: chainKey,
+          destinationChain: HUB_CHAIN,
+          lifiRoute: quote.tool,
+          delegateIncluded: delegateNeeded,
+          needsBurnMint,
+          estimatedTime: needsBurnMint ? '15-25 minutes' : `~${quote.estimate.executionDuration}s`,
+        },
+        feeAmount: '0',
+        feePercent: '0',
+      },
+    });
+
+    let stepIndex = 0;
+
+    const swapStep = await this.prisma.operationStep.create({
+      data: {
+        operationId: operation.id,
+        stepIndex: stepIndex++,
+        chain: chainKey,
+        type: 'LIFI_SWAP',
+        status: 'AWAITING_SIGNATURE',
+        callData: allCalls.map((c) => ({
+          to: c.to,
+          data: c.data,
+          value: c.value?.toString(),
+        })),
+      },
+    });
+
+    const desc = delegateNeeded
+      ? `Add delegate + swap ${dto.amount} ${quote.action.fromToken.symbol} → USDC and deposit on ${chainKey}`
+      : `Swap ${dto.amount} ${quote.action.fromToken.symbol} → USDC and deposit on ${chainKey}`;
+
+    const signRequests: any[] = [
+      {
+        stepId: swapStep.id,
+        chain: chainKey,
+        type: 'LIFI_SWAP',
+        calls: allCalls.map((c) => ({ to: c.to, data: c.data })),
+        description: desc,
+      },
+    ];
+
+    // If not on hub chain — add burn+mint steps to move USDC to hub
+    if (needsBurnMint) {
+      const burnStep = await this.prisma.operationStep.create({
+        data: {
+          operationId: operation.id,
+          stepIndex: stepIndex++,
+          chain: chainKey,
+          type: 'BURN_INTENT',
+          status: 'PENDING',
+          burnIntentData: {
+            sourceChain: chainKey,
+            destinationChain: HUB_CHAIN,
+            amount: burnAmount.toString(),
+            depositor: user.walletAddress,
+            recipient: user.walletAddress,
+          },
+        },
+      });
+
+      await this.prisma.operationStep.create({
+        data: {
+          operationId: operation.id,
+          stepIndex: stepIndex++,
+          chain: HUB_CHAIN,
+          type: 'MINT',
+          status: 'PENDING',
+        },
+      });
+
+      signRequests.push({
+        stepId: burnStep.id,
+        chain: chainKey,
+        type: 'BURN_INTENT',
+        description: `Burn ${formatUnits(burnAmount, USDC_DECIMALS)} USDC on ${chainKey} → mint on ${HUB_CHAIN}`,
+        serverSide: true,
+      });
+    }
+
+    await this.prisma.operation.update({
+      where: { id: operation.id },
+      data: { signRequests },
+    });
+
+    return {
+      id: operation.id,
+      type: 'SWAP_DEPOSIT',
       status: 'AWAITING_SIGNATURE',
       summary: operation.summary,
       signRequests,
@@ -440,6 +618,138 @@ export class OperationsService {
         description: `Burn ${dto.amount} USDC → ${dto.destinationAddress} on ${dto.destinationChain}`,
         serverSide: true,
       });
+
+      // Outflow swap: if outputToken is specified, add LIFI_SWAP step
+      if (dto.outputToken) {
+        const destChain = ALL_CHAINS[dto.destinationChain];
+        const destUsdcAddress = getUsdcAddress(dto.destinationChain);
+        const swapSlippage = dto.slippage ?? 0.005;
+
+        try {
+          const estimateQuote = await this.lifiService.getQuote({
+            fromChain: destChain.chainId,
+            toChain: destChain.chainId,
+            fromToken: destUsdcAddress,
+            toToken: dto.outputToken,
+            fromAmount: amountRaw.toString(),
+            fromAddress: user.walletAddress,
+            toAddress: dto.destinationAddress,
+            slippage: swapSlippage,
+          });
+
+          // Same-chain optimization: if user has enough on-chain USDC on destination,
+          // skip burn/mint entirely and include swap calldata in first UserOp
+          const isSameChain = sourceChain === dto.destinationChain;
+          let directSwap = false;
+
+          if (isSameChain) {
+            const onChainUsdc = await this.gatewayService.getOnChainBalance(
+              dto.destinationChain,
+              user.walletAddress,
+            );
+            if (onChainUsdc >= amountRaw) {
+              directSwap = true;
+            }
+          }
+
+          if (directSwap) {
+            // Direct swap — no burn/mint needed, calldata ready now
+            const swapCalls = this.lifiService.buildSwapCalls(
+              estimateQuote,
+              destUsdcAddress,
+              amountRaw,
+            );
+
+            const swapStep = await this.prisma.operationStep.create({
+              data: {
+                operationId: operation.id,
+                stepIndex: stepIndex++,
+                chain: dto.destinationChain,
+                type: 'LIFI_SWAP',
+                status: 'AWAITING_SIGNATURE',
+                callData: swapCalls.map((c) => ({
+                  to: c.to,
+                  data: c.data,
+                  value: c.value?.toString(),
+                })),
+              },
+            });
+
+            signRequests.push({
+              stepId: swapStep.id,
+              chain: dto.destinationChain,
+              type: 'LIFI_SWAP',
+              calls: swapCalls.map((c) => ({ to: c.to, data: c.data })),
+              description: `Swap ${dto.amount} USDC → ${estimateQuote.action.toToken.symbol} on ${dto.destinationChain}`,
+            });
+
+            // Mark burn/mint steps as SKIPPED since we don't need them
+            await this.prisma.operationStep.updateMany({
+              where: {
+                operationId: operation.id,
+                type: { in: ['BURN_INTENT', 'MINT'] },
+              },
+              data: { status: 'SKIPPED' },
+            });
+
+            // Remove burn signRequest (server-side) from the list
+            const burnIdx = signRequests.findIndex((r) => r.type === 'BURN_INTENT');
+            if (burnIdx !== -1) signRequests.splice(burnIdx, 1);
+          } else {
+            // Cross-chain: PENDING swap step — worker will refresh quote after mint
+            const swapStep = await this.prisma.operationStep.create({
+              data: {
+                operationId: operation.id,
+                stepIndex: stepIndex++,
+                chain: dto.destinationChain,
+                type: 'LIFI_SWAP',
+                status: 'PENDING',
+                burnIntentData: {
+                  outputToken: dto.outputToken,
+                  outputTokenDecimals: dto.outputTokenDecimals ?? 18,
+                  slippage: swapSlippage,
+                  recipientAddress: dto.destinationAddress,
+                  usdcAmount: amountRaw.toString(),
+                },
+              },
+            });
+
+            signRequests.push({
+              stepId: swapStep.id,
+              chain: dto.destinationChain,
+              type: 'LIFI_SWAP',
+              description: `Swap USDC → ${estimateQuote.action.toToken.symbol} on ${dto.destinationChain} (after mint)`,
+              serverSide: false,
+              pendingMint: true,
+            });
+          }
+
+          // Enrich summary with swap estimate
+          const summary = operation.summary as any;
+          summary.outputToken = estimateQuote.action.toToken.symbol;
+          summary.estimatedOutput = formatUnits(
+            BigInt(estimateQuote.estimate.toAmount),
+            dto.outputTokenDecimals ?? 18,
+          );
+          summary.minimumOutput = formatUnits(
+            BigInt(estimateQuote.estimate.toAmountMin),
+            dto.outputTokenDecimals ?? 18,
+          );
+          summary.lifiRoute = estimateQuote.tool;
+          summary.directSwap = directSwap;
+          summary.estimatedTime = directSwap ? '< 1 minute' : '20-30 minutes';
+
+          await this.prisma.operation.update({
+            where: { id: operation.id },
+            data: { summary },
+          });
+        } catch (lifiError) {
+          this.logger.warn(`LiFi quote failed for outflow swap: ${lifiError.message}`);
+          throw new BadRequestException(
+            `LiFi swap not available for ${dto.outputToken} on ${dto.destinationChain}: ${lifiError.message}`,
+          );
+        }
+      }
     }
 
     await this.prisma.operation.update({
