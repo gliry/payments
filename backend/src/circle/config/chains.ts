@@ -81,7 +81,26 @@ export const AA_ONLY_CHAINS: Record<string, ChainConfig> = {};
 export const GATEWAY_ONLY_CHAINS: Record<string, ChainConfig> = {};
 
 /**
- * Hub chain key (Polygon = primary liquidity hub)
+ * Hub chain key.
+ *
+ * OmniFlow will run on Arc as the production hub. Arc advantages over any
+ * alternative hub chain:
+ *
+ *  - 1-second finality → deposits and payouts settle instantly on the hub,
+ *    no waiting for block confirmations.
+ *  - Native USDC as base asset → the hub holds only issuer-native USDC,
+ *    eliminating bridged/wrapped token risk entirely.
+ *  - Circle Gas Station → all hub transactions are gas-sponsored, users
+ *    never need native tokens on the hub chain.
+ *  - Deep Circle stack integration → Modular Wallets, Gateway (CCTP V2),
+ *    Bundler, and Gas Station are all first-class citizens on Arc.
+ *  - USDC issuer's own L1 → maximum trust for the chain where all
+ *    protocol liquidity rests.
+ *
+ * The full flow is validated end-to-end on Arc testnet. For the mainnet demo
+ * (with real liquidity) we stage on Polygon while Arc mainnet is not yet
+ * available. The architecture is chain-agnostic: switching the hub requires
+ * changing only this constant — zero other code changes.
  */
 export const HUB_CHAIN = 'polygon';
 
