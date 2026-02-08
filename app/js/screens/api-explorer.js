@@ -77,7 +77,7 @@ function render() {
             <textarea id="api-body" class="input input--mono" rows="8"></textarea>
           </div>
 
-          <button id="api-send-btn" class="btn btn--primary btn--full" disabled>Send Request</button>
+          <button id="api-send-btn" class="btn btn--primary btn--full" ${selectedEndpoint ? '' : 'disabled'}>Send Request</button>
         </div>
       </div>
 
@@ -207,6 +207,30 @@ function setupListeners() {
   const methodBadge = document.getElementById('api-method-badge');
   const urlEl = document.getElementById('api-url');
   const sendBtn = document.getElementById('api-send-btn');
+
+  // Restore selected endpoint state after re-render
+  if (selectedEndpoint && endpointSelect) {
+    // Find the matching option value
+    for (const [group, eps] of Object.entries(ENDPOINTS)) {
+      const idx = eps.findIndex(ep => ep.method === selectedEndpoint.method && ep.path === selectedEndpoint.path);
+      if (idx !== -1) {
+        endpointSelect.value = `${group}:${idx}`;
+        break;
+      }
+    }
+
+    methodBadge.className = `method-badge method-badge--${selectedEndpoint.method.toLowerCase()}`;
+    methodBadge.textContent = selectedEndpoint.method;
+    urlEl.textContent = `https://omniflow.up.railway.app${selectedEndpoint.path}`;
+    urlDisplay.style.display = 'flex';
+
+    if (selectedEndpoint.body && selectedEndpoint.method !== 'GET') {
+      bodyGroup.style.display = 'block';
+      bodyInput.value = selectedEndpoint.body;
+    } else {
+      bodyGroup.style.display = 'none';
+    }
+  }
 
   endpointSelect?.addEventListener('change', () => {
     const val = endpointSelect.value;

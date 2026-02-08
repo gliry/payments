@@ -61,9 +61,14 @@ function getChains() {
   return chains;
 }
 
+// Per-chain minimum maxFeePerGas — Avalanche C-Chain requires at least 25 gwei
+const MIN_FEE_PER_GAS = {
+  43114: 30_000_000_000n, // Avalanche: 30 gwei
+};
+
 /**
  * Fee estimator — fetch eth_gasPrice from chain's native RPC, apply 2x buffer.
- * No artificial floor — L2s have sub-gwei gas prices and the bundler charges maxFeePerGas.
+ * Enforces per-chain minimum where the RPC reports a value below what the network accepts.
  */
 function nativeFeeEstimator(chain) {
   return async () => {
@@ -75,8 +80,9 @@ function nativeFeeEstimator(chain) {
     });
     const data = await res.json();
     const gasPrice = BigInt(data.result);
-    // 2x buffer over actual gas price; minimum 100k wei to avoid zero
-    const maxFeePerGas = gasPrice > 100000n ? gasPrice * 2n : 100000n;
+    const minFee = MIN_FEE_PER_GAS[chain.id] ?? 100000n;
+    const estimated = gasPrice > 100000n ? gasPrice * 2n : 100000n;
+    const maxFeePerGas = estimated > minFee ? estimated : minFee;
     const maxPriorityFeePerGas = maxFeePerGas;
     console.log(`[userop] Fee estimate chain ${chain.id}: gasPrice=${gasPrice}, maxFeePerGas=${maxFeePerGas}`);
     return { maxFeePerGas, maxPriorityFeePerGas };

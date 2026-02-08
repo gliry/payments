@@ -119,6 +119,13 @@ export const operations = {
   },
   get: (id) => api.get(`/v1/operations/${id}`),
   submit: (id, signatures) => api.post(`/v1/operations/${id}/submit`, { signatures }),
+  swapDeposit: (sourceChain, sourceToken, amount, tokenDecimals, slippage) =>
+    api.post('/v1/operations/swap-deposit', {
+      sourceChain, sourceToken, amount: String(amount),
+      ...(tokenDecimals != null ? { tokenDecimals } : {}),
+      ...(slippage != null ? { slippage } : {}),
+    }),
+  refreshSwap: (id) => api.post(`/v1/operations/${id}/refresh-swap`),
 };
 
 // Webhook endpoints

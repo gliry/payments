@@ -4,7 +4,9 @@
 
 import * as state from '../state.js';
 import { wallet, operations } from '../api.js';
-import { formatUSDC, formatAddress, getChainMeta, getChainSVG, isValidAddress, getAllChains, getOpTypeLabel } from '../utils.js';
+import { signAndSubmitUserOps } from '../userop.js';
+import { formatUSDC, formatAddress, getChainMeta, getChainSVG, isValidAddress, getAllChains, getOpTypeLabel, debounce, getChainKeyByChainId } from '../utils.js';
+import { isENSName, resolveENS } from '../ens.js';
 import { showToast } from '../components/toast.js';
 import { statusBadge } from '../components/status-badge.js';
 import { chainBadge } from '../components/chain-icon.js';
@@ -16,6 +18,18 @@ let rows = [];
 let activeTab = 'manual';
 let executionState = null; // null | 'executing' | 'done'
 let batchResult = null;
+
+const TOKENS = ['USDC', 'USDT', 'WETH', 'WBTC'];
+
+function createRow(overrides = {}) {
+  return {
+    address: '', resolvedAddress: null, chain: 'polygon', amount: '',
+    token: 'USDC',
+    ensName: null, ensPrefs: null, ensStatus: null, ensError: null,
+    _prefsFilled: false,
+    ...overrides,
+  };
+}
 
 const TEMPLATES = {
   payroll: {
@@ -50,6 +64,16 @@ const TEMPLATES = {
       { address: '0x6666666666666666666666666666666666666666', chain: 'base', amount: '100' },
       { address: '0x7777777777777777777777777777777777777777', chain: 'optimism', amount: '100' },
       { address: '0x8888888888888888888888888888888888888888', chain: 'polygon', amount: '100' },
+    ],
+  },
+  demo: {
+    name: 'Demo',
+    desc: '4 recipients across 3 chains with ENS',
+    rows: [
+      { address: 'gliry.eth', chain: 'arbitrum', amount: '0.5', token: 'USDT' },
+      { address: '0xe1CB6231c5931d8914812801982a5D9093de61c3', chain: 'base', amount: '1', token: 'USDT' },
+      { address: '0x461406d9EB5641F18513090d03C018BCbD11Ae3D', chain: 'avalanche', amount: '0.0004', token: 'WETH' },
+      { address: '0xA99c4E96132663C4A40768FBfcbDD77a2dE5cd81', chain: 'arbitrum', amount: '0.00001', token: 'WBTC' },
     ],
   },
 };
@@ -93,10 +117,11 @@ function renderManual() {
         <table class="batch-table">
           <thead>
             <tr>
-              <th style="width: 40px;">#</th>
+              <th style="width: 36px;">#</th>
               <th>Recipient Address</th>
-              <th style="width: 140px;">Chain</th>
-              <th style="width: 120px;">Amount</th>
+              <th style="width: 130px;">Chain</th>
+              <th style="width: 100px;">Token</th>
+              <th style="width: 110px;">Amount</th>
               <th style="width: 40px;"></th>
             </tr>
           </thead>
@@ -106,28 +131,80 @@ function renderManual() {
         </table>
       </div>
       <button id="batch-add-row" class="btn btn--ghost btn--sm" style="margin-top: 12px;">+ Add Row</button>
+      <div class="text-xs text-muted" style="margin-top: 8px;">Try <strong>gliry.eth</strong> to see ENS payment preferences in action</div>
     </div>
   `;
 }
 
+// Fixed sub-row height so cells don't jump when indicators appear/disappear
+const SUB_ROW = 'height:18px;line-height:18px;margin-top:2px;';
+
 function renderRow(row, index) {
   const chains = getAllChains();
+  const isResolving = row.ensStatus === 'resolving';
+  const isResolved = row.ensStatus === 'resolved' && row.resolvedAddress;
+  const hasError = row.ensStatus === 'error';
+  const hasPrefs = row.ensPrefs && (row.ensPrefs.chain || row.ensPrefs.address);
+  const borderColor = isResolved ? 'var(--color-success)' : hasError ? 'var(--color-error)' : '';
+  const prefsFilled = row.ensPrefs && row._prefsFilled;
+
+  // Compact ENS status — always occupies the same height
+  let ensContent = '&nbsp;';
+  if (isResolving) {
+    ensContent = `<span class="text-muted" style="display:inline-flex;align-items:center;gap:4px;"><span class="loading-spinner loading-spinner--sm"></span> Resolving...</span>`;
+  } else if (isResolved) {
+    ensContent = `<span style="color:var(--color-success);">
+      <svg viewBox="0 0 16 16" width="10" height="10" fill="none" style="vertical-align:-1px;"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ${formatAddress(row.resolvedAddress)}
+    </span>`;
+  } else if (hasError) {
+    ensContent = `<span style="color:var(--color-error);">${row.ensError}</span>`;
+  }
+
+  // Chain sub-row: fill button or empty
+  let chainSub = '&nbsp;';
+  if (isResolved && hasPrefs && !prefsFilled) {
+    chainSub = `<button class="btn btn--ghost btn--sm batch-fill-suggested" data-index="${index}" style="font-size:10px;padding:0 5px;color:var(--color-primary);white-space:nowrap;line-height:18px;">Apply ENS prefs</button>`;
+  }
+
+  // Token sub-row: LiFi badge or empty
+  let tokenSub = '&nbsp;';
+  if (row.token !== 'USDC') {
+    tokenSub = `<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(156,107,255,0.12);color:#9c6bff;font-weight:600;">via LiFi</span>`;
+  }
+
   return `
-    <tr data-index="${index}">
-      <td class="text-sm text-muted">${index + 1}</td>
-      <td><input type="text" class="input input--mono batch-address" value="${row.address}" placeholder="0x..." data-index="${index}"></td>
-      <td>
+    <tr data-index="${index}" style="vertical-align:top;">
+      <td class="text-sm text-muted" style="vertical-align:top;padding-top:10px;">${index + 1}</td>
+      <td style="vertical-align:top;">
+        <input type="text" class="input input--mono batch-address" value="${row.address}" placeholder="0x... or name.eth" data-index="${index}" style="font-size:13px;${borderColor ? `border-color:${borderColor};` : ''}">
+        <div class="text-xs" style="${SUB_ROW}">${ensContent}</div>
+      </td>
+      <td style="vertical-align:top;">
         <select class="select batch-chain" data-index="${index}">
           ${chains.map(c =>
             `<option value="${c}" ${row.chain === c ? 'selected' : ''}>${getChainMeta(c).name}</option>`
           ).join('')}
         </select>
+        <div class="text-xs" style="${SUB_ROW}">${chainSub}</div>
       </td>
-      <td><input type="number" class="input text-mono batch-amount" value="${row.amount}" placeholder="0.00" step="0.01" data-index="${index}"></td>
-      <td>
+      <td style="vertical-align:top;">
+        <select class="select batch-token" data-index="${index}">
+          ${TOKENS.map(t =>
+            `<option value="${t}" ${row.token === t ? 'selected' : ''}>${t}</option>`
+          ).join('')}
+        </select>
+        <div class="text-xs" style="${SUB_ROW} text-align:center;">${tokenSub}</div>
+      </td>
+      <td style="vertical-align:top;">
+        <input type="number" class="input text-mono batch-amount" value="${row.amount}" placeholder="0.00" step="0.01" data-index="${index}">
+        <div style="${SUB_ROW}">&nbsp;</div>
+      </td>
+      <td style="vertical-align:top;padding-top:8px;">
         <button class="btn btn--ghost btn--sm batch-remove" data-index="${index}" style="color: var(--color-error); padding: 4px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
+        <div style="${SUB_ROW}">&nbsp;</div>
       </td>
     </tr>
   `;
@@ -174,9 +251,7 @@ function renderTemplates() {
 
 function renderSummary() {
   const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
-  const totalFees = totalAmount * 0.0025; // 0.25% batch fee
-  const totalRequired = totalAmount + totalFees;
-  const insufficient = totalRequired > balance;
+  const insufficient = totalAmount > balance;
 
   // Chain distribution
   const chainDist = {};
@@ -193,30 +268,15 @@ function renderSummary() {
         <span class="text-muted">Recipients</span>
         <span style="font-weight: 600;">${rows.length}</span>
       </div>
-      <div class="batch-summary__row">
-        <span class="text-muted">Total Amount</span>
+      <div class="batch-summary__row batch-summary__row--total">
+        <span>Total Amount</span>
         <span class="text-mono" style="font-weight: 600;">${formatUSDC(totalAmount)}</span>
       </div>
-      <div class="batch-summary__row">
-        <span class="text-muted">Fees (0.25% batch)</span>
-        <span class="text-mono">${formatUSDC(totalFees)}</span>
-      </div>
-      <div class="batch-summary__row batch-summary__row--total">
-        <span>Total Required</span>
-        <span class="text-mono">${formatUSDC(totalRequired)}</span>
-      </div>
 
-      ${insufficient ? `
-        <div class="batch-summary__row batch-summary__row--warning" style="margin-top: 8px;">
-          <span>Available: ${formatUSDC(balance)}</span>
-          <span style="font-weight: 600;">Insufficient!</span>
-        </div>
-      ` : `
-        <div class="batch-summary__row" style="margin-top: 8px; color: var(--color-success);">
-          <span>Available</span>
-          <span class="text-mono">${formatUSDC(balance)}</span>
-        </div>
-      `}
+      <div class="batch-summary__row" style="margin-top: 8px;${insufficient ? ' color: var(--color-error);' : ' color: var(--color-success);'}">
+        <span>Available</span>
+        <span class="text-mono">${formatUSDC(balance)}${insufficient ? ' \u26a0 Insufficient' : ''}</span>
+      </div>
 
       <!-- Chain distribution -->
       ${Object.keys(chainDist).length > 0 ? `
@@ -244,14 +304,58 @@ function renderSummary() {
   `;
 }
 
+function getExplorerUrl(chainKey) {
+  const explorers = {
+    base: 'https://basescan.org',
+    arbitrum: 'https://arbiscan.io',
+    avalanche: 'https://snowtrace.io',
+    ethereum: 'https://etherscan.io',
+    optimism: 'https://optimistic.etherscan.io',
+    polygon: 'https://polygonscan.com',
+  };
+  return explorers[chainKey] || 'https://etherscan.io';
+}
+
 function renderExecution() {
   if (!batchResult) return;
 
   const summary = batchResult.summary || {};
   const steps = batchResult.steps || [];
+
+  // Match steps to recipients by order — steps don't carry destAddr/amount.
+  // Skip infra steps; TRANSFER = 1 step, BURN_INTENT+MINT = 2 steps per recipient.
+  const recipientSteps = steps.filter(s =>
+    s.type !== 'APPROVE_AND_DEPOSIT' && s.type !== 'ADD_DELEGATE'
+  );
+  let stepIdx = 0;
+  const recipients = (summary.recipients || []).map(r => {
+    const mySteps = [];
+    if (stepIdx < recipientSteps.length) {
+      const step = recipientSteps[stepIdx];
+      if (step.type === 'TRANSFER') {
+        mySteps.push(step);
+        stepIdx++;
+      } else if (step.type === 'BURN_INTENT') {
+        mySteps.push(step);
+        stepIdx++;
+        if (stepIdx < recipientSteps.length && recipientSteps[stepIdx].type === 'MINT') {
+          mySteps.push(recipientSteps[stepIdx]);
+          stepIdx++;
+        }
+      }
+    }
+    let status = 'PENDING';
+    if (mySteps.length > 0) {
+      if (mySteps.every(s => s.status === 'CONFIRMED' || s.status === 'COMPLETED')) status = 'COMPLETED';
+      else if (mySteps.some(s => s.status === 'FAILED')) status = 'FAILED';
+      else if (mySteps.some(s => s.status === 'CONFIRMED' || s.status === 'PROCESSING')) status = 'IN_PROGRESS';
+    }
+    const mintStep = mySteps.find(s => s.type === 'MINT' || s.type === 'TRANSFER');
+    return { ...r, status, txHash: mintStep?.txHash || null };
+  });
   const isDone = executionState === 'done';
-  const total = steps.length || summary.totalRecipients || 0;
-  const completed = steps.filter(s => s.status === 'COMPLETED').length;
+  const total = recipients.length || summary.totalRecipients || 0;
+  const completed = recipients.filter(r => r.status === 'COMPLETED').length;
   const progress = total > 0 ? (completed / total * 100) : 0;
 
   container.innerHTML = `
@@ -283,7 +387,7 @@ function renderExecution() {
         </div>
         <div class="card" style="text-align: center;">
           <div class="text-sm text-muted">Recipients</div>
-          <div style="font-size: 1.25rem; font-weight: 700;">${total}</div>
+          <div style="font-size: 1.25rem; font-weight: 700;">${recipients.length}</div>
         </div>
       </div>
     ` : ''}
@@ -291,13 +395,14 @@ function renderExecution() {
     <!-- Per-recipient status -->
     <div class="card">
       <h4 style="margin-bottom: 16px;">Send Status</h4>
-      ${steps.map((s, i) => `
+      ${recipients.map((r, i) => `
         <div class="batch-row-status">
           <span class="text-sm text-muted" style="width: 24px;">${i + 1}</span>
-          <span class="text-mono text-sm" style="flex: 1;">${formatAddress(s.destAddr || s.address || '')}</span>
-          ${s.destChain ? chainBadge(s.destChain) : (s.chain ? chainBadge(s.chain) : '')}
-          <span class="text-mono text-sm" style="width: 100px; text-align: right; font-weight: 600;">${formatUSDC(s.amount)}</span>
-          ${statusBadge(s.status)}
+          <span class="text-mono text-sm" style="flex: 1;">${formatAddress(r.address || '')}</span>
+          ${r.chain ? chainBadge(r.chain) : ''}
+          <span class="text-mono text-sm" style="width: 100px; text-align: right; font-weight: 600;">${formatUSDC(r.amount)}</span>
+          ${statusBadge(r.status)}
+          ${r.status === 'COMPLETED' && r.txHash ? `<a href="${getExplorerUrl(r.chain)}/tx/${r.txHash}" target="_blank" rel="noopener" style="margin-left:6px;color:var(--color-primary);font-size:14px;text-decoration:none;" title="View on explorer">↗</a>` : ''}
         </div>
       `).join('')}
     </div>
@@ -330,21 +435,91 @@ function setupListeners() {
 
   // Add row
   document.getElementById('batch-add-row')?.addEventListener('click', () => {
-    rows.push({ address: '', chain: 'base', amount: '' });
+    rows.push(createRow());
     render();
   });
 
-  // Row editing
-  container.querySelectorAll('.batch-address').forEach(el => {
-    el.addEventListener('change', (e) => {
-      rows[e.target.dataset.index].address = e.target.value;
+  // Row editing — debounced address input with ENS resolution
+  const debouncedResolve = debounce(async (index, value) => {
+    const row = rows[index];
+    if (!row || row.address !== value) return; // stale check
+
+    if (isENSName(value)) {
+      row.ensStatus = 'resolving';
+      row.ensName = value;
+      row.resolvedAddress = null;
+      row.ensPrefs = null;
+      row.ensError = null;
       render();
+
+      try {
+        const result = await resolveENS(value);
+        if (!rows[index] || rows[index].address !== value) return; // stale
+        if (!result.address) {
+          row.ensStatus = 'error';
+          row.ensError = 'Name not found';
+        } else {
+          row.ensStatus = 'resolved';
+          row.resolvedAddress = result.address;
+          row.ensPrefs = Object.keys(result.preferences).length > 0 ? result.preferences : null;
+        }
+      } catch (err) {
+        if (!rows[index] || rows[index].address !== value) return;
+        row.ensStatus = 'error';
+        row.ensError = err.message || 'Resolution failed';
+      }
+      render();
+    } else {
+      // Not ENS — clear ENS state
+      row.ensName = null;
+      row.resolvedAddress = null;
+      row.ensPrefs = null;
+      row.ensStatus = null;
+      row.ensError = null;
+    }
+  }, 600);
+
+  container.querySelectorAll('.batch-address').forEach(el => {
+    el.addEventListener('input', (e) => {
+      const idx = parseInt(e.target.dataset.index);
+      rows[idx].address = e.target.value.trim();
+      debouncedResolve(idx, rows[idx].address);
+    });
+  });
+
+  // Apply ENS prefs button
+  container.querySelectorAll('.batch-fill-suggested').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.index);
+      const row = rows[idx];
+      if (!row || !row.ensPrefs) return;
+      if (row.ensPrefs.chain) {
+        const chainKey = getChainKeyByChainId(parseInt(row.ensPrefs.chain));
+        if (chainKey) row.chain = chainKey;
+      }
+      if (row.ensPrefs.token) {
+        const t = row.ensPrefs.token.toUpperCase();
+        if (TOKENS.includes(t)) row.token = t;
+      }
+      if (row.ensPrefs.address && isValidAddress(row.ensPrefs.address)) {
+        row.resolvedAddress = row.ensPrefs.address;
+      }
+      row._prefsFilled = true;
+      render();
+      showToast('Applied ENS payment preferences', 'success');
     });
   });
 
   container.querySelectorAll('.batch-chain').forEach(el => {
     el.addEventListener('change', (e) => {
       rows[e.target.dataset.index].chain = e.target.value;
+      render();
+    });
+  });
+
+  container.querySelectorAll('.batch-token').forEach(el => {
+    el.addEventListener('change', (e) => {
+      rows[e.target.dataset.index].token = e.target.value;
       render();
     });
   });
@@ -368,7 +543,7 @@ function setupListeners() {
   container.querySelectorAll('[data-template]').forEach(el => {
     el.addEventListener('click', () => {
       const tpl = TEMPLATES[el.dataset.template];
-      rows = tpl.rows.map(r => ({ ...r }));
+      rows = tpl.rows.map(r => createRow(r));
       activeTab = 'manual';
       render();
       showToast(`Loaded "${tpl.name}" template`, 'info');
@@ -414,7 +589,9 @@ function parseCSV(file) {
     for (const line of lines) {
       const parts = line.split(',').map(s => s.trim());
       if (parts.length >= 3) {
-        parsed.push({ address: parts[0], chain: parts[1], amount: parts[2] });
+        const overrides = { address: parts[0], chain: parts[1], amount: parts[2] };
+        if (parts[3] && TOKENS.includes(parts[3].toUpperCase())) overrides.token = parts[3].toUpperCase();
+        parsed.push(createRow(overrides));
       }
     }
 
@@ -435,16 +612,17 @@ function parseCSV(file) {
       table.innerHTML = `
         <div class="table-wrapper" style="max-height: 200px; overflow-y: auto;">
           <table class="table">
-            <thead><tr><th>Address</th><th>Chain</th><th>Amount</th></tr></thead>
+            <thead><tr><th>Address</th><th>Chain</th><th>Amount</th><th>Token</th></tr></thead>
             <tbody>
               ${parsed.slice(0, 10).map(r => `
                 <tr>
                   <td class="text-mono text-sm">${formatAddress(r.address)}</td>
                   <td class="text-sm">${r.chain}</td>
                   <td class="text-mono text-sm">${r.amount}</td>
+                  <td class="text-sm">${r.token}</td>
                 </tr>
               `).join('')}
-              ${parsed.length > 10 ? `<tr><td colspan="3" class="text-sm text-muted">...and ${parsed.length - 10} more</td></tr>` : ''}
+              ${parsed.length > 10 ? `<tr><td colspan="4" class="text-sm text-muted">...and ${parsed.length - 10} more</td></tr>` : ''}
             </tbody>
           </table>
         </div>
@@ -455,7 +633,10 @@ function parseCSV(file) {
 }
 
 async function handleExecute() {
-  const validRows = rows.filter(r => r.address && r.chain && parseFloat(r.amount) > 0);
+  const validRows = rows.filter(r => {
+    const addr = r.resolvedAddress || r.address;
+    return addr && isValidAddress(addr) && r.chain && parseFloat(r.amount) > 0;
+  });
   if (validRows.length === 0) {
     showToast('No valid rows to execute', 'warning');
     return;
@@ -467,14 +648,22 @@ async function handleExecute() {
 
   try {
     const recipients = validRows.map(r => ({
-      address: r.address,
+      address: r.resolvedAddress || r.address,
       chain: r.chain,
       amount: String(r.amount),
     }));
 
-    batchResult = await operations.batchSend(recipients, 'base');
+    batchResult = await operations.batchSend(recipients);
     executionState = 'executing';
     render();
+
+    // Sign client-side UserOps (if any) and submit to trigger server-side processing
+    const clientSteps = (batchResult.signRequests || []).filter(r => !r.serverSide);
+    let signatures = [];
+    if (clientSteps.length > 0) {
+      signatures = await signAndSubmitUserOps(clientSteps);
+    }
+    await operations.submit(batchResult.id, signatures);
 
     // Poll for completion
     if (batchResult.status !== 'COMPLETED') {
@@ -491,7 +680,7 @@ async function handleExecute() {
             render();
           }
         } catch {}
-      }, 1000);
+      }, 15000);
     } else {
       executionState = 'done';
       render();
@@ -538,9 +727,9 @@ export async function show() {
 
   if (rows.length === 0) {
     rows = [
-      { address: '', chain: 'base', amount: '' },
-      { address: '', chain: 'arbitrum', amount: '' },
-      { address: '', chain: 'polygon', amount: '' },
+      createRow({ chain: 'polygon' }),
+      createRow({ chain: 'arbitrum' }),
+      createRow({ chain: 'polygon' }),
     ];
   }
 

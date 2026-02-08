@@ -2,7 +2,7 @@
 // OmniFlow Dashboard — External Wallet (MetaMask) Connection
 // ============================================================================
 
-import { CHAIN_CONFIG, getChainKeyByChainId, formatTokenBalance } from './utils.js';
+import { CHAIN_CONFIG, KNOWN_TOKENS, getChainKeyByChainId, formatTokenBalance } from './utils.js';
 
 let connectedAddress = null;
 let connectedChainId = null;
@@ -60,12 +60,14 @@ export function getConnectedAddress() {
 }
 
 /**
- * Fetch native + USDC balances across all chains
+ * Fetch native + USDC + known token balances across all chains
  * @param {string} address
- * @returns {Promise<Array<{ chainKey, nativeSymbol, nativeBalance, nativeFormatted, usdcBalance, usdcFormatted }>>}
+ * @returns {Promise<Array<{ chainKey, nativeSymbol, nativeBalance, nativeFormatted, usdcBalance, usdcFormatted, tokens: Array<{ symbol, address, decimals, balance, formatted }> }>>}
  */
 export async function getMultiChainBalances(address) {
   const entries = Object.entries(CHAIN_CONFIG);
+  const paddedAddr = address.slice(2).toLowerCase().padStart(64, '0');
+  const callData = BALANCE_OF_SELECTOR + paddedAddr;
 
   const results = await Promise.allSettled(
     entries.map(async ([chainKey, cfg]) => {
@@ -73,14 +75,28 @@ export async function getMultiChainBalances(address) {
       const nativeHex = await rpcCall(cfg.rpc, 'eth_getBalance', [address, 'latest']);
       const nativeBalance = BigInt(nativeHex);
 
-      // Fetch USDC balance via balanceOf(address)
-      const paddedAddr = address.slice(2).toLowerCase().padStart(64, '0');
-      const callData = BALANCE_OF_SELECTOR + paddedAddr;
+      // Fetch USDC balance
       const usdcHex = await rpcCall(cfg.rpc, 'eth_call', [
         { to: cfg.usdc, data: callData },
         'latest',
       ]);
       const usdcBalance = BigInt(usdcHex || '0x0');
+
+      // Fetch known token balances (WETH, USDT, etc.)
+      const knownTokens = KNOWN_TOKENS[chainKey] || [];
+      const tokenResults = await Promise.allSettled(
+        knownTokens.map(async (token) => {
+          const hex = await rpcCall(cfg.rpc, 'eth_call', [
+            { to: token.address, data: callData },
+            'latest',
+          ]);
+          const balance = BigInt(hex || '0x0');
+          return { ...token, balance, formatted: formatTokenBalance(balance, token.decimals) };
+        })
+      );
+      const tokens = tokenResults
+        .filter(r => r.status === 'fulfilled' && r.value.balance > 0n)
+        .map(r => r.value);
 
       return {
         chainKey,
@@ -89,6 +105,7 @@ export async function getMultiChainBalances(address) {
         nativeFormatted: formatTokenBalance(nativeBalance, 18),
         usdcBalance,
         usdcFormatted: formatTokenBalance(usdcBalance, 6),
+        tokens,
       };
     })
   );
@@ -96,7 +113,7 @@ export async function getMultiChainBalances(address) {
   return results
     .filter((r) => r.status === 'fulfilled')
     .map((r) => r.value)
-    .filter((r) => r.nativeBalance > 0n || r.usdcBalance > 0n);
+    .filter((r) => r.nativeBalance > 0n || r.usdcBalance > 0n || r.tokens.length > 0);
 }
 
 /**

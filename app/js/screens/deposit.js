@@ -4,17 +4,19 @@
 
 import * as state from '../state.js';
 import { wallet, operations } from '../api.js';
-import { formatUSDC, getChainSVG, getAllChains, getChainMeta, copyToClipboard, formatAddress, CHAIN_CONFIG, getChainKeyByChainId, formatTokenBalance } from '../utils.js';
+import { formatUSDC, getChainSVG, getAllChains, getChainMeta, copyToClipboard, formatAddress, CHAIN_CONFIG, getChainKeyByChainId, formatTokenBalance, KNOWN_TOKENS, getTokenBalance } from '../utils.js';
 import { showToast } from '../components/toast.js';
 import { statusBadge } from '../components/status-badge.js';
 import { chainBadge } from '../components/chain-icon.js';
 import { navigate } from '../app.js';
 import { connectWallet, disconnectWallet, getConnectedAddress, getMultiChainBalances, switchChain, sendTransaction, waitForReceipt } from '../wallet-connect.js';
 import { signAndSubmitUserOps } from '../userop.js';
+import { estimateUSDCOutput } from '../lifi.js';
 
 let container;
 let activeTab = 'receive';
 let balanceData = null;
+let aaTokenBalances = null;  // [{ chainKey, symbol, address, decimals, balance }] | null
 
 // Top-up state
 let externalWallet = null;     // { address, chainId }
@@ -108,8 +110,9 @@ function render() {
 function renderCollectForm() {
   const onChain = balanceData.onChainBalances || {};
   const chains = Object.keys(onChain).filter(c => c !== HUB_CHAIN && parseFloat(onChain[c]) > 0);
+  const hasTokens = aaTokenBalances && aaTokenBalances.length > 0;
 
-  if (chains.length === 0) {
+  if (chains.length === 0 && !hasTokens) {
     return `
       <div class="empty-state" style="padding: 24px;">
         <div class="empty-state__title">No on-chain balances</div>
@@ -118,24 +121,89 @@ function renderCollectForm() {
     `;
   }
 
+  // USDC section
+  let usdcSection = '';
+  if (chains.length > 0) {
+    usdcSection = `
+      <div style="margin-bottom: 20px;">
+        <label class="input-label" style="margin-bottom: 12px;">USDC balances</label>
+        ${chains.map(chain => `
+          <label class="flex items-center gap-8" style="padding: 10px 0; border-bottom: 1px solid var(--color-border); cursor: pointer;">
+            <input type="checkbox" class="collect-chain-check" value="${chain}" checked>
+            ${chainBadge(chain)}
+            <span class="text-sm" style="flex: 1; font-weight: 500;">${getChainMeta(chain).name}</span>
+            <span class="text-mono text-sm" style="font-weight: 600;">${formatUSDC(onChain[chain])}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Non-USDC token section
+  let tokenSection = '';
+  if (hasTokens) {
+    tokenSection = `
+      <div style="margin-bottom: 20px;">
+        <label class="input-label" style="margin-bottom: 4px;">Other tokens</label>
+        <div class="text-xs" style="margin-bottom: 12px; padding: 6px 10px; background: linear-gradient(90deg, rgba(156,107,255,0.08), rgba(40,160,240,0.08)); border-radius: 6px; border-left: 3px solid #9c6bff;">
+          <strong style="color: #9c6bff;">LiFi Route</strong>
+          <span class="text-muted"> &mdash; these tokens will be automatically swapped to USDC via LiFi aggregator before deposit</span>
+        </div>
+        ${aaTokenBalances.map((t, i) => {
+          const humanAmount = parseFloat(formatTokenBalance(t.balance, t.decimals));
+          const estUsdc = estimateUSDCOutput(t.symbol, humanAmount);
+          return `
+            <label class="flex items-center gap-8" style="padding: 10px 0; border-bottom: 1px solid var(--color-border); cursor: pointer;">
+              <input type="checkbox" class="collect-token-check" data-idx="${i}"
+                     data-chain="${t.chainKey}" data-token="${t.address}" data-decimals="${t.decimals}" data-symbol="${t.symbol}" checked>
+              ${chainBadge(t.chainKey)}
+              <span class="text-sm" style="flex: 1; font-weight: 500;">
+                ${t.symbol} on ${getChainMeta(t.chainKey).name}
+                <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(156,107,255,0.12);color:#9c6bff;font-weight:600;margin-left:4px;">LiFi</span>
+              </span>
+              <span class="text-mono text-sm" style="font-weight: 600; text-align: right;">
+                <input type="text" inputmode="decimal" class="collect-token-amount" data-idx="${i}" data-max="${humanAmount}"
+                       value="${humanAmount.toFixed(4)}" autocomplete="off"
+                       style="width: 90px; text-align: right; font-family: inherit; font-size: inherit; font-weight: inherit; padding: 2px 4px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg-soft);">
+                ${t.symbol}<br>
+                <span class="text-muted" style="font-size: 0.7rem;" id="collect-token-est-${i}">~${formatUSDC(estUsdc)}</span>
+              </span>
+            </label>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // Summary totals
+  const usdcTotal = chains.reduce((s, c) => s + parseFloat(onChain[c]), 0);
+  let tokenEstTotal = 0;
+  if (hasTokens) {
+    for (const t of aaTokenBalances) {
+      const humanAmount = parseFloat(formatTokenBalance(t.balance, t.decimals));
+      tokenEstTotal += estimateUSDCOutput(t.symbol, humanAmount);
+    }
+  }
+
   return `
-    <div style="margin-bottom: 20px;">
-      <label class="input-label" style="margin-bottom: 12px;">Select chains to sweep</label>
-      ${chains.map(chain => `
-        <label class="flex items-center gap-8" style="padding: 10px 0; border-bottom: 1px solid var(--color-border); cursor: pointer;">
-          <input type="checkbox" class="collect-chain-check" value="${chain}" checked>
-          ${chainBadge(chain)}
-          <span class="text-sm" style="flex: 1; font-weight: 500;">${getChainMeta(chain).name}</span>
-          <span class="text-mono text-sm" style="font-weight: 600;">${formatUSDC(onChain[chain])}</span>
-        </label>
-      `).join('')}
-    </div>
+    ${usdcSection}
+    ${tokenSection}
 
     <div style="background: var(--color-bg-soft); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
       <div class="flex justify-between text-sm" style="margin-bottom: 4px;">
         <span class="text-muted">Selected total</span>
-        <span class="text-mono" style="font-weight: 600;" id="collect-total">${formatUSDC(chains.reduce((s, c) => s + parseFloat(onChain[c]), 0))}</span>
+        <span class="text-mono" style="font-weight: 600;" id="collect-total">${formatUSDC(usdcTotal + tokenEstTotal)}</span>
       </div>
+      ${hasTokens ? `
+      <div class="flex justify-between text-sm" style="margin-bottom: 4px;">
+        <span class="text-muted">USDC direct</span>
+        <span class="text-mono text-sm" id="collect-usdc-subtotal">${formatUSDC(usdcTotal)}</span>
+      </div>
+      <div class="flex justify-between text-sm" style="margin-bottom: 4px;">
+        <span class="text-muted">Swap estimate</span>
+        <span class="text-mono text-sm" id="collect-swap-subtotal">~${formatUSDC(tokenEstTotal)}</span>
+      </div>
+      ` : ''}
       <div class="flex justify-between text-sm">
         <span class="text-muted">Destination</span>
         <span style="font-weight: 500;">Arc (gateway)</span>
@@ -167,8 +235,8 @@ function renderTopUpConnect() {
   return `
     <h3 style="margin-bottom: 8px;">Top Up from External Wallet</h3>
     <p class="text-sm text-muted" style="margin-bottom: 24px;">
-      Connect your MetaMask wallet to deposit USDC from any chain into your OmniFlow account.
-      Funds are deposited into your Gateway unified balance.
+      Connect your MetaMask wallet to transfer tokens into your OmniFlow wallet.
+      Any ERC-20 token is supported — use Collect to sweep them into your unified balance.
     </p>
     <div style="text-align: center; padding: 24px 0;">
       <svg viewBox="0 0 40 40" width="56" height="56" style="margin-bottom: 16px; opacity: 0.6;">
@@ -182,7 +250,7 @@ function renderTopUpConnect() {
           Connect MetaMask
         </button>
       </div>
-      <p class="text-sm text-muted">Supports USDC across 6 chains</p>
+      <p class="text-sm text-muted">Supports any token: USDC, WETH, USDT and more across 6 chains</p>
     </div>
   `;
 }
@@ -235,6 +303,19 @@ function renderTopUpBalances() {
           </div>
         `);
       }
+      // Extra tokens (WETH, USDT, etc.)
+      for (const t of (b.tokens || [])) {
+        rows.push(`
+          <div class="topup-balance-row" data-chain="${b.chainKey}" data-type="token" data-token-address="${t.address}" data-token-symbol="${t.symbol}" data-token-decimals="${t.decimals}">
+            <div class="topup-balance-row__icon">${getChainSVG(b.chainKey, 36)}</div>
+            <div class="topup-balance-row__info">
+              <div class="topup-balance-row__symbol">${t.symbol}</div>
+              <div class="topup-balance-row__chain">${meta.name}</div>
+            </div>
+            <div class="topup-balance-row__amount">${t.formatted}</div>
+          </div>
+        `);
+      }
     }
     balanceRows = rows.join('');
   }
@@ -259,7 +340,6 @@ function renderTopUpAmount() {
   if (!selectedToken) return '';
 
   const meta = getChainMeta(selectedToken.chainKey);
-  const isHubChain = selectedToken.type === 'usdc' && selectedToken.chainKey === HUB_CHAIN;
 
   return `
     <div class="flex items-center justify-between" style="margin-bottom: 20px;">
@@ -278,7 +358,7 @@ function renderTopUpAmount() {
       </div>
       <div>
         <div class="topup-selected-token__name">${selectedToken.symbol}</div>
-        <div class="topup-selected-token__chain">${meta.name}${isHubChain ? ' — Direct deposit' : ' — Cross-chain deposit'}</div>
+        <div class="topup-selected-token__chain">${meta.name}</div>
       </div>
     </div>
 
@@ -303,11 +383,6 @@ function renderTopUpConfirm(omniflowAddress) {
   if (!selectedToken) return '';
 
   const meta = getChainMeta(selectedToken.chainKey);
-  const isHubChain = selectedToken.type === 'usdc' && selectedToken.chainKey === HUB_CHAIN;
-
-  const toAmount = topUpAmount;
-  const estimatedTime = isHubChain ? '~30 sec' : '~2 min';
-  const toolUsed = 'Gateway Bridge';
 
   return `
     <div class="flex items-center justify-between" style="margin-bottom: 20px;">
@@ -317,7 +392,7 @@ function renderTopUpConfirm(omniflowAddress) {
 
     <div class="quote-card" style="margin-bottom: 20px;">
       <div class="quote-card__row">
-        <span class="text-muted">From</span>
+        <span class="text-muted">Amount</span>
         <span style="font-weight: 600;">${topUpAmount} ${selectedToken.symbol}</span>
       </div>
       <div class="quote-card__row">
@@ -326,25 +401,13 @@ function renderTopUpConfirm(omniflowAddress) {
       </div>
       <div class="quote-card__arrow">↓</div>
       <div class="quote-card__row">
-        <span class="text-muted">To</span>
-        <span style="font-weight: 600;">${toAmount} USDC</span>
-      </div>
-      <div class="quote-card__row">
         <span class="text-muted">Destination</span>
-        <span>Arc → OmniFlow Wallet</span>
-      </div>
-      <div class="quote-card__row" style="border-top: 1px solid var(--color-border); margin-top: 8px; padding-top: 8px;">
-        <span class="text-muted">Estimated time</span>
-        <span>${estimatedTime}</span>
-      </div>
-      <div class="quote-card__row">
-        <span class="text-muted">Via</span>
-        <span>${toolUsed}</span>
+        <span>OmniFlow Wallet</span>
       </div>
     </div>
 
     <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 16px; text-align: center;">
-      Funds will be deposited to: <span class="text-mono">${formatAddress(omniflowAddress)}</span>
+      Tokens will be transferred to: <span class="text-mono">${formatAddress(omniflowAddress)}</span>
     </div>
 
     <button id="topup-confirm" class="btn btn--primary btn--full btn--lg">Confirm Top Up</button>
@@ -384,8 +447,8 @@ function renderTopUpSuccess() {
       </div>
       <h3 style="margin-bottom: 8px;">Top Up Submitted!</h3>
       <p class="text-sm text-muted" style="margin-bottom: 24px;">
-        ${topUpAmount} ${selectedToken?.symbol || ''} has been deposited into Gateway.
-        Your unified balance will update shortly.
+        ${topUpAmount} ${selectedToken?.symbol || ''} has been transferred to your wallet.
+        Use Collect to sweep funds into your unified balance.
       </p>
       ${txLink ? `<a href="${txLink}" target="_blank" class="btn btn--secondary btn--sm" style="margin-bottom: 12px;">View on Explorer ↗</a><br>` : ''}
       <button id="topup-done" class="btn btn--primary" style="margin-top: 8px;">Done</button>
@@ -430,15 +493,47 @@ function setupListeners() {
     }
   });
 
-  // Collect checkboxes → update total
-  container.querySelectorAll('.collect-chain-check').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const onChain = balanceData?.onChainBalances || {};
-      const checked = [...container.querySelectorAll('.collect-chain-check:checked')].map(el => el.value);
-      const total = checked.reduce((s, c) => s + parseFloat(onChain[c] || 0), 0);
-      const totalEl = document.getElementById('collect-total');
-      if (totalEl) totalEl.textContent = formatUSDC(total);
+  // Collect checkboxes → update total (USDC + token estimates)
+  const updateCollectTotal = () => {
+    const onChain = balanceData?.onChainBalances || {};
+    const checkedChains = [...container.querySelectorAll('.collect-chain-check:checked')].map(el => el.value);
+    const usdcTotal = checkedChains.reduce((s, c) => s + parseFloat(onChain[c] || 0), 0);
+
+    let tokenEstTotal = 0;
+    container.querySelectorAll('.collect-token-check:checked').forEach(el => {
+      const idx = parseInt(el.dataset.idx);
+      const t = aaTokenBalances?.[idx];
+      if (t) {
+        const amountInput = container.querySelector(`.collect-token-amount[data-idx="${idx}"]`);
+        const maxAmount = parseFloat(formatTokenBalance(t.balance, t.decimals));
+        let userAmount = amountInput ? parseFloat(amountInput.value) : maxAmount;
+        if (isNaN(userAmount) || userAmount <= 0) userAmount = 0;
+        if (userAmount > maxAmount) userAmount = maxAmount;
+        const est = estimateUSDCOutput(t.symbol, userAmount);
+        tokenEstTotal += est;
+        const estEl = document.getElementById(`collect-token-est-${idx}`);
+        if (estEl) estEl.textContent = '~' + formatUSDC(est);
+      }
     });
+
+    const totalEl = document.getElementById('collect-total');
+    if (totalEl) totalEl.textContent = formatUSDC(usdcTotal + tokenEstTotal);
+    const usdcSub = document.getElementById('collect-usdc-subtotal');
+    if (usdcSub) usdcSub.textContent = formatUSDC(usdcTotal);
+    const swapSub = document.getElementById('collect-swap-subtotal');
+    if (swapSub) swapSub.textContent = '~' + formatUSDC(tokenEstTotal);
+  };
+  container.querySelectorAll('.collect-chain-check').forEach(cb => cb.addEventListener('change', updateCollectTotal));
+  container.querySelectorAll('.collect-token-check').forEach(cb => cb.addEventListener('change', updateCollectTotal));
+  container.querySelectorAll('.collect-token-amount').forEach(input => {
+    input.addEventListener('input', () => {
+      const max = parseFloat(input.dataset.max);
+      let val = parseFloat(input.value);
+      if (!isNaN(val) && val > max) { input.value = max.toFixed(4); }
+      updateCollectTotal();
+    });
+    // Prevent checkbox toggle when clicking inside the input
+    input.addEventListener('click', e => e.stopPropagation());
   });
 
   // Collect button
@@ -472,7 +567,19 @@ function setupListeners() {
           balance: balEntry.nativeBalance,
           symbol: balEntry.nativeSymbol,
           decimals: 18,
-          address: NATIVE_TOKEN,
+          address: null,
+        };
+      } else if (type === 'token') {
+        const tokenAddr = row.dataset.tokenAddress;
+        const tokenEntry = balEntry.tokens?.find(t => t.address === tokenAddr);
+        if (!tokenEntry) return;
+        selectedToken = {
+          chainKey,
+          type: 'token',
+          balance: tokenEntry.balance,
+          symbol: tokenEntry.symbol,
+          decimals: tokenEntry.decimals,
+          address: tokenAddr,
         };
       } else {
         selectedToken = {
@@ -578,13 +685,11 @@ async function handleTopUpExecute() {
 
   const srcChainId = CHAIN_CONFIG[selectedToken.chainKey].chainId;
 
-  // Build execution steps
+  // Build execution steps — just switch + transfer + confirm
   topUpExecSteps = [
     { label: `Switch to ${getChainMeta(selectedToken.chainKey).name}`, status: 'pending' },
-    { label: 'Transfer USDC to wallet', status: 'pending' },
+    { label: `Transfer ${selectedToken.symbol} to wallet`, status: 'pending' },
     { label: 'Confirming transaction', status: 'pending' },
-    { label: 'Bridge deposit (passkey)', status: 'pending' },
-    { label: 'Waiting for completion', status: 'pending' },
   ];
 
   topUpStep = 'executing';
@@ -601,17 +706,32 @@ async function handleTopUpExecute() {
     stepIdx++;
     render();
 
-    // Step 2: Transfer USDC to AA wallet (MetaMask sends)
+    // Step 2: Transfer token to AA wallet (MetaMask sends)
     topUpExecSteps[stepIdx].status = 'active';
     render();
 
     const amountBig = parseAmountToSmallestUnit(topUpAmount, selectedToken.decimals);
-    const transferData = buildTransferData(omniflowAddress, amountBig);
-    const txHash = await sendTransaction({
-      from: externalWallet.address,
-      to: CHAIN_CONFIG[selectedToken.chainKey].usdc,
-      data: transferData,
-    });
+    let txHash;
+
+    if (selectedToken.type === 'native') {
+      // Native token (ETH/AVAX) — plain value transfer
+      txHash = await sendTransaction({
+        from: externalWallet.address,
+        to: omniflowAddress,
+        value: '0x' + BigInt(amountBig).toString(16),
+      });
+    } else {
+      // ERC20 token — transfer(address, uint256)
+      const tokenAddress = selectedToken.type === 'usdc'
+        ? CHAIN_CONFIG[selectedToken.chainKey].usdc
+        : selectedToken.address;
+      const transferData = buildTransferData(omniflowAddress, amountBig);
+      txHash = await sendTransaction({
+        from: externalWallet.address,
+        to: tokenAddress,
+        data: transferData,
+      });
+    }
 
     topUpTxHash = txHash;
     topUpExecSteps[stepIdx].status = 'done';
@@ -622,43 +742,6 @@ async function handleTopUpExecute() {
     topUpExecSteps[stepIdx].status = 'active';
     render();
     await waitForReceipt(txHash, srcChainId);
-    topUpExecSteps[stepIdx].status = 'done';
-    stepIdx++;
-    render();
-
-    // Step 4: Create bridge operation + sign deposit UserOp with passkey
-    topUpExecSteps[stepIdx].status = 'active';
-    render();
-
-    const bridgeResult = await operations.bridge(selectedToken.chainKey, HUB_CHAIN, topUpAmount);
-    const clientSteps = (bridgeResult.signRequests || []).filter(r => !r.serverSide);
-
-    if (clientSteps.length > 0) {
-      const signatures = await signAndSubmitUserOps(clientSteps, { paymaster: false });
-      await operations.submit(bridgeResult.id, signatures);
-    }
-
-    topUpExecSteps[stepIdx].status = 'done';
-    stepIdx++;
-    render();
-
-    // Step 5: Poll for cross-chain completion
-    topUpExecSteps[stepIdx].status = 'active';
-    render();
-
-    let attempts = 0;
-    while (attempts < 60) {
-      await new Promise(r => setTimeout(r, 3000));
-      try {
-        const updated = await operations.get(bridgeResult.id);
-        if (updated.status === 'COMPLETED') break;
-        if (updated.status === 'FAILED') throw new Error('Bridge operation failed');
-      } catch (e) {
-        if (e.message === 'Bridge operation failed') throw e;
-      }
-      attempts++;
-    }
-
     topUpExecSteps[stepIdx].status = 'done';
     render();
 
@@ -687,10 +770,61 @@ function resetTopUpState() {
 // Collect handler
 // ============================================================================
 
+function parseEstimatedTime(str) {
+  if (!str) return 120;
+  const rangeMatch = str.match(/(\d+)\s*-\s*(\d+)\s*min/i);
+  if (rangeMatch) return parseInt(rangeMatch[2]) * 60;
+  const secMatch = str.match(/~?(\d+)\s*s/i);
+  if (secMatch) return parseInt(secMatch[1]);
+  const minMatch = str.match(/(\d+)\s*min/i);
+  if (minMatch) return parseInt(minMatch[1]) * 60;
+  return 120;
+}
+
+function formatCountdown(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+async function pollOperation(op, steps, renderSteps) {
+  let attempts = 0;
+  while (attempts < 60) {
+    await new Promise(r => setTimeout(r, 3000));
+    const updated = await operations.get(op.result.id);
+    if (updated.status === 'COMPLETED') {
+      steps[op.stepIdx].status = 'done';
+      renderSteps();
+      return;
+    }
+    if (updated.status === 'FAILED') {
+      steps[op.stepIdx].status = 'error';
+      renderSteps();
+      throw new Error(`Operation failed: ${op.type}`);
+    }
+    attempts++;
+  }
+  steps[op.stepIdx].status = 'error';
+  renderSteps();
+  throw new Error(`Timeout waiting for ${op.type}`);
+}
+
 async function handleCollect() {
-  const checked = [...container.querySelectorAll('.collect-chain-check:checked')].map(el => el.value);
-  if (checked.length === 0) {
-    showToast('Select at least one chain', 'warning');
+  const checkedChains = [...container.querySelectorAll('.collect-chain-check:checked')].map(el => el.value);
+  const checkedTokens = [...container.querySelectorAll('.collect-token-check:checked')].map(el => {
+    const idx = parseInt(el.dataset.idx);
+    const t = aaTokenBalances?.[idx];
+    if (!t) return null;
+    const amountInput = container.querySelector(`.collect-token-amount[data-idx="${idx}"]`);
+    const maxAmount = parseFloat(formatTokenBalance(t.balance, t.decimals));
+    let userAmount = amountInput ? parseFloat(amountInput.value) : maxAmount;
+    if (isNaN(userAmount) || userAmount <= 0) return null;
+    if (userAmount > maxAmount) userAmount = maxAmount;
+    return { ...t, userAmount };
+  }).filter(Boolean);
+
+  if (checkedChains.length === 0 && checkedTokens.length === 0) {
+    showToast('Select at least one item to collect', 'warning');
     return;
   }
 
@@ -699,60 +833,125 @@ async function handleCollect() {
   btn.innerHTML = '<span class="loading-spinner loading-spinner--sm"></span> Collecting...';
   btn.disabled = true;
 
-  try {
-    // 1. Create collect operation
-    const result = await operations.collect(checked, HUB_CHAIN);
+  // Build progress steps
+  const steps = [];
+  for (const t of checkedTokens) {
+    steps.push({ label: `Swapping ${t.userAmount.toFixed(4)} ${t.symbol} → USDC on ${getChainMeta(t.chainKey).name}`, status: 'pending' });
+  }
+  if (checkedChains.length > 0) {
+    steps.push({ label: `Collecting USDC from ${checkedChains.map(c => getChainMeta(c).name).join(', ')}`, status: 'pending' });
+  }
 
-    resultEl.innerHTML = `
-      <div class="card" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
-        <div class="text-sm" style="font-weight: 600; color: var(--color-primary); margin-bottom: 4px;">Processing collect...</div>
-        <div class="text-sm">Chains: ${checked.map(c => getChainMeta(c).name).join(', ')}</div>
-        <div class="text-sm" style="margin-top: 8px;" id="collect-poll-status">${statusBadge(result.status)}</div>
-      </div>
-    `;
+  let remainingSec = 0;
+  let countdownInterval = null;
 
-    // 2. Sign UserOps with passkey (approve+deposit per chain)
-    const clientSteps = (result.signRequests || []).filter(r => !r.serverSide);
-    if (clientSteps.length > 0) {
-      resultEl.querySelector('.text-sm[style*="font-weight: 600"]').textContent = 'Signing with passkey...';
-      const signatures = await signAndSubmitUserOps(clientSteps);
-      await operations.submit(result.id, signatures);
-    }
-
-    // 3. Poll until completed
-    let attempts = 0;
-    while (attempts < 60) {
-      await new Promise(r => setTimeout(r, 3000));
-      try {
-        const updated = await operations.get(result.id);
-        const pollEl = document.getElementById('collect-poll-status');
-        if (pollEl) pollEl.innerHTML = statusBadge(updated.status);
-
-        if (updated.status === 'COMPLETED') {
-          resultEl.innerHTML = `
-            <div class="card" style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
-              <div class="text-sm" style="font-weight: 600; color: var(--color-success); margin-bottom: 4px;">Collect completed!</div>
-              <div class="text-sm">Chains: ${checked.map(c => getChainMeta(c).name).join(', ')}</div>
+  const renderSteps = () => {
+    const hasActive = steps.some(s => s.status === 'active');
+    const countdownHtml = remainingSec > 0 && hasActive
+      ? `<div class="collect-countdown">
+           <span class="collect-countdown__time">~${formatCountdown(remainingSec)} remaining</span>
+         </div>`
+      : '';
+    resultEl.innerHTML = countdownHtml + `
+      <div class="topup-exec-steps">
+        ${steps.map((step, i) => {
+          const cls = step.status === 'active' ? 'active' : step.status === 'done' ? 'done' : step.status === 'error' ? 'done' : '';
+          const icon = step.status === 'done' ? '✓' : step.status === 'active' ? '<span class="topup-exec-step__spinner"></span>' : step.status === 'error' ? '✕' : (i + 1);
+          return `
+            <div class="topup-exec-step ${cls}">
+              <div class="topup-exec-step__indicator">${icon}</div>
+              <span>${step.label}</span>
             </div>
           `;
-          showToast('Collect completed', 'success');
-          // Refresh balances
-          try { balanceData = await wallet.balances(); render(); } catch {}
-          return;
-        }
-        if (updated.status === 'FAILED') {
-          throw new Error('Collect operation failed');
-        }
-      } catch (e) {
-        if (e.message === 'Collect operation failed') throw e;
-      }
-      attempts++;
+        }).join('')}
+      </div>
+    `;
+  };
+
+  try {
+    // Phase 1: Prepare all operations in parallel
+    const allOps = [];
+    const preparePromises = [];
+    let stepIdx = 0;
+
+    for (const t of checkedTokens) {
+      const idx = stepIdx++;
+      steps[idx].status = 'active';
+      preparePromises.push(
+        operations.swapDeposit(t.chainKey, t.address, t.userAmount, t.decimals)
+          .then(result => allOps.push({ type: 'swap', result, stepIdx: idx }))
+      );
+    }
+    if (checkedChains.length > 0) {
+      const idx = stepIdx++;
+      steps[idx].status = 'active';
+      preparePromises.push(
+        operations.collect(checkedChains, HUB_CHAIN)
+          .then(result => allOps.push({ type: 'collect', result, stepIdx: idx }))
+      );
+    }
+    renderSteps();
+    await Promise.all(preparePromises);
+
+    // Phase 2: Collect all client-side signRequests and sign in one batch
+    const allClientSteps = allOps.flatMap(op =>
+      (op.result.signRequests || []).filter(r => !r.serverSide)
+    );
+    const allSignatures = allClientSteps.length > 0
+      ? await signAndSubmitUserOps(allClientSteps)
+      : [];
+
+    // Phase 3: Map signatures back to operations and submit all in parallel
+    await Promise.all(allOps.map(op => {
+      const opStepIds = new Set(
+        (op.result.signRequests || []).filter(r => !r.serverSide).map(r => r.stepId)
+      );
+      const opSigs = allSignatures.filter(s => opStepIds.has(s.stepId));
+      return operations.submit(op.result.id, opSigs);
+    }));
+
+    // Phase 4: Start countdown timer based on estimated times
+    const maxEstSec = Math.max(...allOps.map(op => parseEstimatedTime(op.result.summary?.estimatedTime)));
+    remainingSec = maxEstSec;
+    renderSteps();
+    countdownInterval = setInterval(() => {
+      remainingSec = Math.max(0, remainingSec - 1);
+      renderSteps();
+    }, 1000);
+
+    // Poll ALL operations in parallel
+    await Promise.allSettled(allOps.map(op => pollOperation(op, steps, renderSteps)));
+
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    remainingSec = 0;
+
+    // Check if any operation failed
+    const failed = steps.filter(s => s.status === 'error');
+    if (failed.length > 0) {
+      renderSteps();
+      showToast(`${failed.length} operation(s) failed`, 'error');
+    } else {
+      renderSteps();
+      showToast('Collect completed', 'success');
     }
 
-    showToast('Collect submitted — check History for updates', 'success');
+    // Refresh balances
+    try {
+      balanceData = await wallet.balances();
+      aaTokenBalances = null;
+      render();
+    } catch {}
+
   } catch (err) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    remainingSec = 0;
+    // Mark any still-pending steps as error
+    steps.forEach(s => { if (s.status === 'active' || s.status === 'pending') s.status = 'error'; });
+    renderSteps();
     showToast(`Error: ${err.message}`, 'error');
   } finally {
+    if (countdownInterval) clearInterval(countdownInterval);
     btn.textContent = 'Collect to Arc';
     btn.disabled = false;
   }
@@ -804,6 +1003,7 @@ export async function show() {
   document.getElementById('header-title').textContent = 'Receive & Collect';
   activeTab = 'receive';
   balanceData = null;
+  aaTokenBalances = null;
   resetTopUpState();
 
   render();
@@ -815,6 +1015,43 @@ export async function show() {
     balanceData = { total: '0', onChainBalances: {} };
   }
   render();
+
+  // Scan non-USDC tokens + native ETH in AA wallet in parallel
+  const user = state.getUser();
+  const walletAddress = user?.walletAddress || state.getWallet()?.address;
+  if (walletAddress) {
+    const results = [];
+    const promises = [];
+    // Scan known ERC20 tokens
+    for (const [chainKey, tokens] of Object.entries(KNOWN_TOKENS)) {
+      const rpc = CHAIN_CONFIG[chainKey]?.rpc;
+      if (!rpc) continue;
+      for (const token of tokens) {
+        promises.push(
+          getTokenBalance(rpc, token.address, walletAddress)
+            .then(bal => { if (bal > 0n) results.push({ chainKey, ...token, balance: bal }); })
+            .catch(() => {})
+        );
+      }
+    }
+    // Scan native ETH/AVAX balance per chain (for swap-deposit)
+    for (const [chainKey, cfg] of Object.entries(CHAIN_CONFIG)) {
+      if (chainKey === HUB_CHAIN) continue;
+      promises.push(
+        fetch(cfg.rpc, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [walletAddress, 'latest'] }),
+        }).then(r => r.json()).then(json => {
+          const bal = BigInt(json.result || '0x0');
+          if (bal > 0n) results.push({ chainKey, symbol: cfg.nativeSymbol, address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', decimals: 18, balance: bal });
+        }).catch(() => {})
+      );
+    }
+    await Promise.allSettled(promises);
+    aaTokenBalances = results;
+    render();
+  }
 }
 
 export function hide() {}
