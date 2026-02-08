@@ -584,6 +584,9 @@ export class OperationsService {
       }
 
       // Cross-chain: burn on source → mint on destination
+      // If outputToken is set, mint to user's wallet (not final recipient) so swap can execute
+      const mintRecipient = dto.outputToken ? user.walletAddress : dto.destinationAddress;
+
       const burnStep = await this.prisma.operationStep.create({
         data: {
           operationId: operation.id,
@@ -596,7 +599,7 @@ export class OperationsService {
             destinationChain: dto.destinationChain,
             amount: amountRaw.toString(),
             depositor: user.walletAddress,
-            recipient: dto.destinationAddress,
+            recipient: mintRecipient,
           },
         },
       });
@@ -1285,6 +1288,111 @@ export class OperationsService {
     }
 
     return this.getOperation(userId, operationId);
+  }
+
+  async refreshSwapQuote(userId: string, operationId: string) {
+    const operation = await this.prisma.operation.findFirst({
+      where: { id: operationId, userId },
+      include: {
+        steps: { orderBy: { stepIndex: 'asc' } },
+        user: true,
+      },
+    });
+
+    if (!operation) throw new NotFoundException('Operation not found');
+
+    if (operation.status !== 'AWAITING_SIGNATURE') {
+      throw new BadRequestException(
+        `Operation is in ${operation.status} state, cannot refresh swap`,
+      );
+    }
+
+    const swapStep = operation.steps.find(
+      (s) => s.type === 'LIFI_SWAP' && s.status === 'AWAITING_SIGNATURE',
+    );
+
+    if (!swapStep) {
+      throw new BadRequestException('No LIFI_SWAP step awaiting signature');
+    }
+
+    const params = swapStep.burnIntentData as any;
+    if (!params?.outputToken) {
+      throw new BadRequestException('LIFI_SWAP step missing outputToken params');
+    }
+
+    const chain = swapStep.chain;
+    const chainConfig = ALL_CHAINS[chain];
+    if (!chainConfig) {
+      throw new BadRequestException(`Unknown chain ${chain}`);
+    }
+
+    const usdcAddress = getUsdcAddress(chain);
+
+    // Get fresh LiFi quote
+    const quote = await this.lifiService.getQuote({
+      fromChain: chainConfig.chainId,
+      toChain: chainConfig.chainId,
+      fromToken: usdcAddress,
+      toToken: params.outputToken,
+      fromAmount: params.usdcAmount,
+      fromAddress: operation.user.walletAddress,
+      toAddress: params.recipientAddress,
+      slippage: params.slippage ?? 0.005,
+    });
+
+    const swapCalls = this.lifiService.buildSwapCalls(
+      quote,
+      usdcAddress,
+      BigInt(params.usdcAmount),
+    );
+
+    // Update step with fresh calldata
+    await this.prisma.operationStep.update({
+      where: { id: swapStep.id },
+      data: {
+        callData: swapCalls.map((c) => ({
+          to: c.to,
+          data: c.data,
+          value: c.value?.toString(),
+        })),
+      },
+    });
+
+    // Update operation signRequests with fresh calls
+    const signRequests = [
+      {
+        stepId: swapStep.id,
+        chain,
+        type: 'LIFI_SWAP',
+        calls: swapCalls.map((c) => ({
+          to: c.to,
+          data: c.data,
+          ...(c.value ? { value: c.value.toString() } : {}),
+        })),
+        description: `Swap USDC → ${quote.action.toToken.symbol} on ${chain}`,
+      },
+    ];
+
+    await this.prisma.operation.update({
+      where: { id: operationId },
+      data: { signRequests },
+    });
+
+    this.logger.log(
+      `Refreshed LiFi quote for operation ${operationId}, step ${swapStep.id} — ${quote.tool} route`,
+    );
+
+    return {
+      id: operationId,
+      status: 'AWAITING_SIGNATURE',
+      signRequests,
+      quote: {
+        tool: quote.tool,
+        estimatedOutput: quote.estimate.toAmount,
+        minimumOutput: quote.estimate.toAmountMin,
+        outputToken: quote.action.toToken.symbol,
+      },
+    };
   }
 
   async getOperation(userId: string, operationId: string) {

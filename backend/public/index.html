@@ -465,21 +465,46 @@
     }
 
     // ── Fee estimation from native RPC ──────────────────
-    // Circle's modular transport returns low gas prices; fetch eth_gasPrice from chain RPC
+    // Per-chain gas strategy: L2s have near-zero fees, L1-like chains need bigger buffers
+    const L2_CHAIN_IDS = new Set([42161, 8453, 10]); // Arbitrum, Base, Optimism
+    const L2_FLOOR = 100_000_000n; // 0.1 gwei — minimum for Circle bundler on L2s
+
     function nativeFeeEstimator(chain) {
+      const isL2 = L2_CHAIN_IDS.has(chain.id);
+
       return async () => {
         const rpcUrl = chain.rpcUrls.default.http[0];
-        const res = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }),
-        });
-        const data = await res.json();
-        const gasPrice = BigInt(data.result);
-        // 2x buffer over actual gas price; minimum 100k wei to avoid zero
-        const maxFeePerGas = gasPrice > 100000n ? gasPrice * 2n : 100000n;
-        const maxPriorityFeePerGas = maxFeePerGas;
-        console.log(`Fee estimate for chain ${chain.id}: gasPrice=${gasPrice}, maxFeePerGas=${maxFeePerGas}`);
+        const [gasPriceRes, priorityFeeRes] = await Promise.all([
+          fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }),
+          }),
+          fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_maxPriorityFeePerGas', params: [] }),
+          }),
+        ]);
+        const gasPriceData = await gasPriceRes.json();
+        const priorityFeeData = await priorityFeeRes.json();
+
+        const gasPrice = BigInt(gasPriceData.result);
+        const rawPriorityFee = priorityFeeData.result ? BigInt(priorityFeeData.result) : 1n;
+
+        let maxFeePerGas, maxPriorityFeePerGas;
+
+        if (isL2) {
+          // L2s: gas is near-zero, just use floor for bundler compat
+          maxFeePerGas = gasPrice > L2_FLOOR ? gasPrice * 11n / 10n : L2_FLOOR;
+          maxPriorityFeePerGas = L2_FLOOR;
+        } else {
+          // L1-like (Polygon, Avalanche): real gas market, 2x buffer for volatility
+          maxFeePerGas = gasPrice * 2n;
+          maxPriorityFeePerGas = rawPriorityFee * 2n;
+        }
+
+        console.log(`Fee estimate [${isL2 ? 'L2' : 'L1'}] chain ${chain.id}: gasPrice=${gasPrice}, priorityFee=${rawPriorityFee}, maxFee=${maxFeePerGas}, maxPriority=${maxPriorityFeePerGas}`);
         return { maxFeePerGas, maxPriorityFeePerGas };
       };
     }
@@ -669,21 +694,59 @@
     }
 
     function showSignButton(container, operationId, signRequests) {
-      const clientSteps = signRequests.filter(r => !r.serverSide);
+      const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
+      const hasSwap = signRequests.some(r => r.type === 'LIFI_SWAP');
       const label = clientSteps.length > 0
         ? `Sign & Execute (${clientSteps.length} UserOps)`
         : 'Submit (server-side steps only)';
 
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+
+      // Refresh Quote button (only for LiFi swaps)
+      if (hasSwap) {
+        const refreshBtn = document.createElement('button');
+        refreshBtn.className = 'btn btn-secondary';
+        refreshBtn.textContent = 'Refresh Quote';
+        refreshBtn.onclick = async () => {
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = 'Refreshing...';
+          const resBody = document.getElementById('resBody');
+          try {
+            const res = await fetch(`${API}/v1/operations/${operationId}/refresh-swap`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${jwt}` },
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              resBody.textContent += `\n\nRefresh failed: ${data.message || JSON.stringify(data)}`;
+              refreshBtn.disabled = false;
+              refreshBtn.textContent = 'Refresh Quote';
+              return;
+            }
+            resBody.textContent += `\n\nQuote refreshed! Route: ${data.quote?.tool}, output: ${data.quote?.outputToken}`;
+            // Replace buttons with updated signRequests
+            btnRow.remove();
+            showSignButton(container, operationId, data.signRequests);
+          } catch (err) {
+            resBody.textContent += `\n\nRefresh error: ${err.message}`;
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = 'Refresh Quote';
+          }
+        };
+        btnRow.appendChild(refreshBtn);
+      }
+
       const signBtn = document.createElement('button');
       signBtn.className = 'btn btn-primary sign-btn';
-      signBtn.style.marginTop = '12px';
-      signBtn.style.display = 'block';
       signBtn.textContent = label;
       signBtn.onclick = () => {
-        signBtn.remove();
+        btnRow.remove();
         handleSignRequests(operationId, signRequests);
       };
-      container.appendChild(signBtn);
+      btnRow.appendChild(signBtn);
+
+      container.appendChild(btnRow);
     }
 
     // ── Sign & Execute UserOps ─────────────────────────
@@ -700,7 +763,7 @@
       }
       const cred = JSON.parse(credJson);
 
-      const clientSteps = signRequests.filter(r => !r.serverSide);
+      const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
 
       if (clientSteps.length === 0) {
         resBody.textContent += '\n\nNo client signing needed — submitting to server...';
@@ -763,6 +826,9 @@
           signatures.push({ stepId: req.stepId, txHash });
         } catch (err) {
           resBody.textContent += `\n  ERROR: ${err.message}`;
+          if (err.details) resBody.textContent += `\n  Details: ${JSON.stringify(err.details)}`;
+          if (err.cause) resBody.textContent += `\n  Cause: ${err.cause.message || JSON.stringify(err.cause)}`;
+          resBody.textContent += `\n  Chain: ${req.chain} (${chain?.id}), calls: ${req.calls?.length || 0}`;
           console.error('Sign error for step', req.stepId, err);
         }
       }

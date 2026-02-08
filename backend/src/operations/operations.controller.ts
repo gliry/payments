@@ -104,6 +104,15 @@ export class OperationsController {
     return this.operationsService.getOperation(user.id, id);
   }
 
+  @Post(':id/refresh-swap')
+  @ApiOperation({ summary: 'Refresh LiFi swap quote (get fresh calldata before signing)' })
+  refreshSwapQuote(
+    @CurrentUser() user: JwtUser,
+    @Param('id') id: string,
+  ) {
+    return this.operationsService.refreshSwapQuote(user.id, id);
+  }
+
   @Post(':id/submit')
   @ApiOperation({ summary: 'Submit signed transactions for an operation' })
   submitOperation(
