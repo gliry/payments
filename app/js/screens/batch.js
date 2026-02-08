@@ -66,6 +66,16 @@ const TEMPLATES = {
       { address: '0x8888888888888888888888888888888888888888', chain: 'polygon', amount: '100' },
     ],
   },
+  demo: {
+    name: 'Demo',
+    desc: '4 recipients across 3 chains with ENS',
+    rows: [
+      { address: 'gliry.eth', chain: 'arbitrum', amount: '0.5', token: 'USDT' },
+      { address: '0xe1CB6231c5931d8914812801982a5D9093de61c3', chain: 'base', amount: '1', token: 'USDT' },
+      { address: '0x461406d9EB5641F18513090d03C018BCbD11Ae3D', chain: 'avalanche', amount: '0.0004', token: 'WETH' },
+      { address: '0xA99c4E96132663C4A40768FBfcbDD77a2dE5cd81', chain: 'arbitrum', amount: '0.00001', token: 'WBTC' },
+    ],
+  },
 };
 
 function render() {
@@ -165,12 +175,12 @@ function renderRow(row, index) {
 
   return `
     <tr data-index="${index}" style="vertical-align:top;">
-      <td class="text-sm text-muted" style="vertical-align:middle;">${index + 1}</td>
-      <td>
+      <td class="text-sm text-muted" style="vertical-align:top;padding-top:10px;">${index + 1}</td>
+      <td style="vertical-align:top;">
         <input type="text" class="input input--mono batch-address" value="${row.address}" placeholder="0x... or name.eth" data-index="${index}" style="font-size:13px;${borderColor ? `border-color:${borderColor};` : ''}">
         <div class="text-xs" style="${SUB_ROW}">${ensContent}</div>
       </td>
-      <td>
+      <td style="vertical-align:top;">
         <select class="select batch-chain" data-index="${index}">
           ${chains.map(c =>
             `<option value="${c}" ${row.chain === c ? 'selected' : ''}>${getChainMeta(c).name}</option>`
@@ -178,7 +188,7 @@ function renderRow(row, index) {
         </select>
         <div class="text-xs" style="${SUB_ROW}">${chainSub}</div>
       </td>
-      <td>
+      <td style="vertical-align:top;">
         <select class="select batch-token" data-index="${index}">
           ${TOKENS.map(t =>
             `<option value="${t}" ${row.token === t ? 'selected' : ''}>${t}</option>`
@@ -186,11 +196,11 @@ function renderRow(row, index) {
         </select>
         <div class="text-xs" style="${SUB_ROW} text-align:center;">${tokenSub}</div>
       </td>
-      <td>
+      <td style="vertical-align:top;">
         <input type="number" class="input text-mono batch-amount" value="${row.amount}" placeholder="0.00" step="0.01" data-index="${index}">
         <div style="${SUB_ROW}">&nbsp;</div>
       </td>
-      <td>
+      <td style="vertical-align:top;padding-top:8px;">
         <button class="btn btn--ghost btn--sm batch-remove" data-index="${index}" style="color: var(--color-error); padding: 4px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -579,7 +589,9 @@ function parseCSV(file) {
     for (const line of lines) {
       const parts = line.split(',').map(s => s.trim());
       if (parts.length >= 3) {
-        parsed.push(createRow({ address: parts[0], chain: parts[1], amount: parts[2] }));
+        const overrides = { address: parts[0], chain: parts[1], amount: parts[2] };
+        if (parts[3] && TOKENS.includes(parts[3].toUpperCase())) overrides.token = parts[3].toUpperCase();
+        parsed.push(createRow(overrides));
       }
     }
 
@@ -600,16 +612,17 @@ function parseCSV(file) {
       table.innerHTML = `
         <div class="table-wrapper" style="max-height: 200px; overflow-y: auto;">
           <table class="table">
-            <thead><tr><th>Address</th><th>Chain</th><th>Amount</th></tr></thead>
+            <thead><tr><th>Address</th><th>Chain</th><th>Amount</th><th>Token</th></tr></thead>
             <tbody>
               ${parsed.slice(0, 10).map(r => `
                 <tr>
                   <td class="text-mono text-sm">${formatAddress(r.address)}</td>
                   <td class="text-sm">${r.chain}</td>
                   <td class="text-mono text-sm">${r.amount}</td>
+                  <td class="text-sm">${r.token}</td>
                 </tr>
               `).join('')}
-              ${parsed.length > 10 ? `<tr><td colspan="3" class="text-sm text-muted">...and ${parsed.length - 10} more</td></tr>` : ''}
+              ${parsed.length > 10 ? `<tr><td colspan="4" class="text-sm text-muted">...and ${parsed.length - 10} more</td></tr>` : ''}
             </tbody>
           </table>
         </div>

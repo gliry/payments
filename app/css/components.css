@@ -1460,6 +1460,16 @@ textarea.input {
   flex-shrink: 0;
 }
 
+/* Collect countdown timer */
+.collect-countdown {
+  text-align: center;
+  padding: 12px 0 4px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 .topup-exec-steps {
   display: flex;
   flex-direction: column;

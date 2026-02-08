@@ -770,6 +770,45 @@ function resetTopUpState() {
 // Collect handler
 // ============================================================================
 
+function parseEstimatedTime(str) {
+  if (!str) return 120;
+  const rangeMatch = str.match(/(\d+)\s*-\s*(\d+)\s*min/i);
+  if (rangeMatch) return parseInt(rangeMatch[2]) * 60;
+  const secMatch = str.match(/~?(\d+)\s*s/i);
+  if (secMatch) return parseInt(secMatch[1]);
+  const minMatch = str.match(/(\d+)\s*min/i);
+  if (minMatch) return parseInt(minMatch[1]) * 60;
+  return 120;
+}
+
+function formatCountdown(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+async function pollOperation(op, steps, renderSteps) {
+  let attempts = 0;
+  while (attempts < 60) {
+    await new Promise(r => setTimeout(r, 3000));
+    const updated = await operations.get(op.result.id);
+    if (updated.status === 'COMPLETED') {
+      steps[op.stepIdx].status = 'done';
+      renderSteps();
+      return;
+    }
+    if (updated.status === 'FAILED') {
+      steps[op.stepIdx].status = 'error';
+      renderSteps();
+      throw new Error(`Operation failed: ${op.type}`);
+    }
+    attempts++;
+  }
+  steps[op.stepIdx].status = 'error';
+  renderSteps();
+  throw new Error(`Timeout waiting for ${op.type}`);
+}
+
 async function handleCollect() {
   const checkedChains = [...container.querySelectorAll('.collect-chain-check:checked')].map(el => el.value);
   const checkedTokens = [...container.querySelectorAll('.collect-token-check:checked')].map(el => {
@@ -803,8 +842,17 @@ async function handleCollect() {
     steps.push({ label: `Collecting USDC from ${checkedChains.map(c => getChainMeta(c).name).join(', ')}`, status: 'pending' });
   }
 
+  let remainingSec = 0;
+  let countdownInterval = null;
+
   const renderSteps = () => {
-    resultEl.innerHTML = `
+    const hasActive = steps.some(s => s.status === 'active');
+    const countdownHtml = remainingSec > 0 && hasActive
+      ? `<div class="collect-countdown">
+           <span class="collect-countdown__time">~${formatCountdown(remainingSec)} remaining</span>
+         </div>`
+      : '';
+    resultEl.innerHTML = countdownHtml + `
       <div class="topup-exec-steps">
         ${steps.map((step, i) => {
           const cls = step.status === 'active' ? 'active' : step.status === 'done' ? 'done' : step.status === 'error' ? 'done' : '';
@@ -820,65 +868,74 @@ async function handleCollect() {
     `;
   };
 
-  let stepIdx = 0;
-
   try {
-    // Phase 1: Swap-deposit for each non-USDC token
+    // Phase 1: Prepare all operations in parallel
+    const allOps = [];
+    const preparePromises = [];
+    let stepIdx = 0;
+
     for (const t of checkedTokens) {
-      steps[stepIdx].status = 'active';
-      renderSteps();
-
-      const result = await operations.swapDeposit(t.chainKey, t.address, t.userAmount, t.decimals);
-
-      const clientSteps = (result.signRequests || []).filter(r => !r.serverSide);
-      if (clientSteps.length > 0) {
-        const signatures = await signAndSubmitUserOps(clientSteps, { paymaster: false });
-        await operations.submit(result.id, signatures);
-      }
-
-      // Poll for completion
-      let attempts = 0;
-      while (attempts < 60) {
-        await new Promise(r => setTimeout(r, 3000));
-        const updated = await operations.get(result.id);
-        if (updated.status === 'COMPLETED') break;
-        if (updated.status === 'FAILED') throw new Error(`Swap-deposit failed for ${t.symbol}`);
-        attempts++;
-      }
-
-      steps[stepIdx].status = 'done';
-      stepIdx++;
-      renderSteps();
+      const idx = stepIdx++;
+      steps[idx].status = 'active';
+      preparePromises.push(
+        operations.swapDeposit(t.chainKey, t.address, t.userAmount, t.decimals)
+          .then(result => allOps.push({ type: 'swap', result, stepIdx: idx }))
+      );
     }
-
-    // Phase 2: USDC collect (if any chains selected)
     if (checkedChains.length > 0) {
-      steps[stepIdx].status = 'active';
+      const idx = stepIdx++;
+      steps[idx].status = 'active';
+      preparePromises.push(
+        operations.collect(checkedChains, HUB_CHAIN)
+          .then(result => allOps.push({ type: 'collect', result, stepIdx: idx }))
+      );
+    }
+    renderSteps();
+    await Promise.all(preparePromises);
+
+    // Phase 2: Collect all client-side signRequests and sign in one batch
+    const allClientSteps = allOps.flatMap(op =>
+      (op.result.signRequests || []).filter(r => !r.serverSide)
+    );
+    const allSignatures = allClientSteps.length > 0
+      ? await signAndSubmitUserOps(allClientSteps)
+      : [];
+
+    // Phase 3: Map signatures back to operations and submit all in parallel
+    await Promise.all(allOps.map(op => {
+      const opStepIds = new Set(
+        (op.result.signRequests || []).filter(r => !r.serverSide).map(r => r.stepId)
+      );
+      const opSigs = allSignatures.filter(s => opStepIds.has(s.stepId));
+      return operations.submit(op.result.id, opSigs);
+    }));
+
+    // Phase 4: Start countdown timer based on estimated times
+    const maxEstSec = Math.max(...allOps.map(op => parseEstimatedTime(op.result.summary?.estimatedTime)));
+    remainingSec = maxEstSec;
+    renderSteps();
+    countdownInterval = setInterval(() => {
+      remainingSec = Math.max(0, remainingSec - 1);
       renderSteps();
+    }, 1000);
 
-      const result = await operations.collect(checkedChains, HUB_CHAIN);
-      const clientSteps = (result.signRequests || []).filter(r => !r.serverSide);
-      if (clientSteps.length > 0) {
-        const signatures = await signAndSubmitUserOps(clientSteps);
-        await operations.submit(result.id, signatures);
-      }
+    // Poll ALL operations in parallel
+    await Promise.allSettled(allOps.map(op => pollOperation(op, steps, renderSteps)));
 
-      // Poll for completion
-      let attempts = 0;
-      while (attempts < 60) {
-        await new Promise(r => setTimeout(r, 3000));
-        const updated = await operations.get(result.id);
-        if (updated.status === 'COMPLETED') break;
-        if (updated.status === 'FAILED') throw new Error('Collect operation failed');
-        attempts++;
-      }
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    remainingSec = 0;
 
-      steps[stepIdx].status = 'done';
-      stepIdx++;
+    // Check if any operation failed
+    const failed = steps.filter(s => s.status === 'error');
+    if (failed.length > 0) {
       renderSteps();
+      showToast(`${failed.length} operation(s) failed`, 'error');
+    } else {
+      renderSteps();
+      showToast('Collect completed', 'success');
     }
 
-    showToast('Collect completed', 'success');
     // Refresh balances
     try {
       balanceData = await wallet.balances();
@@ -887,10 +944,14 @@ async function handleCollect() {
     } catch {}
 
   } catch (err) {
-    if (stepIdx < steps.length) steps[stepIdx].status = 'error';
+    if (countdownInterval) clearInterval(countdownInterval);
+    remainingSec = 0;
+    // Mark any still-pending steps as error
+    steps.forEach(s => { if (s.status === 'active' || s.status === 'pending') s.status = 'error'; });
     renderSteps();
     showToast(`Error: ${err.message}`, 'error');
   } finally {
+    if (countdownInterval) clearInterval(countdownInterval);
     btn.textContent = 'Collect to Arc';
     btn.disabled = false;
   }
