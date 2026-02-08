@@ -8,6 +8,18 @@ import { LifiService } from '../lifi/lifi.service';
 import { AuthService } from '../auth/auth.service';
 import { ALL_CHAINS, getUsdcAddress } from '../circle/config/chains';
 
+/**
+ * Calculate effective slippage for LiFi swaps — mirrors the function in operations.service.ts.
+ * Small amounts need higher slippage to avoid MinimalOutputBalanceViolation reverts.
+ */
+function effectiveSwapSlippage(usdcAmount: bigint, userSlippage?: number): number {
+  const usdc = Number(usdcAmount) / 1e6;
+  if (usdc < 1) return Math.max(userSlippage ?? 0, 0.05);
+  if (usdc < 10) return Math.max(userSlippage ?? 0, 0.03);
+  if (usdc < 100) return Math.max(userSlippage ?? 0, 0.01);
+  return userSlippage ?? 0.005;
+}
+
 const WORKER_INTERVAL_MS = 30_000;
 const STEP_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -222,6 +234,8 @@ export class MintWorkerService {
 
     try {
       // Get fresh LiFi quote (previous quote from preparation may have expired)
+      const slippage = effectiveSwapSlippage(BigInt(params.usdcAmount), params.slippage);
+
       const quote = await this.lifiService.getQuote({
         fromChain: chainConfig.chainId,
         toChain: chainConfig.chainId,
@@ -230,7 +244,7 @@ export class MintWorkerService {
         fromAmount: params.usdcAmount,
         fromAddress: op.user.walletAddress,
         toAddress: params.recipientAddress,
-        slippage: params.slippage ?? 0.005,
+        slippage,
       });
 
       const swapCalls = this.lifiService.buildSwapCalls(
@@ -258,7 +272,11 @@ export class MintWorkerService {
           stepId: swapStep.id,
           chain,
           type: 'LIFI_SWAP',
-          calls: swapCalls.map((c) => ({ to: c.to, data: c.data })),
+          calls: swapCalls.map((c) => ({
+            to: c.to,
+            data: c.data,
+            ...(c.value ? { value: c.value.toString() } : {}),
+          })),
           description: `Swap USDC → ${quote.action.toToken.symbol} on ${chain}`,
         },
       ];

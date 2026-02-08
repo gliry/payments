@@ -695,19 +695,58 @@
 
     function showSignButton(container, operationId, signRequests) {
       const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
-      const hasSwap = signRequests.some(r => r.type === 'LIFI_SWAP');
-      const label = clientSteps.length > 0
-        ? `Sign & Execute (${clientSteps.length} UserOps)`
-        : 'Submit (server-side steps only)';
+      const hasSwap = signRequests.some(r => r.type === 'LIFI_SWAP' && r.calls);
+      const label = hasSwap
+        ? 'Refresh Quote & Sign'
+        : clientSteps.length > 0
+          ? `Sign & Execute (${clientSteps.length} UserOps)`
+          : 'Submit (server-side steps only)';
 
       const btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
 
-      // Refresh Quote button (only for LiFi swaps)
+      const signBtn = document.createElement('button');
+      signBtn.className = 'btn btn-primary sign-btn';
+      signBtn.textContent = label;
+      signBtn.onclick = async () => {
+        if (hasSwap) {
+          // Auto-refresh quote right before signing to minimize stale-calldata window
+          signBtn.disabled = true;
+          signBtn.textContent = 'Refreshing quote...';
+          const resBody = document.getElementById('resBody');
+          try {
+            const res = await fetch(`${API}/v1/operations/${operationId}/refresh-swap`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${jwt}` },
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              resBody.textContent += `\n\nRefresh failed: ${data.message || JSON.stringify(data)}`;
+              signBtn.disabled = false;
+              signBtn.textContent = label;
+              return;
+            }
+            resBody.textContent += `\n\nQuote refreshed: ${data.quote?.tool} route, output: ${data.quote?.outputToken}`;
+            // Sign with fresh signRequests
+            btnRow.remove();
+            handleSignRequests(operationId, data.signRequests);
+          } catch (err) {
+            resBody.textContent += `\n\nRefresh error: ${err.message}`;
+            signBtn.disabled = false;
+            signBtn.textContent = label;
+          }
+        } else {
+          btnRow.remove();
+          handleSignRequests(operationId, signRequests);
+        }
+      };
+      btnRow.appendChild(signBtn);
+
+      // Manual refresh button (swap only)
       if (hasSwap) {
         const refreshBtn = document.createElement('button');
         refreshBtn.className = 'btn btn-secondary';
-        refreshBtn.textContent = 'Refresh Quote';
+        refreshBtn.textContent = 'Refresh Only';
         refreshBtn.onclick = async () => {
           refreshBtn.disabled = true;
           refreshBtn.textContent = 'Refreshing...';
@@ -721,30 +760,20 @@
             if (!res.ok) {
               resBody.textContent += `\n\nRefresh failed: ${data.message || JSON.stringify(data)}`;
               refreshBtn.disabled = false;
-              refreshBtn.textContent = 'Refresh Quote';
+              refreshBtn.textContent = 'Refresh Only';
               return;
             }
-            resBody.textContent += `\n\nQuote refreshed! Route: ${data.quote?.tool}, output: ${data.quote?.outputToken}`;
-            // Replace buttons with updated signRequests
+            resBody.textContent += `\n\nQuote refreshed: ${data.quote?.tool} route, output: ${data.quote?.outputToken}`;
             btnRow.remove();
             showSignButton(container, operationId, data.signRequests);
           } catch (err) {
             resBody.textContent += `\n\nRefresh error: ${err.message}`;
             refreshBtn.disabled = false;
-            refreshBtn.textContent = 'Refresh Quote';
+            refreshBtn.textContent = 'Refresh Only';
           }
         };
         btnRow.appendChild(refreshBtn);
       }
-
-      const signBtn = document.createElement('button');
-      signBtn.className = 'btn btn-primary sign-btn';
-      signBtn.textContent = label;
-      signBtn.onclick = () => {
-        btnRow.remove();
-        handleSignRequests(operationId, signRequests);
-      };
-      btnRow.appendChild(signBtn);
 
       container.appendChild(btnRow);
     }
@@ -825,10 +854,17 @@
           resBody.textContent += `\n  TX: ${txHash}`;
           signatures.push({ stepId: req.stepId, txHash });
         } catch (err) {
-          resBody.textContent += `\n  ERROR: ${err.message}`;
+          const errMsg = err.message || '';
+          // Detect LiFi MinimalOutputBalanceViolation (selector 0x63ecb9f6)
+          if (errMsg.includes('0x63ecb9f6') || errMsg.includes('MinimalOutputBalanceViolation')) {
+            resBody.textContent += `\n  SLIPPAGE ERROR: Swap output fell below minimum. The price moved between quote and execution.`;
+            resBody.textContent += `\n  Try again — the quote will auto-refresh with a fresh price.`;
+          } else {
+            resBody.textContent += `\n  ERROR: ${errMsg}`;
+          }
           if (err.details) resBody.textContent += `\n  Details: ${JSON.stringify(err.details)}`;
           if (err.cause) resBody.textContent += `\n  Cause: ${err.cause.message || JSON.stringify(err.cause)}`;
-          resBody.textContent += `\n  Chain: ${req.chain} (${chain?.id}), calls: ${req.calls?.length || 0}`;
+          resBody.textContent += `\n  Chain: ${req.chain} (${CHAINS[req.chain]?.id}), calls: ${req.calls?.length || 0}`;
           console.error('Sign error for step', req.stepId, err);
         }
       }

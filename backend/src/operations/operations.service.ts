@@ -49,6 +49,20 @@ function calcMaxFee(amount: bigint): bigint {
   return fee > 50000n ? fee : 50000n;
 }
 
+/**
+ * Calculate effective slippage for LiFi swaps.
+ * Small amounts need higher slippage because DEX fees + price impact
+ * eat a proportionally larger share, and even tiny price movements
+ * between quote and execution can trigger MinimalOutputBalanceViolation.
+ */
+function effectiveSwapSlippage(usdcAmount: bigint, userSlippage?: number): number {
+  const usdc = Number(usdcAmount) / 1e6; // human-readable USDC
+  if (usdc < 1) return Math.max(userSlippage ?? 0, 0.05);    // < $1: 5% min
+  if (usdc < 10) return Math.max(userSlippage ?? 0, 0.03);   // < $10: 3% min
+  if (usdc < 100) return Math.max(userSlippage ?? 0, 0.01);  // < $100: 1% min
+  return userSlippage ?? 0.005;                                // >= $100: 0.5% default
+}
+
 @Injectable()
 export class OperationsService {
   private readonly logger = new Logger(OperationsService.name);
@@ -626,7 +640,7 @@ export class OperationsService {
       if (dto.outputToken) {
         const destChain = ALL_CHAINS[dto.destinationChain];
         const destUsdcAddress = getUsdcAddress(dto.destinationChain);
-        const swapSlippage = dto.slippage ?? 0.005;
+        const swapSlippage = effectiveSwapSlippage(amountRaw, dto.slippage);
 
         try {
           const estimateQuote = await this.lifiService.getQuote({
@@ -1337,7 +1351,7 @@ export class OperationsService {
       fromAmount: params.usdcAmount,
       fromAddress: operation.user.walletAddress,
       toAddress: params.recipientAddress,
-      slippage: params.slippage ?? 0.005,
+      slippage: effectiveSwapSlippage(BigInt(params.usdcAmount), params.slippage),
     });
 
     const swapCalls = this.lifiService.buildSwapCalls(
