@@ -72,35 +72,6 @@ function render(balanceData, ops) {
       </div>
     </div>
 
-    <!-- Recent Operations -->
-    <div class="card">
-      <div class="flex items-center justify-between" style="margin-bottom: 16px;">
-        <h3>Recent Operations</h3>
-        <a href="#history" class="text-sm" style="font-weight: 500;">View All</a>
-      </div>
-      ${ops.length === 0
-        ? `<div class="empty-state">
-            <div class="empty-state__title">No operations yet</div>
-            <div class="empty-state__desc">Send or receive funds to get started</div>
-          </div>`
-        : `<div class="table-wrapper">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Description</th>
-                  <th style="text-align:right">Amount</th>
-                  <th>Status</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${ops.slice(0, 10).map(op => renderOpRow(op)).join('')}
-              </tbody>
-            </table>
-          </div>`
-      }
-    </div>
   `;
 
   // Event listeners
