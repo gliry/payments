@@ -11,9 +11,9 @@ import { navigate } from '../app.js';
 
 let container;
 let currentStep = 1;
-let formData = { address: '', chain: 'base', amount: '' };
+let formData = { address: '', chain: 'polygon', amount: '' };
 let balance = 0;
-const SRC_CHAIN = 'base';
+const SRC_CHAIN = 'polygon';
 
 function render() {
   container.innerHTML = `
@@ -233,7 +233,7 @@ function setupListeners() {
 
   // Success
   document.getElementById('send-another')?.addEventListener('click', () => {
-    formData = { address: '', chain: 'base', amount: '' };
+    formData = { address: '', chain: 'polygon', amount: '' };
     currentStep = 1;
     render();
   });
@@ -295,7 +295,7 @@ export function init() {
 export async function show() {
   document.getElementById('header-title').textContent = 'Send';
   currentStep = 1;
-  formData = { address: '', chain: 'base', amount: '' };
+  formData = { address: '', chain: 'polygon', amount: '' };
 
   try {
     const bal = await wallet.balances();

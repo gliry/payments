@@ -43,7 +43,7 @@ function render() {
       <div class="input-group" style="margin-bottom: 16px;">
         <label class="input-label">API Endpoint</label>
         <div class="flex items-center gap-8">
-          <code class="input input--mono" style="background: var(--color-bg-soft);" readonly>http://localhost:3000</code>
+          <code class="input input--mono" style="background: var(--color-bg-soft);" readonly>https://omniflow.up.railway.app</code>
           <button class="copy-btn" id="copy-api-url">
             <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/></svg>
           </button>
@@ -52,7 +52,7 @@ function render() {
       <div class="input-group">
         <label class="input-label">Sample Request</label>
         <div class="code-block">
-          <div class="code-block__body">curl http://localhost:3000/v1/wallet/balances \\
+          <div class="code-block__body">curl https://omniflow.up.railway.app/v1/wallet/balances \\
   -H "Authorization: Bearer YOUR_TOKEN"</div>
         </div>
       </div>
@@ -135,7 +135,7 @@ function setupListeners() {
   });
 
   document.getElementById('copy-api-url')?.addEventListener('click', async () => {
-    await copyToClipboard('http://localhost:3000');
+    await copyToClipboard('https://omniflow.up.railway.app');
     showToast('API URL copied!', 'success');
   });
 
