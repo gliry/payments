@@ -895,7 +895,7 @@ async function handleCollect() {
 
     // Phase 2: Collect all client-side signRequests and sign in one batch
     const allClientSteps = allOps.flatMap(op =>
-      (op.result.signRequests || []).filter(r => !r.serverSide)
+      (op.result.signRequests || []).filter(r => !r.serverSide && r.calls)
     );
     const allSignatures = allClientSteps.length > 0
       ? await signAndSubmitUserOps(allClientSteps)
@@ -904,7 +904,7 @@ async function handleCollect() {
     // Phase 3: Map signatures back to operations and submit all in parallel
     await Promise.all(allOps.map(op => {
       const opStepIds = new Set(
-        (op.result.signRequests || []).filter(r => !r.serverSide).map(r => r.stepId)
+        (op.result.signRequests || []).filter(r => !r.serverSide && r.calls).map(r => r.stepId)
       );
       const opSigs = allSignatures.filter(s => opStepIds.has(s.stepId));
       return operations.submit(op.result.id, opSigs);

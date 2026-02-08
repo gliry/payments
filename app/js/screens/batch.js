@@ -5,7 +5,7 @@
 import * as state from '../state.js';
 import { wallet, operations } from '../api.js';
 import { signAndSubmitUserOps } from '../userop.js';
-import { formatUSDC, formatAddress, getChainMeta, getChainSVG, isValidAddress, getAllChains, getOpTypeLabel, debounce, getChainKeyByChainId } from '../utils.js';
+import { formatUSDC, formatAddress, getChainMeta, getChainSVG, isValidAddress, getAllChains, getOpTypeLabel, debounce, getChainKeyByChainId, KNOWN_TOKENS } from '../utils.js';
 import { isENSName, resolveENS } from '../ens.js';
 import { showToast } from '../components/toast.js';
 import { statusBadge } from '../components/status-badge.js';
@@ -647,25 +647,35 @@ async function handleExecute() {
   btn.disabled = true;
 
   try {
-    const recipients = validRows.map(r => ({
-      address: r.resolvedAddress || r.address,
-      chain: r.chain,
-      amount: String(r.amount),
-    }));
+    const recipients = validRows.map(r => {
+      const rec = {
+        address: r.resolvedAddress || r.address,
+        chain: r.chain,
+        amount: String(r.amount),
+      };
+      if (r.token && r.token !== 'USDC') {
+        const tokenInfo = (KNOWN_TOKENS[r.chain] || []).find(t => t.symbol === r.token);
+        if (tokenInfo) {
+          rec.outputToken = tokenInfo.address;
+          rec.outputTokenDecimals = tokenInfo.decimals;
+        }
+      }
+      return rec;
+    });
 
     batchResult = await operations.batchSend(recipients);
     executionState = 'executing';
     render();
 
     // Sign client-side UserOps (if any) and submit to trigger server-side processing
-    const clientSteps = (batchResult.signRequests || []).filter(r => !r.serverSide);
+    const clientSteps = (batchResult.signRequests || []).filter(r => !r.serverSide && r.calls);
     let signatures = [];
     if (clientSteps.length > 0) {
       signatures = await signAndSubmitUserOps(clientSteps);
     }
     await operations.submit(batchResult.id, signatures);
 
-    // Poll for completion
+    // Poll for completion (and sign LIFI_SWAP steps when mint-worker prepares them)
     if (batchResult.status !== 'COMPLETED') {
       const pollId = setInterval(async () => {
         try {
@@ -676,6 +686,14 @@ async function handleExecute() {
             executionState = 'done';
             render();
             triggerConfetti();
+          } else if (updated.status === 'AWAITING_SIGNATURE') {
+            // Mint-worker prepared LIFI_SWAP calldata — sign and submit
+            const swapSteps = (updated.signRequests || []).filter(r => !r.serverSide && r.calls);
+            if (swapSteps.length > 0) {
+              const swapSigs = await signAndSubmitUserOps(swapSteps);
+              await operations.submit(updated.id, swapSigs);
+            }
+            render();
           } else {
             render();
           }
