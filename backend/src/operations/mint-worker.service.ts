@@ -4,7 +4,9 @@ import { Interval } from '@nestjs/schedule';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CircleService } from '../circle/circle.service';
 import { GatewayService } from '../circle/gateway/gateway.service';
+import { LifiService } from '../lifi/lifi.service';
 import { AuthService } from '../auth/auth.service';
+import { ALL_CHAINS, getUsdcAddress } from '../circle/config/chains';
 
 const WORKER_INTERVAL_MS = 30_000;
 const STEP_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -18,6 +20,7 @@ export class MintWorkerService {
     private readonly prisma: PrismaService,
     private readonly circleService: CircleService,
     private readonly gatewayService: GatewayService,
+    private readonly lifiService: LifiService,
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
@@ -95,7 +98,32 @@ export class MintWorkerService {
       await this.tryMint(mintStep, burnStep);
     }
 
-    // 3. Check completion
+    // 3. Handle PENDING LIFI_SWAP steps (prepare calldata after mint completes)
+    const pendingSwaps = freshSteps.filter(
+      (s) => s.type === 'LIFI_SWAP' && s.status === 'PENDING',
+    );
+
+    for (const swapStep of pendingSwaps) {
+      // Only prepare swap if all preceding steps are done
+      const precedingSteps = freshSteps.filter(
+        (s) => s.stepIndex < swapStep.stepIndex,
+      );
+      const allPrecedingDone = precedingSteps.every(
+        (s) => s.status === 'CONFIRMED' || s.status === 'SKIPPED',
+      );
+
+      if (!allPrecedingDone) continue;
+
+      if (this.isTimedOut(swapStep)) {
+        await this.failStep(swapStep.id, 'Timeout waiting for LiFi swap preparation');
+        await this.failOperation(op.id, 'LiFi swap timeout');
+        return;
+      }
+
+      await this.prepareLifiSwap(op, swapStep);
+    }
+
+    // 4. Check completion (LIFI_SWAP in AWAITING_SIGNATURE does NOT count as done)
     await this.checkCompletion(op.id);
   }
 
@@ -172,6 +200,83 @@ export class MintWorkerService {
     } catch (error) {
       this.logger.warn(
         `Mint retry failed for step ${mintStep.id}: ${error.message}`,
+      );
+    }
+  }
+
+  private async prepareLifiSwap(op: any, swapStep: any) {
+    const params = swapStep.burnIntentData as any;
+    if (!params?.outputToken) {
+      this.logger.warn(`LIFI_SWAP step ${swapStep.id} missing outputToken params`);
+      return;
+    }
+
+    const chain = swapStep.chain;
+    const chainConfig = ALL_CHAINS[chain];
+    if (!chainConfig) {
+      this.logger.warn(`Unknown chain ${chain} for LIFI_SWAP step ${swapStep.id}`);
+      return;
+    }
+
+    const usdcAddress = getUsdcAddress(chain);
+
+    try {
+      // Get fresh LiFi quote (previous quote from preparation may have expired)
+      const quote = await this.lifiService.getQuote({
+        fromChain: chainConfig.chainId,
+        toChain: chainConfig.chainId,
+        fromToken: usdcAddress,
+        toToken: params.outputToken,
+        fromAmount: params.usdcAmount,
+        fromAddress: op.user.walletAddress,
+        toAddress: params.recipientAddress,
+        slippage: params.slippage ?? 0.005,
+      });
+
+      const swapCalls = this.lifiService.buildSwapCalls(
+        quote,
+        usdcAddress,
+        BigInt(params.usdcAmount),
+      );
+
+      // Update step with fresh calldata → AWAITING_SIGNATURE
+      await this.prisma.operationStep.update({
+        where: { id: swapStep.id },
+        data: {
+          status: 'AWAITING_SIGNATURE',
+          callData: swapCalls.map((c) => ({
+            to: c.to,
+            data: c.data,
+            value: c.value?.toString(),
+          })),
+        },
+      });
+
+      // Transition operation to AWAITING_SIGNATURE so frontend knows to prompt user
+      const signRequests = [
+        {
+          stepId: swapStep.id,
+          chain,
+          type: 'LIFI_SWAP',
+          calls: swapCalls.map((c) => ({ to: c.to, data: c.data })),
+          description: `Swap USDC → ${quote.action.toToken.symbol} on ${chain}`,
+        },
+      ];
+
+      await this.prisma.operation.update({
+        where: { id: op.id },
+        data: {
+          status: 'AWAITING_SIGNATURE',
+          signRequests,
+        },
+      });
+
+      this.logger.log(
+        `LiFi swap prepared for step ${swapStep.id} — ${quote.tool} route, awaiting user signature`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `LiFi quote failed for step ${swapStep.id}: ${error.message}, will retry`,
       );
     }
   }

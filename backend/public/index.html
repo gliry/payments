@@ -257,7 +257,7 @@
 
         <!-- Send -->
         <div class="form-row">
-          <label>Send USDC to address</label>
+          <label>Send USDC to address (optional: swap to output token via LiFi)</label>
           <div class="row">
             <input type="text" id="sendAddress" placeholder="0xRecipient..." style="margin-bottom:0" />
           </div>
@@ -272,6 +272,11 @@
             <input type="text" id="sendAmount" placeholder="10.00" style="max-width:100px;margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doSend()">POST send</button>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <input type="text" id="sendOutputToken" placeholder="Output token 0x... (optional — LiFi swap)" style="margin-bottom:0" />
+            <input type="text" id="sendOutputDecimals" placeholder="18" value="" style="max-width:60px;margin-bottom:0" title="Output token decimals" />
+            <input type="text" id="sendSlippage" placeholder="0.005" value="" style="max-width:70px;margin-bottom:0" title="Slippage" />
           </div>
         </div>
 
@@ -328,6 +333,30 @@
             </div>
             <button class="btn btn-sm btn-primary" style="flex:none"
               onclick="doBatchSend()">POST batch-send</button>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <!-- Swap & Deposit (Any Token → USDC → Gateway) -->
+        <div class="form-row">
+          <label>Swap & Deposit: any token → USDC → Gateway (via LiFi)</label>
+          <div class="row">
+            <select id="swapDepositChain">
+              <option value="polygon">polygon</option>
+              <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
+            </select>
+            <input type="text" id="swapDepositToken" placeholder="Token address 0x..." style="margin-bottom:0" />
+          </div>
+          <div class="row" style="margin-top:6px">
+            <input type="text" id="swapDepositAmount" placeholder="0.5" style="max-width:100px;margin-bottom:0" />
+            <input type="text" id="swapDepositDecimals" placeholder="18" value="18" style="max-width:60px;margin-bottom:0" title="Token decimals" />
+            <input type="text" id="swapDepositSlippage" placeholder="0.005" value="" style="max-width:70px;margin-bottom:0" title="Slippage" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doSwapDeposit()">POST swap-deposit</button>
           </div>
         </div>
 
@@ -436,22 +465,46 @@
     }
 
     // ── Fee estimation from native RPC ──────────────────
-    // Circle's modular transport returns low gas prices; fetch eth_gasPrice from chain RPC
+    // Per-chain gas strategy: L2s have near-zero fees, L1-like chains need bigger buffers
+    const L2_CHAIN_IDS = new Set([42161, 8453, 10]); // Arbitrum, Base, Optimism
+    const L2_FLOOR = 100_000_000n; // 0.1 gwei — minimum for Circle bundler on L2s
+
     function nativeFeeEstimator(chain) {
+      const isL2 = L2_CHAIN_IDS.has(chain.id);
+
       return async () => {
         const rpcUrl = chain.rpcUrls.default.http[0];
-        const res = await fetch(rpcUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }),
-        });
-        const data = await res.json();
-        const gasPrice = BigInt(data.result);
-        // Circle bundler requires both maxFeePerGas and maxPriorityFeePerGas >= 1.5 gwei
-        const floor = 2000000000n;
-        const maxFeePerGas = gasPrice > floor ? gasPrice * 3n / 2n : floor;
-        const maxPriorityFeePerGas = maxFeePerGas;
-        console.log(`Fee estimate for chain ${chain.id}: gasPrice=${gasPrice}, maxFeePerGas=${maxFeePerGas}`);
+        const [gasPriceRes, priorityFeeRes] = await Promise.all([
+          fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }),
+          }),
+          fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_maxPriorityFeePerGas', params: [] }),
+          }),
+        ]);
+        const gasPriceData = await gasPriceRes.json();
+        const priorityFeeData = await priorityFeeRes.json();
+
+        const gasPrice = BigInt(gasPriceData.result);
+        const rawPriorityFee = priorityFeeData.result ? BigInt(priorityFeeData.result) : 1n;
+
+        let maxFeePerGas, maxPriorityFeePerGas;
+
+        if (isL2) {
+          // L2s: gas is near-zero, just use floor for bundler compat
+          maxFeePerGas = gasPrice > L2_FLOOR ? gasPrice * 11n / 10n : L2_FLOOR;
+          maxPriorityFeePerGas = L2_FLOOR;
+        } else {
+          // L1-like (Polygon, Avalanche): real gas market, 2x buffer for volatility
+          maxFeePerGas = gasPrice * 2n;
+          maxPriorityFeePerGas = rawPriorityFee * 2n;
+        }
+
+        console.log(`Fee estimate [${isL2 ? 'L2' : 'L1'}] chain ${chain.id}: gasPrice=${gasPrice}, priorityFee=${rawPriorityFee}, maxFee=${maxFeePerGas}, maxPriority=${maxPriorityFeePerGas}`);
         return { maxFeePerGas, maxPriorityFeePerGas };
       };
     }
@@ -641,21 +694,59 @@
     }
 
     function showSignButton(container, operationId, signRequests) {
-      const clientSteps = signRequests.filter(r => !r.serverSide);
+      const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
+      const hasSwap = signRequests.some(r => r.type === 'LIFI_SWAP');
       const label = clientSteps.length > 0
         ? `Sign & Execute (${clientSteps.length} UserOps)`
         : 'Submit (server-side steps only)';
 
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+
+      // Refresh Quote button (only for LiFi swaps)
+      if (hasSwap) {
+        const refreshBtn = document.createElement('button');
+        refreshBtn.className = 'btn btn-secondary';
+        refreshBtn.textContent = 'Refresh Quote';
+        refreshBtn.onclick = async () => {
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = 'Refreshing...';
+          const resBody = document.getElementById('resBody');
+          try {
+            const res = await fetch(`${API}/v1/operations/${operationId}/refresh-swap`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${jwt}` },
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              resBody.textContent += `\n\nRefresh failed: ${data.message || JSON.stringify(data)}`;
+              refreshBtn.disabled = false;
+              refreshBtn.textContent = 'Refresh Quote';
+              return;
+            }
+            resBody.textContent += `\n\nQuote refreshed! Route: ${data.quote?.tool}, output: ${data.quote?.outputToken}`;
+            // Replace buttons with updated signRequests
+            btnRow.remove();
+            showSignButton(container, operationId, data.signRequests);
+          } catch (err) {
+            resBody.textContent += `\n\nRefresh error: ${err.message}`;
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = 'Refresh Quote';
+          }
+        };
+        btnRow.appendChild(refreshBtn);
+      }
+
       const signBtn = document.createElement('button');
       signBtn.className = 'btn btn-primary sign-btn';
-      signBtn.style.marginTop = '12px';
-      signBtn.style.display = 'block';
       signBtn.textContent = label;
       signBtn.onclick = () => {
-        signBtn.remove();
+        btnRow.remove();
         handleSignRequests(operationId, signRequests);
       };
-      container.appendChild(signBtn);
+      btnRow.appendChild(signBtn);
+
+      container.appendChild(btnRow);
     }
 
     // ── Sign & Execute UserOps ─────────────────────────
@@ -672,7 +763,7 @@
       }
       const cred = JSON.parse(credJson);
 
-      const clientSteps = signRequests.filter(r => !r.serverSide);
+      const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
 
       if (clientSteps.length === 0) {
         resBody.textContent += '\n\nNo client signing needed — submitting to server...';
@@ -735,6 +826,9 @@
           signatures.push({ stepId: req.stepId, txHash });
         } catch (err) {
           resBody.textContent += `\n  ERROR: ${err.message}`;
+          if (err.details) resBody.textContent += `\n  Details: ${JSON.stringify(err.details)}`;
+          if (err.cause) resBody.textContent += `\n  Cause: ${err.cause.message || JSON.stringify(err.cause)}`;
+          resBody.textContent += `\n  Chain: ${req.chain} (${chain?.id}), calls: ${req.calls?.length || 0}`;
           console.error('Sign error for step', req.stepId, err);
         }
       }
@@ -811,6 +905,16 @@
             resBody.textContent += `\n\n❌ Operation FAILED: ${data.errorMessage || 'unknown'}`;
             resStatus.textContent = 'Operation FAILED';
             resStatus.className = 'res-status res-err';
+            return;
+          }
+
+          // AWAITING_SIGNATURE = worker prepared a LiFi swap, needs second user signature
+          if (data.status === 'AWAITING_SIGNATURE' && data.signRequests && data.signRequests.length > 0) {
+            resBody.textContent += `\n\n🔑 Operation needs your signature for swap step!`;
+            resBody.textContent += '\n' + JSON.stringify(data, null, 2);
+            resStatus.textContent = 'Awaiting Signature (swap)';
+            resStatus.className = 'res-status';
+            showSignButton(resBox, data.id, data.signRequests);
             return;
           }
 
@@ -948,11 +1052,19 @@
       if (!destinationAddress) { alert('Enter recipient address'); return; }
       if (!amount) { alert('Enter amount'); return; }
 
-      await apiCall('POST', '/v1/operations/send', {
-        destinationAddress,
-        destinationChain,
-        amount,
-      });
+      const body = { destinationAddress, destinationChain, amount };
+
+      // Optional LiFi swap output token
+      const outputToken = document.getElementById('sendOutputToken').value.trim();
+      if (outputToken) {
+        body.outputToken = outputToken;
+        const decimals = document.getElementById('sendOutputDecimals').value.trim();
+        if (decimals) body.outputTokenDecimals = parseInt(decimals, 10);
+        const slippage = document.getElementById('sendSlippage').value.trim();
+        if (slippage) body.slippage = parseFloat(slippage);
+      }
+
+      await apiCall('POST', '/v1/operations/send', body);
     }
 
     // ── Operations: Bridge ──────────────────────────────
@@ -1010,6 +1122,24 @@
       await apiCall('POST', '/v1/operations/batch-send', body);
     }
 
+    // ── Operations: Swap & Deposit ─────────────────────
+    async function doSwapDeposit() {
+      const sourceChain = document.getElementById('swapDepositChain').value;
+      const sourceToken = document.getElementById('swapDepositToken').value.trim();
+      const amount = document.getElementById('swapDepositAmount').value.trim();
+      if (!sourceToken) { alert('Enter source token address'); return; }
+      if (!amount) { alert('Enter amount'); return; }
+
+      const body = { sourceChain, sourceToken, amount };
+
+      const decimals = document.getElementById('swapDepositDecimals').value.trim();
+      if (decimals) body.tokenDecimals = parseInt(decimals, 10);
+      const slippage = document.getElementById('swapDepositSlippage').value.trim();
+      if (slippage) body.slippage = parseFloat(slippage);
+
+      await apiCall('POST', '/v1/operations/swap-deposit', body);
+    }
+
     // ── Operations: Get by ID / Submit ──────────────────
     async function doGetOp() {
       const id = document.getElementById('opId').value.trim();
@@ -1060,6 +1190,7 @@
     window.doGetOp = doGetOp;
     window.doSubmitOp = doSubmitOp;
     window.doBatchSend = doBatchSend;
+    window.doSwapDeposit = doSwapDeposit;
     window.addRecipientRow = addRecipientRow;
     window.handleSignRequests = handleSignRequests;
     window.signDelegateAndSubmit = signDelegateAndSubmit;

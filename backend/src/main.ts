@@ -44,7 +44,16 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   // Serve static files from backend/public (test client at /index.html)
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  // Disable caching for HTML files to ensure latest version is always served
+  app.useStaticAssets(join(__dirname, '..', 'public'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    },
+  });
 
   app.enableShutdownHooks();
 
