@@ -16,7 +16,7 @@ OmniFlow is a hub-and-spoke payments protocol that unifies fragmented crypto liq
 
 - **Deposit** any token from any chain — auto-swaps to USDC and settles on the hub
 - **Pay out** to any chain in any token recipients actually want
-- **Batch payouts** — 50 recipients, 5 chains, 4 tokens, one API call
+- **Batch payouts** — any recipients, any chains, any tokens, one API call
 - **Passkey auth** — FaceID/TouchID signs every transaction, no seed phrases
 - **Fully non-custodial** — every user owns their Modular Smart Contract Account (MSCA)
 - **ENS payment routing** — send to `alice.eth`, OmniFlow reads on-chain preferences and auto-routes
@@ -107,7 +107,7 @@ User: "Deposit 0.5 WETH from Arbitrum"
 │  Gas: sponsored by paymaster                        │
 └──────────────────────┬──────────────────────────────┘
                        │
-                       ▼  Circle Gateway (CCTP V2)
+                       ▼  Circle Gateway
 ┌─────────────────────────────────────────────────────┐
 │  Burn USDC on Arbitrum                              │
 │  Attestation from Circle                            │
@@ -133,7 +133,7 @@ API call: POST /operations/send
 │  LI.FI quote: USDC (Optimism) → DAI (Optimism)     │
 └──────────────────────┬──────────────────────────────┘
                        │
-                       ▼  Circle Gateway (CCTP V2)
+                       ▼  Circle Gateway
 ┌─────────────────────────────────────────────────────┐
 │  Burn USDC on Arc (hub)                             │
 │  Attestation from Circle                            │
@@ -205,7 +205,7 @@ Code: [`backend/src/operations/operations.service.ts:917`](https://github.com/gl
 | Directory | Description |
 |-----------|-------------|
 | `app/` | Vanilla JS dashboard — ES6 modules, custom router, no build step |
-| `backend/` | NestJS backend — Prisma ORM + SQLite, Circle SDK, LI.FI, Gateway |
+| `backend/` | NestJS backend — Prisma ORM + SQLite + PostgreSQL, Circle SDK, LI.FI, Gateway |
 | `frontend/` | First tests of idea frontend and scripts |
 | `demo/` | Demo scripts and presentation materials |
 
@@ -218,7 +218,7 @@ Arc is the core of OmniFlow. We chose Arc as the hub chain because it is the USD
 ### Best Chain Abstracted USDC Apps Using Arc as a Liquidity Hub
 
 - **Arc as liquidity hub** — hub-and-spoke model reduces N×(N-1) cross-chain paths to just 2N. All USDC consolidates on Arc, invisible to the user. → [`backend/src/circle/config/chains.ts:20`](https://github.com/gliry/payments/blob/main/backend/src/circle/config/chains.ts#L20) (AA_GATEWAY_CHAINS), [`:86`](https://github.com/gliry/payments/blob/main/backend/src/circle/config/chains.ts#L86) (HUB_CHAIN)
-- **Circle Gateway (CCTP V2)** — native USDC burn-attestation-mint across chains. No wrapped tokens, no liquidity pools. Real native USDC on every chain. → [`backend/src/circle/gateway/gateway.service.ts:111`](https://github.com/gliry/payments/blob/main/backend/src/circle/gateway/gateway.service.ts#L111) (createBurnIntent), [`:151`](https://github.com/gliry/payments/blob/main/backend/src/circle/gateway/gateway.service.ts#L151) (signAndSubmitBurnIntent), [`:328`](https://github.com/gliry/payments/blob/main/backend/src/circle/gateway/gateway.service.ts#L328) (executeMint)
+- **Circle Gateway** — native USDC burn-attestation-mint across chains. No wrapped tokens, no liquidity pools. Real native USDC on every chain. → [`backend/src/circle/gateway/gateway.service.ts:111`](https://github.com/gliry/payments/blob/main/backend/src/circle/gateway/gateway.service.ts#L111) (createBurnIntent), [`:151`](https://github.com/gliry/payments/blob/main/backend/src/circle/gateway/gateway.service.ts#L151) (signAndSubmitBurnIntent), [`:328`](https://github.com/gliry/payments/blob/main/backend/src/circle/gateway/gateway.service.ts#L328) (executeMint)
 - **Circle Wallets (Passkey / MSCA)** — ERC-4337 smart accounts with WebAuthn signer. One Passkey controls accounts on all chains. Lazy deployment via CREATE2 — address is known before contract exists. → [`app/js/auth.js:76`](https://github.com/gliry/payments/blob/main/app/js/auth.js#L76) (registerPasskey)
 - **AA Batching** — approve + swap + transfer + bridge + fee collapsed into a single atomic UserOp with one biometric confirmation → [`app/js/userop.js:95`](https://github.com/gliry/payments/blob/main/app/js/userop.js#L95) (signAndSubmitUserOps)
 - **Cross-chain deposit & mint calls** → [`frontend/src/lib/gateway/operations.ts:97`](https://github.com/gliry/payments/blob/main/frontend/src/lib/gateway/operations.ts#L97) (buildGatewayDepositCalls), [`:137`](https://github.com/gliry/payments/blob/main/frontend/src/lib/gateway/operations.ts#L137) (buildGatewayMintCalls)
