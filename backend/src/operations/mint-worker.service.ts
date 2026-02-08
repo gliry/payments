@@ -177,6 +177,16 @@ export class MintWorkerService {
   }
 
   private async tryMint(mintStep: any, burnStep: any) {
+    // Skip if already has a txHash (eager mint succeeded but DB update may have lagged)
+    if (mintStep.txHash) {
+      await this.prisma.operationStep.update({
+        where: { id: mintStep.id },
+        data: { status: 'CONFIRMED', completedAt: new Date() },
+      });
+      this.logger.log(`Mint step ${mintStep.id} already has txHash, marked CONFIRMED`);
+      return;
+    }
+
     const relayerKey = this.configService.get<string>('RELAYER_PRIVATE_KEY');
     if (!relayerKey) {
       this.logger.error('RELAYER_PRIVATE_KEY not configured, cannot execute mint');
@@ -210,8 +220,36 @@ export class MintWorkerService {
 
       this.logger.log(`Mint executed on ${destinationChain}: ${txHash}`);
     } catch (error) {
+      const msg = error.message || '';
+      // TransferSpecHashUsed (0x160ca292) = attestation already consumed on-chain
+      // This means a previous mint attempt actually succeeded — mark CONFIRMED
+      if (msg.includes('0x160ca292') || msg.includes('TransferSpecHashUsed')) {
+        this.logger.log(
+          `Mint step ${mintStep.id}: attestation already consumed on ${destinationChain} — marking CONFIRMED`,
+        );
+        await this.prisma.operationStep.update({
+          where: { id: mintStep.id },
+          data: {
+            status: 'CONFIRMED',
+            completedAt: new Date(),
+            errorMessage: 'Attestation already consumed (duplicate mint detected)',
+          },
+        });
+        return;
+      }
+
+      // AttestationExpiredAtIndex (0xa31dc54b) = attestation maxBlockHeight exceeded
+      // Non-retryable: the attestation is permanently invalid, need a new burn intent
+      if (msg.includes('0xa31dc54b') || msg.includes('AttestationExpiredAtIndex')) {
+        this.logger.error(
+          `Mint step ${mintStep.id}: attestation expired on ${destinationChain} — failing step`,
+        );
+        await this.failStep(mintStep.id, `Attestation expired on ${destinationChain}. The mint window has passed.`);
+        return;
+      }
+
       this.logger.warn(
-        `Mint retry failed for step ${mintStep.id}: ${error.message}`,
+        `Mint retry failed for step ${mintStep.id}: ${msg}`,
       );
     }
   }

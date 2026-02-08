@@ -46,6 +46,30 @@ const GATEWAY_MINTER_ABI = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'error',
+    name: 'TransferSpecHashUsed',
+    inputs: [{ name: 'transferSpecHash', type: 'bytes32' }],
+  },
+  {
+    type: 'error',
+    name: 'MustHaveAtLeastOneAttestation',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'InvalidAttestationSigner',
+    inputs: [{ name: 'signer', type: 'address' }],
+  },
+  {
+    type: 'error',
+    name: 'AttestationExpiredAtIndex',
+    inputs: [
+      { name: 'index', type: 'uint32' },
+      { name: 'maxBlockHeight', type: 'uint256' },
+      { name: 'currentBlock', type: 'uint256' },
+    ],
+  },
 ] as const;
 
 const GATEWAY_WALLET_DELEGATE_ABI = [

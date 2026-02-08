@@ -1101,7 +1101,17 @@ export class OperationsService {
       });
     }
 
-    for (const r of recipientDetails) {
+    // Track swap estimates for summary
+    const swapEstimates: Array<{
+      recipientIndex: number;
+      outputToken: string;
+      estimatedOutput: string;
+      minimumOutput: string;
+      lifiRoute: string;
+    }> = [];
+
+    for (let ri = 0; ri < recipientDetails.length; ri++) {
+      const r = recipientDetails[ri];
       const isInternal =
         sourceChain === r.chain && sourceChain === HUB_CHAIN;
 
@@ -1128,6 +1138,9 @@ export class OperationsService {
           description: `Transfer ${r.amount} USDC to ${r.address}`,
         });
       } else {
+        // If outputToken is set, mint to user's wallet so swap can execute from it
+        const mintRecipient = r.outputToken ? user.walletAddress : r.address;
+
         const burnStep = await this.prisma.operationStep.create({
           data: {
             operationId: operation.id,
@@ -1140,7 +1153,7 @@ export class OperationsService {
               destinationChain: r.chain,
               amount: r.amountRaw.toString(),
               depositor: user.walletAddress,
-              recipient: r.address,
+              recipient: mintRecipient,
             },
           },
         });
@@ -1159,10 +1172,86 @@ export class OperationsService {
           stepId: burnStep.id,
           chain: sourceChain,
           type: 'BURN_INTENT',
-          description: `Burn ${r.amount} USDC → ${r.address} on ${r.chain}`,
+          description: `Burn ${r.amount} USDC → ${r.outputToken ? 'swap on' : r.address + ' on'} ${r.chain}`,
           serverSide: true,
         });
+
+        // Add LIFI_SWAP step for recipients with outputToken
+        if (r.outputToken) {
+          const destChain = ALL_CHAINS[r.chain];
+          const destUsdcAddress = getUsdcAddress(r.chain);
+          const swapSlippage = effectiveSwapSlippage(r.amountRaw, r.slippage);
+
+          try {
+            const estimateQuote = await this.lifiService.getQuote({
+              fromChain: destChain.chainId,
+              toChain: destChain.chainId,
+              fromToken: destUsdcAddress,
+              toToken: r.outputToken,
+              fromAmount: r.amountRaw.toString(),
+              fromAddress: user.walletAddress,
+              toAddress: r.address,
+              slippage: swapSlippage,
+            });
+
+            const swapStep = await this.prisma.operationStep.create({
+              data: {
+                operationId: operation.id,
+                stepIndex: stepIndex++,
+                chain: r.chain,
+                type: 'LIFI_SWAP',
+                status: 'PENDING',
+                burnIntentData: {
+                  outputToken: r.outputToken,
+                  outputTokenDecimals: r.outputTokenDecimals ?? 18,
+                  slippage: swapSlippage,
+                  recipientAddress: r.address,
+                  usdcAmount: r.amountRaw.toString(),
+                },
+              },
+            });
+
+            signRequests.push({
+              stepId: swapStep.id,
+              chain: r.chain,
+              type: 'LIFI_SWAP',
+              description: `Swap USDC → ${estimateQuote.action.toToken.symbol} → ${r.address} on ${r.chain} (after mint)`,
+              serverSide: false,
+              pendingMint: true,
+            });
+
+            swapEstimates.push({
+              recipientIndex: ri,
+              outputToken: estimateQuote.action.toToken.symbol,
+              estimatedOutput: formatUnits(
+                BigInt(estimateQuote.estimate.toAmount),
+                r.outputTokenDecimals ?? 18,
+              ),
+              minimumOutput: formatUnits(
+                BigInt(estimateQuote.estimate.toAmountMin),
+                r.outputTokenDecimals ?? 18,
+              ),
+              lifiRoute: estimateQuote.tool,
+            });
+          } catch (lifiError) {
+            this.logger.warn(`LiFi quote failed for batch recipient ${ri}: ${lifiError.message}`);
+            throw new BadRequestException(
+              `LiFi swap not available for recipient #${ri + 1} (${r.outputToken} on ${r.chain}): ${lifiError.message}`,
+            );
+          }
+        }
       }
+    }
+
+    // Enrich summary with swap estimates
+    if (swapEstimates.length > 0) {
+      const summary = operation.summary as any;
+      summary.swapEstimates = swapEstimates;
+      summary.estimatedTime = '20-30 minutes';
+      await this.prisma.operation.update({
+        where: { id: operation.id },
+        data: { summary },
+      });
     }
 
     await this.prisma.operation.update({
@@ -1174,7 +1263,7 @@ export class OperationsService {
       id: operation.id,
       type: 'BATCH_SEND',
       status: 'AWAITING_SIGNATURE',
-      summary: operation.summary,
+      summary: (await this.prisma.operation.findUnique({ where: { id: operation.id } }))?.summary ?? operation.summary,
       signRequests,
     };
   }
@@ -1265,9 +1354,38 @@ export class OperationsService {
 
             this.logger.log(`Eager mint succeeded on ${intentData.destinationChain}: ${txHash}`);
           } catch (mintError) {
-            this.logger.warn(
-              `Eager mint failed on ${intentData.destinationChain}, worker will retry: ${mintError.message}`,
-            );
+            const msg = mintError.message || '';
+            // TransferSpecHashUsed = attestation already consumed (shouldn't happen
+            // in eager path, but handle defensively)
+            if (msg.includes('0x160ca292') || msg.includes('TransferSpecHashUsed')) {
+              this.logger.log(
+                `Eager mint: attestation already consumed on ${intentData.destinationChain} — marking CONFIRMED`,
+              );
+              await this.prisma.operationStep.update({
+                where: { id: mintStep.id },
+                data: {
+                  status: 'CONFIRMED',
+                  completedAt: new Date(),
+                  errorMessage: 'Attestation already consumed (duplicate mint detected)',
+                },
+              });
+            } else if (msg.includes('0xa31dc54b') || msg.includes('AttestationExpiredAtIndex')) {
+              // Non-retryable: attestation maxBlockHeight exceeded on destination chain
+              this.logger.error(
+                `Eager mint: attestation expired on ${intentData.destinationChain}`,
+              );
+              await this.prisma.operationStep.update({
+                where: { id: mintStep.id },
+                data: {
+                  status: 'FAILED',
+                  errorMessage: `Attestation expired on ${intentData.destinationChain}`,
+                },
+              });
+            } else {
+              this.logger.warn(
+                `Eager mint failed on ${intentData.destinationChain}, worker will retry: ${msg}`,
+              );
+            }
           }
           mintIndex++;
         }
