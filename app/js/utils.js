@@ -142,6 +142,50 @@ export function getChainSVG(chain, size = 32) {
   return svgs[chain] || svgs.ethereum;
 }
 
+/** Known non-USDC tokens per chain (most liquid, for AA wallet scanning) */
+export const KNOWN_TOKENS = {
+  base: [
+    { symbol: 'WETH', address: '0x4200000000000000000000000000000000000006', decimals: 18 },
+    { symbol: 'DAI',  address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', decimals: 18 },
+    { symbol: 'USDT', address: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2', decimals: 6 },
+  ],
+  arbitrum: [
+    { symbol: 'WETH', address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', decimals: 18 },
+    { symbol: 'WBTC', address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f', decimals: 8 },
+    { symbol: 'ARB',  address: '0x912CE59144191C1204E64559FE8253a0e49E6548', decimals: 18 },
+    { symbol: 'USDT', address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', decimals: 6 },
+  ],
+  optimism: [
+    { symbol: 'WETH', address: '0x4200000000000000000000000000000000000006', decimals: 18 },
+    { symbol: 'OP',   address: '0x4200000000000000000000000000000000000042', decimals: 18 },
+    { symbol: 'USDT', address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', decimals: 6 },
+  ],
+  avalanche: [
+    { symbol: 'WAVAX', address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7', decimals: 18 },
+    { symbol: 'WETH',  address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB', decimals: 18 },
+    { symbol: 'USDT',  address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7', decimals: 6 },
+  ],
+  ethereum: [
+    { symbol: 'WETH', address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', decimals: 18 },
+    { symbol: 'WBTC', address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', decimals: 8 },
+    { symbol: 'DAI',  address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', decimals: 18 },
+  ],
+};
+
+/** Fetch ERC20 balanceOf via eth_call. Returns BigInt. */
+export async function getTokenBalance(rpcUrl, tokenAddress, walletAddress) {
+  const paddedAddr = walletAddress.slice(2).toLowerCase().padStart(64, '0');
+  const callData = '0x70a08231' + paddedAddr; // balanceOf(address)
+  const res = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: tokenAddress, data: callData }, 'latest'] }),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return BigInt(json.result || '0x0');
+}
+
 /** Simple ID generator */
 export function generateId(prefix = 'id') {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
