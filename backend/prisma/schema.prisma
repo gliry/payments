@@ -27,7 +27,7 @@ model User {
   walletAddress String @unique
 
   // Server-generated delegate EOA for Gateway burn intent signing
-  delegateAddress      String @unique
+  delegateAddress      String
   delegateEncryptedKey String // AES-256-GCM encrypted private key
 
   metadata Json?
@@ -81,7 +81,7 @@ model Operation {
   id     String          @id @default(uuid())
   userId String
   type   OperationType
-  status OperationStatus @default(PREPARING)
+  status OperationStatus @default(AWAITING_SIGNATURE)
 
   params       Json
   summary      Json?
@@ -115,12 +115,8 @@ enum OperationType {
 }
 
 enum OperationStatus {
-  PREPARING
   AWAITING_SIGNATURE
-  SUBMITTED
   PROCESSING
-  AWAITING_SIGNATURE_PHASE2
-  SUBMITTED_PHASE2
   COMPLETED
   FAILED
   CANCELLED
@@ -134,9 +130,8 @@ model OperationStep {
   type        StepType
   status      StepStatus @default(PENDING)
 
-  callData   Json?
-  txHash     String?
-  userOpHash String?
+  callData Json?
+  txHash   String?
 
   burnIntentData    Json?
   attestation       String?
@@ -151,16 +146,15 @@ model OperationStep {
   operation Operation @relation(fields: [operationId], references: [id])
 
   @@index([operationId])
+  @@index([status])
+  @@index([type, status])
   @@map("operation_steps")
 }
 
 enum StepType {
-  APPROVE
-  DEPOSIT
   APPROVE_AND_DEPOSIT
   ADD_DELEGATE
   BURN_INTENT
-  WAIT_ATTESTATION
   MINT
   TRANSFER
   LIFI_SWAP

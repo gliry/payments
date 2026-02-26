@@ -2,7 +2,10 @@
 // which doesn't exist in Node.js. Provide a minimal shim.
 if (typeof globalThis.window === 'undefined') {
   (globalThis as any).window = {
-    location: { hostname: 'localhost', protocol: 'http:' },
+    location: {
+      hostname: process.env.CIRCLE_ALLOWED_DOMAIN || 'localhost',
+      protocol: 'https:',
+    },
   };
 }
 

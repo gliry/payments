@@ -7,18 +7,11 @@ import { GatewayService } from '../circle/gateway/gateway.service';
 import { LifiService } from '../lifi/lifi.service';
 import { AuthService } from '../auth/auth.service';
 import { ALL_CHAINS, getUsdcAddress } from '../circle/config/chains';
-
-/**
- * Calculate effective slippage for LiFi swaps — mirrors the function in operations.service.ts.
- * Small amounts need higher slippage to avoid MinimalOutputBalanceViolation reverts.
- */
-function effectiveSwapSlippage(usdcAmount: bigint, userSlippage?: number): number {
-  const usdc = Number(usdcAmount) / 1e6;
-  if (usdc < 1) return Math.max(userSlippage ?? 0, 0.05);
-  if (usdc < 10) return Math.max(userSlippage ?? 0, 0.03);
-  if (usdc < 100) return Math.max(userSlippage ?? 0, 0.01);
-  return userSlippage ?? 0.005;
-}
+import { effectiveSwapSlippage } from './helpers/fee.util';
+import {
+  isAttestationConsumed,
+  isAttestationExpired,
+} from '../circle/gateway/gateway.errors';
 
 const WORKER_INTERVAL_MS = 30_000;
 const STEP_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -221,9 +214,7 @@ export class MintWorkerService {
       this.logger.log(`Mint executed on ${destinationChain}: ${txHash}`);
     } catch (error) {
       const msg = error.message || '';
-      // TransferSpecHashUsed (0x160ca292) = attestation already consumed on-chain
-      // This means a previous mint attempt actually succeeded — mark CONFIRMED
-      if (msg.includes('0x160ca292') || msg.includes('TransferSpecHashUsed')) {
+      if (isAttestationConsumed(msg)) {
         this.logger.log(
           `Mint step ${mintStep.id}: attestation already consumed on ${destinationChain} — marking CONFIRMED`,
         );
@@ -238,9 +229,7 @@ export class MintWorkerService {
         return;
       }
 
-      // AttestationExpiredAtIndex (0xa31dc54b) = attestation maxBlockHeight exceeded
-      // Non-retryable: the attestation is permanently invalid, need a new burn intent
-      if (msg.includes('0xa31dc54b') || msg.includes('AttestationExpiredAtIndex')) {
+      if (isAttestationExpired(msg)) {
         this.logger.error(
           `Mint step ${mintStep.id}: attestation expired on ${destinationChain} — failing step`,
         );

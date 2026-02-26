@@ -1,14 +1,16 @@
-import { IsArray, IsString, IsOptional } from 'class-validator';
+import { IsArray, IsOptional, ArrayMinSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsGatewayChain } from '../../common/validators/chain.validator';
 
 export class PrepareCollectDto {
   @ApiProperty({ example: ['arbitrum', 'avalanche'] })
   @IsArray()
-  @IsString({ each: true })
+  @ArrayMinSize(1)
+  @IsGatewayChain({ each: true })
   sourceChains: string[];
 
   @ApiProperty({ example: 'polygon', required: false })
   @IsOptional()
-  @IsString()
+  @IsGatewayChain()
   destination?: string;
 }

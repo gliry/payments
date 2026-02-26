@@ -244,11 +244,11 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   username?: string
   credentialId?: string
   walletAddress?: string
-  delegateAddress?: string
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   publicKey?: Prisma.StringFilter<"User"> | string
+  delegateAddress?: Prisma.StringFilter<"User"> | string
   delegateEncryptedKey?: Prisma.StringFilter<"User"> | string
   metadata?: Prisma.JsonNullableFilter<"User">
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -256,7 +256,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   delegateSetups?: Prisma.DelegateSetupListRelationFilter
   operations?: Prisma.OperationListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
-}, "id" | "username" | "credentialId" | "walletAddress" | "delegateAddress">
+}, "id" | "username" | "credentialId" | "walletAddress">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder

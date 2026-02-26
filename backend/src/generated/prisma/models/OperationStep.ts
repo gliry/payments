@@ -42,7 +42,6 @@ export type OperationStepMinAggregateOutputType = {
   type: $Enums.StepType | null
   status: $Enums.StepStatus | null
   txHash: string | null
-  userOpHash: string | null
   attestation: string | null
   operatorSignature: string | null
   errorMessage: string | null
@@ -59,7 +58,6 @@ export type OperationStepMaxAggregateOutputType = {
   type: $Enums.StepType | null
   status: $Enums.StepStatus | null
   txHash: string | null
-  userOpHash: string | null
   attestation: string | null
   operatorSignature: string | null
   errorMessage: string | null
@@ -77,7 +75,6 @@ export type OperationStepCountAggregateOutputType = {
   status: number
   callData: number
   txHash: number
-  userOpHash: number
   burnIntentData: number
   attestation: number
   operatorSignature: number
@@ -105,7 +102,6 @@ export type OperationStepMinAggregateInputType = {
   type?: true
   status?: true
   txHash?: true
-  userOpHash?: true
   attestation?: true
   operatorSignature?: true
   errorMessage?: true
@@ -122,7 +118,6 @@ export type OperationStepMaxAggregateInputType = {
   type?: true
   status?: true
   txHash?: true
-  userOpHash?: true
   attestation?: true
   operatorSignature?: true
   errorMessage?: true
@@ -140,7 +135,6 @@ export type OperationStepCountAggregateInputType = {
   status?: true
   callData?: true
   txHash?: true
-  userOpHash?: true
   burnIntentData?: true
   attestation?: true
   operatorSignature?: true
@@ -246,7 +240,6 @@ export type OperationStepGroupByOutputType = {
   status: $Enums.StepStatus
   callData: runtime.JsonValue | null
   txHash: string | null
-  userOpHash: string | null
   burnIntentData: runtime.JsonValue | null
   attestation: string | null
   operatorSignature: string | null
@@ -288,7 +281,6 @@ export type OperationStepWhereInput = {
   status?: Prisma.EnumStepStatusFilter<"OperationStep"> | $Enums.StepStatus
   callData?: Prisma.JsonNullableFilter<"OperationStep">
   txHash?: Prisma.StringNullableFilter<"OperationStep"> | string | null
-  userOpHash?: Prisma.StringNullableFilter<"OperationStep"> | string | null
   burnIntentData?: Prisma.JsonNullableFilter<"OperationStep">
   attestation?: Prisma.StringNullableFilter<"OperationStep"> | string | null
   operatorSignature?: Prisma.StringNullableFilter<"OperationStep"> | string | null
@@ -308,7 +300,6 @@ export type OperationStepOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   callData?: Prisma.SortOrderInput | Prisma.SortOrder
   txHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  userOpHash?: Prisma.SortOrderInput | Prisma.SortOrder
   burnIntentData?: Prisma.SortOrderInput | Prisma.SortOrder
   attestation?: Prisma.SortOrderInput | Prisma.SortOrder
   operatorSignature?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -331,7 +322,6 @@ export type OperationStepWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumStepStatusFilter<"OperationStep"> | $Enums.StepStatus
   callData?: Prisma.JsonNullableFilter<"OperationStep">
   txHash?: Prisma.StringNullableFilter<"OperationStep"> | string | null
-  userOpHash?: Prisma.StringNullableFilter<"OperationStep"> | string | null
   burnIntentData?: Prisma.JsonNullableFilter<"OperationStep">
   attestation?: Prisma.StringNullableFilter<"OperationStep"> | string | null
   operatorSignature?: Prisma.StringNullableFilter<"OperationStep"> | string | null
@@ -351,7 +341,6 @@ export type OperationStepOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   callData?: Prisma.SortOrderInput | Prisma.SortOrder
   txHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  userOpHash?: Prisma.SortOrderInput | Prisma.SortOrder
   burnIntentData?: Prisma.SortOrderInput | Prisma.SortOrder
   attestation?: Prisma.SortOrderInput | Prisma.SortOrder
   operatorSignature?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -378,7 +367,6 @@ export type OperationStepScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumStepStatusWithAggregatesFilter<"OperationStep"> | $Enums.StepStatus
   callData?: Prisma.JsonNullableWithAggregatesFilter<"OperationStep">
   txHash?: Prisma.StringNullableWithAggregatesFilter<"OperationStep"> | string | null
-  userOpHash?: Prisma.StringNullableWithAggregatesFilter<"OperationStep"> | string | null
   burnIntentData?: Prisma.JsonNullableWithAggregatesFilter<"OperationStep">
   attestation?: Prisma.StringNullableWithAggregatesFilter<"OperationStep"> | string | null
   operatorSignature?: Prisma.StringNullableWithAggregatesFilter<"OperationStep"> | string | null
@@ -396,7 +384,6 @@ export type OperationStepCreateInput = {
   status?: $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: string | null
-  userOpHash?: string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: string | null
   operatorSignature?: string | null
@@ -416,7 +403,6 @@ export type OperationStepUncheckedCreateInput = {
   status?: $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: string | null
-  userOpHash?: string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: string | null
   operatorSignature?: string | null
@@ -434,7 +420,6 @@ export type OperationStepUpdateInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -454,7 +439,6 @@ export type OperationStepUncheckedUpdateInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -473,7 +457,6 @@ export type OperationStepCreateManyInput = {
   status?: $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: string | null
-  userOpHash?: string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: string | null
   operatorSignature?: string | null
@@ -491,7 +474,6 @@ export type OperationStepUpdateManyMutationInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -510,7 +492,6 @@ export type OperationStepUncheckedUpdateManyInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -539,7 +520,6 @@ export type OperationStepCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   callData?: Prisma.SortOrder
   txHash?: Prisma.SortOrder
-  userOpHash?: Prisma.SortOrder
   burnIntentData?: Prisma.SortOrder
   attestation?: Prisma.SortOrder
   operatorSignature?: Prisma.SortOrder
@@ -561,7 +541,6 @@ export type OperationStepMaxOrderByAggregateInput = {
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   txHash?: Prisma.SortOrder
-  userOpHash?: Prisma.SortOrder
   attestation?: Prisma.SortOrder
   operatorSignature?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
@@ -578,7 +557,6 @@ export type OperationStepMinOrderByAggregateInput = {
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   txHash?: Prisma.SortOrder
-  userOpHash?: Prisma.SortOrder
   attestation?: Prisma.SortOrder
   operatorSignature?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
@@ -657,7 +635,6 @@ export type OperationStepCreateWithoutOperationInput = {
   status?: $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: string | null
-  userOpHash?: string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: string | null
   operatorSignature?: string | null
@@ -675,7 +652,6 @@ export type OperationStepUncheckedCreateWithoutOperationInput = {
   status?: $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: string | null
-  userOpHash?: string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: string | null
   operatorSignature?: string | null
@@ -722,7 +698,6 @@ export type OperationStepScalarWhereInput = {
   status?: Prisma.EnumStepStatusFilter<"OperationStep"> | $Enums.StepStatus
   callData?: Prisma.JsonNullableFilter<"OperationStep">
   txHash?: Prisma.StringNullableFilter<"OperationStep"> | string | null
-  userOpHash?: Prisma.StringNullableFilter<"OperationStep"> | string | null
   burnIntentData?: Prisma.JsonNullableFilter<"OperationStep">
   attestation?: Prisma.StringNullableFilter<"OperationStep"> | string | null
   operatorSignature?: Prisma.StringNullableFilter<"OperationStep"> | string | null
@@ -740,7 +715,6 @@ export type OperationStepCreateManyOperationInput = {
   status?: $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: string | null
-  userOpHash?: string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: string | null
   operatorSignature?: string | null
@@ -758,7 +732,6 @@ export type OperationStepUpdateWithoutOperationInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -776,7 +749,6 @@ export type OperationStepUncheckedUpdateWithoutOperationInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -794,7 +766,6 @@ export type OperationStepUncheckedUpdateManyWithoutOperationInput = {
   status?: Prisma.EnumStepStatusFieldUpdateOperationsInput | $Enums.StepStatus
   callData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userOpHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   burnIntentData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   attestation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   operatorSignature?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -815,7 +786,6 @@ export type OperationStepSelect<ExtArgs extends runtime.Types.Extensions.Interna
   status?: boolean
   callData?: boolean
   txHash?: boolean
-  userOpHash?: boolean
   burnIntentData?: boolean
   attestation?: boolean
   operatorSignature?: boolean
@@ -835,7 +805,6 @@ export type OperationStepSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   status?: boolean
   callData?: boolean
   txHash?: boolean
-  userOpHash?: boolean
   burnIntentData?: boolean
   attestation?: boolean
   operatorSignature?: boolean
@@ -855,7 +824,6 @@ export type OperationStepSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   status?: boolean
   callData?: boolean
   txHash?: boolean
-  userOpHash?: boolean
   burnIntentData?: boolean
   attestation?: boolean
   operatorSignature?: boolean
@@ -875,7 +843,6 @@ export type OperationStepSelectScalar = {
   status?: boolean
   callData?: boolean
   txHash?: boolean
-  userOpHash?: boolean
   burnIntentData?: boolean
   attestation?: boolean
   operatorSignature?: boolean
@@ -885,7 +852,7 @@ export type OperationStepSelectScalar = {
   completedAt?: boolean
 }
 
-export type OperationStepOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "stepIndex" | "chain" | "type" | "status" | "callData" | "txHash" | "userOpHash" | "burnIntentData" | "attestation" | "operatorSignature" | "errorMessage" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["operationStep"]>
+export type OperationStepOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "operationId" | "stepIndex" | "chain" | "type" | "status" | "callData" | "txHash" | "burnIntentData" | "attestation" | "operatorSignature" | "errorMessage" | "createdAt" | "updatedAt" | "completedAt", ExtArgs["result"]["operationStep"]>
 export type OperationStepInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   operation?: boolean | Prisma.OperationDefaultArgs<ExtArgs>
 }
@@ -910,7 +877,6 @@ export type $OperationStepPayload<ExtArgs extends runtime.Types.Extensions.Inter
     status: $Enums.StepStatus
     callData: runtime.JsonValue | null
     txHash: string | null
-    userOpHash: string | null
     burnIntentData: runtime.JsonValue | null
     attestation: string | null
     operatorSignature: string | null
@@ -1350,7 +1316,6 @@ export interface OperationStepFieldRefs {
   readonly status: Prisma.FieldRef<"OperationStep", 'StepStatus'>
   readonly callData: Prisma.FieldRef<"OperationStep", 'Json'>
   readonly txHash: Prisma.FieldRef<"OperationStep", 'String'>
-  readonly userOpHash: Prisma.FieldRef<"OperationStep", 'String'>
   readonly burnIntentData: Prisma.FieldRef<"OperationStep", 'Json'>
   readonly attestation: Prisma.FieldRef<"OperationStep", 'String'>
   readonly operatorSignature: Prisma.FieldRef<"OperationStep", 'String'>
