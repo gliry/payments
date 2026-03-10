@@ -312,7 +312,7 @@
         <span class="section__label">The Problem</span>
         <h2 class="section__headline">Crypto teams waste 2+ hours on every payout run</h2>
         <p class="section__subtitle">Manual transactions, spreadsheet chaos, bridge hopping. No tool solves cross-chain batch payments.</p>
-        <div class="problem__cards grid-2" data-animate="stagger">
+        <div class="problem__cards grid-2">
           <div class="card problem__card">
             <span class="problem__card-stat" data-counter="2" data-counter-suffix="+ hours">0</span>
             <h3 class="problem__card-title">Per payout cycle</h3>
@@ -535,33 +535,43 @@
     </section>
 
     <!-- #8 Features -->
-    <section class="section" id="features">
+    <section class="section bg-mesh bg-mesh--features" id="features">
       <div class="container">
         <span class="section__label">Why OmniFlow</span>
         <h2 class="section__headline">The only platform that combines all five.</h2>
         <div class="features__grid" data-animate="stagger">
           <div class="card features__card" data-tilt>
-            <span class="features__icon">&#127760;</span>
+            <div class="features__visual">
+              <span class="features__icon">&#127760;</span>
+            </div>
             <h3 class="features__title">Cross-Chain (30+ chains)</h3>
             <p class="features__text">Route payments across 30+ EVM chains via CCTP v2 and LI.FI. No manual bridging.</p>
           </div>
           <div class="card features__card" data-tilt>
-            <span class="features__icon">&#128230;</span>
+            <div class="features__visual">
+              <span class="features__icon">&#128230;</span>
+            </div>
             <h3 class="features__title">Batch Operations</h3>
             <p class="features__text">50 recipients, 5 chains, 1 click. Upload CSV or paste from spreadsheet.</p>
           </div>
           <div class="card features__card" data-tilt>
-            <span class="features__icon">&#9889;</span>
+            <div class="features__visual">
+              <span class="features__icon">&#9889;</span>
+            </div>
             <h3 class="features__title">Gasless (Account Abstraction)</h3>
             <p class="features__text">Account Abstraction handles gas. No native tokens needed. One passkey tap to approve.</p>
           </div>
           <div class="card features__card" data-tilt>
-            <span class="features__icon">&#128260;</span>
+            <div class="features__visual">
+              <span class="features__icon">&#128260;</span>
+            </div>
             <h3 class="features__title">Any Token &rarr; Any Token</h3>
             <p class="features__text">Sender pays in ETH, recipient gets USDC on another chain. Automatic conversion.</p>
           </div>
           <div class="card features__card" data-tilt>
-            <span class="features__icon">&#128274;</span>
+            <div class="features__visual">
+              <span class="features__icon">&#128274;</span>
+            </div>
             <h3 class="features__title">Non-Custodial</h3>
             <p class="features__text">Your keys, your funds. Session keys with spending limits, time expiry, and contract whitelist.</p>
           </div>
@@ -574,6 +584,25 @@
       <div class="container">
         <span class="section__label">Security</span>
         <h2 class="section__headline">Your keys. Your funds. Always.</h2>
+        <div class="security__visual" data-animate="fade-up">
+          <div class="security__flow">
+            <div class="security__flow-node security__flow-node--user">
+              <span>&#128100;</span>
+              <span>You</span>
+            </div>
+            <div class="security__flow-arrow">&rarr;</div>
+            <div class="security__flow-node security__flow-node--smart">
+              <span>&#128274;</span>
+              <span>Smart Account</span>
+            </div>
+            <div class="security__flow-arrow">&rarr;</div>
+            <div class="security__flow-node security__flow-node--recipients">
+              <span>&#128101;</span>
+              <span>Recipients</span>
+            </div>
+          </div>
+          <p class="security__flow-caption">No intermediary. No custodian. Direct execution via session keys.</p>
+        </div>
         <div class="security__grid grid-2" data-animate="stagger">
           <div class="card security__card">
             <h3 class="security__title">Non-custodial smart accounts</h3>
@@ -649,10 +678,19 @@
     </section>
 
     <!-- #14 Traction -->
-    <section class="section section--alt" id="traction">
+    <section class="section bg-mesh bg-mesh--traction" id="traction">
       <div class="container">
         <span class="section__label">Team</span>
         <h2 class="section__headline">Small team. Big leverage.</h2>
+        <div class="traction__hero" data-animate="fade-up">
+          <div class="traction__badge-large">
+            <span class="traction__trophy">&#127942;</span>
+            <div>
+              <span class="traction__badge-title">1st Place — ETHGlobal HackMoney 2026</span>
+              <span class="traction__badge-subtitle">"Best DeFi Composer App" — LI.FI Prize Track</span>
+            </div>
+          </div>
+        </div>
         <div class="traction__grid grid-2" data-animate="stagger">
           <div class="card traction__card">
             <span class="traction__stat">&#127942; 1st Place</span>

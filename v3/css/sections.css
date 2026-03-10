@@ -685,8 +685,19 @@
   gap: var(--space-3);
 }
 
+.features__visual {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(24, 148, 232, 0.05), rgba(159, 114, 255, 0.05));
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  margin: calc(-1 * var(--space-8)) calc(-1 * var(--space-8)) var(--space-4);
+  padding: var(--space-4);
+}
+
 .features__icon {
-  font-size: 2rem;
+  font-size: 3rem;
   line-height: 1;
 }
 
@@ -752,6 +763,68 @@
 
 .security__trust-logo:hover {
   opacity: 1;
+}
+
+/* Security flow diagram */
+.security__visual {
+  margin-bottom: var(--space-12);
+}
+
+.security__flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-8);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-lg);
+}
+
+.security__flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-card);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.security__flow-node span:first-child {
+  font-size: 2rem;
+}
+
+.security__flow-node--user {
+  background: rgba(24, 148, 232, 0.08);
+  border: 1px solid rgba(24, 148, 232, 0.2);
+}
+
+.security__flow-node--smart {
+  background: rgba(98, 226, 164, 0.08);
+  border: 1px solid rgba(98, 226, 164, 0.2);
+}
+
+.security__flow-node--recipients {
+  background: rgba(159, 114, 255, 0.08);
+  border: 1px solid rgba(159, 114, 255, 0.2);
+}
+
+.security__flow-arrow {
+  font-size: 1.5rem;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
+.security__flow-caption {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-4);
 }
 
 /* ── Integrations (#13) ── */
@@ -846,6 +919,43 @@
 }
 
 /* ── Traction (#14) ── */
+.traction__hero {
+  margin-bottom: var(--space-12);
+}
+
+.traction__badge-large {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  background: var(--color-bg-card);
+  border: 2px solid var(--color-purple);
+  border-radius: var(--radius-card-lg);
+  box-shadow: 0 0 40px rgba(159, 114, 255, 0.15);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.traction__trophy {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.traction__badge-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.traction__badge-subtitle {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-purple);
+}
+
 .traction__stat {
   display: block;
   font-family: var(--font-display);

@@ -52,6 +52,23 @@
   animation: meshDrift 18s ease-in-out infinite alternate;
 }
 
+/* Features section (#8) — dual blob */
+.bg-mesh--features::before {
+  background:
+    radial-gradient(ellipse 50% 40% at 40% 50%, var(--color-primary), transparent),
+    radial-gradient(ellipse 40% 40% at 60% 40%, var(--color-purple), transparent);
+  opacity: var(--mesh-opacity);
+  animation: meshDrift 22s ease-in-out infinite alternate;
+}
+
+/* Traction section (#14) — mint glow */
+.bg-mesh--traction::before {
+  background:
+    radial-gradient(ellipse 45% 50% at 50% 50%, var(--color-mint), transparent);
+  opacity: var(--mesh-opacity);
+  animation: meshDrift 20s ease-in-out infinite alternate;
+}
+
 /* CTA section (#15) — hero callback */
 .bg-mesh--cta::before {
   background:

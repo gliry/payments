@@ -96,6 +96,37 @@
     });
   }
 
+  // ── Problem: pinned sequential card reveal ──
+  function initProblemPin() {
+    var section = document.getElementById('problem');
+    var cards = section ? section.querySelectorAll('.problem__card') : [];
+    if (!section || cards.length === 0 || isMobile) return;
+
+    // Hide all cards initially
+    gsap.set(cards, { opacity: 0, y: 40 });
+
+    var tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: '+=' + (cards.length * 50) + '%',
+        pin: true,
+        scrub: 1,
+      }
+    });
+
+    // Reveal each card sequentially
+    cards.forEach(function(card, i) {
+      tl.to(card, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+      if (i < cards.length - 1) {
+        tl.to({}, { duration: 0.2 }); // pause between cards
+      }
+    });
+
+    // Hold at end
+    tl.to({}, { duration: 0.3 });
+  }
+
   // ── Solution: before → after morph ──
   function initSolutionAnimation() {
     const wrap = document.getElementById('solutionWrap');
@@ -206,6 +237,7 @@
   function init() {
     initHeroAnimation();
     initScrollReveal();
+    initProblemPin();
     initStaggerReveal();
     initCounters();
     initSolutionAnimation();
