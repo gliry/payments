@@ -180,6 +180,29 @@
     });
   }
 
+  // ── Flow Demo: pinned scroll-driven phases ──
+  function initFlowDemoScroll() {
+    var demo = document.getElementById('flowDemo');
+    if (!demo || isMobile) return;
+
+    ScrollTrigger.create({
+      trigger: '#how-it-works',
+      start: 'top top',
+      end: '+=200%',
+      pin: true,
+      scrub: 1,
+      onUpdate: function(self) {
+        var progress = self.progress;
+        var phase = 0;
+        if (progress > 0.33) phase = 1;
+        if (progress > 0.66) phase = 2;
+        if (typeof window.__flowDemoSetPhase === 'function') {
+          window.__flowDemoSetPhase(phase);
+        }
+      }
+    });
+  }
+
   function init() {
     initHeroAnimation();
     initScrollReveal();
@@ -187,6 +210,7 @@
     initCounters();
     initSolutionAnimation();
     initStepsAnimation();
+    initFlowDemoScroll();
   }
 
   if (document.readyState === 'complete') {

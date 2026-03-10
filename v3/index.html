@@ -382,44 +382,75 @@
     </section>
 
     <!-- #4 How It Works -->
-    <section class="section section--alt" id="how-it-works">
+    <section class="section section--alt section--flow-demo" id="how-it-works">
       <div class="container">
         <span class="section__label">How It Works</span>
         <h2 class="section__headline">Three steps. Any chain.</h2>
-        <div class="steps" id="stepsWrap">
-          <div class="steps__progress">
-            <div class="steps__line">
-              <div class="steps__line-fill" id="stepsLineFill"></div>
+      </div>
+      <div class="flow-demo" id="flowDemo">
+        <canvas class="flow-demo__canvas" id="flowDemoCanvas"></canvas>
+        <div class="flow-demo__nodes">
+          <!-- Senders (left) -->
+          <div class="flow-demo__column flow-demo__column--left">
+            <div class="flow-demo__node flow-demo__node--sender" data-node="s0">
+              <span class="flow-demo__node-icon">&#128188;</span>
+              <span class="flow-demo__node-label">Treasury</span>
+            </div>
+            <div class="flow-demo__node flow-demo__node--sender" data-node="s1">
+              <span class="flow-demo__node-icon">&#128196;</span>
+              <span class="flow-demo__node-label">CSV Upload</span>
+            </div>
+            <div class="flow-demo__node flow-demo__node--sender" data-node="s2">
+              <span class="flow-demo__node-icon">&#127963;</span>
+              <span class="flow-demo__node-label">DAO Fund</span>
             </div>
           </div>
-          <div class="steps__list">
-            <div class="steps__item" data-step="1">
-              <div class="steps__number">01</div>
-              <h3 class="steps__title">Upload</h3>
-              <p class="steps__text">CSV file or paste from spreadsheet — address, chain, token, amount.</p>
-              <div class="steps__timing">
-                <span class="steps__timing-label">Time:</span>
-                <span class="steps__timing-value">Instant</span>
-              </div>
+          <!-- Hub (center) -->
+          <div class="flow-demo__hub" id="flowDemoHub">
+            <div class="flow-demo__hub-ring"></div>
+            <div class="flow-demo__hub-ring flow-demo__hub-ring--2"></div>
+            <div class="flow-demo__hub-core">OmniFlow</div>
+          </div>
+          <!-- Recipients (right) -->
+          <div class="flow-demo__column flow-demo__column--right">
+            <div class="flow-demo__node flow-demo__node--recipient" data-node="r0" style="--chain-color: var(--color-chain-base)">
+              <span class="flow-demo__node-label">alice.eth</span>
+              <span class="flow-demo__node-chain">Base</span>
             </div>
-            <div class="steps__item" data-step="2">
-              <div class="steps__number">02</div>
-              <h3 class="steps__title">Review</h3>
-              <p class="steps__text">Preview recipients, routes, and fees. OmniFlow finds optimal paths via LI.FI + CCTP v2.</p>
-              <div class="steps__timing">
-                <span class="steps__timing-label">Time:</span>
-                <span class="steps__timing-value">5 sec</span>
-              </div>
+            <div class="flow-demo__node flow-demo__node--recipient" data-node="r1" style="--chain-color: var(--color-chain-arb)">
+              <span class="flow-demo__node-label">bob.eth</span>
+              <span class="flow-demo__node-chain">Arbitrum</span>
             </div>
-            <div class="steps__item" data-step="3">
-              <div class="steps__number">03</div>
-              <h3 class="steps__title">Execute</h3>
-              <p class="steps__text">One click. Account Abstraction batches everything. All recipients get paid.</p>
-              <div class="steps__timing">
-                <span class="steps__timing-label">Settlement:</span>
-                <span class="steps__timing-value">30 sec – 3 min</span>
-              </div>
+            <div class="flow-demo__node flow-demo__node--recipient" data-node="r2" style="--chain-color: var(--color-chain-eth)">
+              <span class="flow-demo__node-label">carol.eth</span>
+              <span class="flow-demo__node-chain">Ethereum</span>
             </div>
+            <div class="flow-demo__node flow-demo__node--recipient" data-node="r3" style="--chain-color: var(--color-chain-op)">
+              <span class="flow-demo__node-label">dave.eth</span>
+              <span class="flow-demo__node-chain">Optimism</span>
+            </div>
+            <div class="flow-demo__node flow-demo__node--recipient" data-node="r4" style="--chain-color: var(--color-chain-sonic)">
+              <span class="flow-demo__node-label">eve.eth</span>
+              <span class="flow-demo__node-chain">Sonic</span>
+            </div>
+          </div>
+        </div>
+        <!-- Step overlay labels -->
+        <div class="flow-demo__steps">
+          <div class="flow-demo__step flow-demo__step--active" data-step="1">
+            <span class="flow-demo__step-num">01</span>
+            <span class="flow-demo__step-title">Upload</span>
+            <span class="flow-demo__step-desc">CSV or paste from spreadsheet</span>
+          </div>
+          <div class="flow-demo__step" data-step="2">
+            <span class="flow-demo__step-num">02</span>
+            <span class="flow-demo__step-title">Route</span>
+            <span class="flow-demo__step-desc">Optimal paths via LI.FI + CCTP</span>
+          </div>
+          <div class="flow-demo__step" data-step="3">
+            <span class="flow-demo__step-num">03</span>
+            <span class="flow-demo__step-title">Execute</span>
+            <span class="flow-demo__step-desc">One click. Everyone gets paid.</span>
           </div>
         </div>
       </div>
@@ -703,6 +734,7 @@
   <script src="js/flowfield.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/batch-demo.js"></script>
+  <script src="js/flow-demo.js"></script>
   <script src="js/interactions.js"></script>
   <script src="js/isometric.js"></script>
 </body>
