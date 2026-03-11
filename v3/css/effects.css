@@ -207,6 +207,49 @@
   mask-composite: exclude;
 }
 
+/* ── Floating background icons ── */
+.floating-icons {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.floating-icon {
+  position: absolute;
+  opacity: 0.06;
+  animation: floatIcon var(--duration, 22s) ease-in-out infinite
+    var(--delay, 0s);
+  will-change: transform;
+}
+
+[data-theme="light"] .floating-icon {
+  opacity: 0.09;
+}
+
+@keyframes floatIcon {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-25px) rotate(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-icon {
+    animation: none;
+  }
+}
+
 /* ── Isometric hero animations ── */
 @keyframes floatA {
   0%,

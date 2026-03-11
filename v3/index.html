@@ -3,22 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      OmniFlow — Cross-Chain Payment Infrastructure for Crypto Teams
-    </title>
+    <title>OmniFlow — Crypto Payments</title>
     <meta
       name="description"
-      content="Batch payouts, invoicing, recurring payments — one engine, any chain, any token. Gasless and non-custodial."
+      content="Cross-chain crypto payments — pay and get paid in any token, on any chain. Gasless, non-custodial. Winner: ETHGlobal HackMoney 2026."
     />
 
     <!-- OG / Twitter -->
-    <meta
-      property="og:title"
-      content="OmniFlow — Cross-Chain Payment Infrastructure for Crypto Teams"
-    />
+    <meta property="og:title" content="OmniFlow — Crypto Payments" />
     <meta
       property="og:description"
-      content="Batch payouts, invoicing, recurring payments — one engine, any chain, any token."
+      content="Pay and get paid in any token, on any chain. One click. Gasless. Non-custodial."
     />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/og-card.png" />
@@ -118,1330 +113,1083 @@
 
     <!-- #1 Hero -->
     <section class="hero" id="hero">
-      <div class="hero__inner hero__inner--split">
-        <div class="hero__text">
+      <div class="hero__inner">
+        <div class="hero__content">
           <div class="badge hero__badge">
             <span>&#127942;</span>
-            1st Place — ETHGlobal HackMoney 2026
+            1st Place "Best DeFi Composer" — ETHGlobal 2026
           </div>
 
           <h1 class="hero__headline">
-            Cross-Chain Payment Infrastructure<br />for Crypto Teams
+            Cross-chain payments.<br />Built for receivers.
           </h1>
 
           <p class="hero__subtitle">
-            Upload CSV. One click. Done. Pay anyone, on any chain, in any token
-            — gasless and non-custodial.
+            One engine for pay-ins and payouts. One click.
           </p>
 
           <div class="hero__stats">
-            <span class="hero__stat-value">30+ Chains</span>
+            <span class="hero__stat-value">Non-Custodial</span>
+            <span class="hero__stat-divider"></span>
+            <span class="hero__stat-value">Gasless</span>
+            <span class="hero__stat-divider"></span>
+            <span class="hero__stat-value">Any Chain</span>
             <span class="hero__stat-divider"></span>
             <span class="hero__stat-value">Any Token</span>
-            <span class="hero__stat-divider"></span>
-            <span class="hero__stat-value">$0 Gas</span>
-            <span class="hero__stat-divider"></span>
-            <span class="hero__stat-value">Non-Custodial</span>
           </div>
 
           <div class="hero__buttons">
             <a href="/app/" class="btn btn--primary">Launch App</a>
-            <a href="#batch-demo" class="btn btn--ghost">Watch Demo</a>
+            <a href="/demo/" class="btn btn--ghost">Try Demo</a>
           </div>
         </div>
 
         <div class="hero__visual">
-          <svg
-            class="hero__isometric"
-            viewBox="0 0 860 380"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <!-- Gradient: brand -->
-              <linearGradient
-                id="brandGrad"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="100%"
-              >
-                <stop offset="0%" stop-color="#1894E8" />
-                <stop offset="100%" stop-color="#9F72FF" />
-              </linearGradient>
-
-              <!-- Line gradients: source side -->
-              <linearGradient
-                id="lineGradSrc1"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#7C7E8A" />
-                <stop offset="100%" stop-color="#1894E8" />
-              </linearGradient>
-              <linearGradient
-                id="lineGradSrc2"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#7C7E8A" />
-                <stop offset="100%" stop-color="#1894E8" />
-              </linearGradient>
-              <linearGradient
-                id="lineGradSrc3"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#7C7E8A" />
-                <stop offset="100%" stop-color="#1894E8" />
-              </linearGradient>
-
-              <!-- Line gradients: recipient side (brand -> chain color) -->
-              <linearGradient
-                id="lineGradBase"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#9F72FF" />
-                <stop offset="100%" stop-color="#0052FF" />
-              </linearGradient>
-              <linearGradient
-                id="lineGradArb"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#9F72FF" />
-                <stop offset="100%" stop-color="#28A0F0" />
-              </linearGradient>
-              <linearGradient
-                id="lineGradEth"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#9F72FF" />
-                <stop offset="100%" stop-color="#627EEA" />
-              </linearGradient>
-              <linearGradient id="lineGradOp" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#9F72FF" />
-                <stop offset="100%" stop-color="#FF0420" />
-              </linearGradient>
-              <linearGradient
-                id="lineGradAvax"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-              >
-                <stop offset="0%" stop-color="#9F72FF" />
-                <stop offset="100%" stop-color="#E84142" />
-              </linearGradient>
-
-              <!-- Glow filters -->
-              <filter
-                id="cardGlow"
-                x="-20%"
-                y="-20%"
-                width="140%"
-                height="140%"
-              >
-                <feGaussianBlur
-                  in="SourceAlpha"
-                  stdDeviation="6"
-                  result="blur"
-                />
-                <feFlood
-                  flood-color="#1894E8"
-                  flood-opacity="0.15"
-                  result="color"
-                />
-                <feComposite
-                  in="color"
-                  in2="blur"
-                  operator="in"
-                  result="glow"
-                />
-                <feMerge>
-                  <feMergeNode in="glow" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter
-                id="centerGlowFilter"
-                x="-40%"
-                y="-40%"
-                width="180%"
-                height="180%"
-              >
-                <feGaussianBlur
-                  in="SourceAlpha"
-                  stdDeviation="16"
-                  result="blur"
-                />
-                <feFlood
-                  flood-color="#6B7FE8"
-                  flood-opacity="0.4"
-                  result="color"
-                />
-                <feComposite
-                  in="color"
-                  in2="blur"
-                  operator="in"
-                  result="glow"
-                />
-                <feMerge>
-                  <feMergeNode in="glow" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter
-                id="lineGlow"
-                x="-10%"
-                y="-50%"
-                width="120%"
-                height="200%"
-              >
-                <feGaussianBlur stdDeviation="3" />
-              </filter>
-              <filter
-                id="packetGlow"
-                x="-100%"
-                y="-100%"
-                width="300%"
-                height="300%"
-              >
-                <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
-              </filter>
-            </defs>
-
-            <!-- Connection Paths: Source -> Center -->
-            <path
-              id="pathSrc1"
-              d="M 160 80 C 250 80, 300 155, 370 160"
-              fill="none"
-              stroke="url(#lineGradSrc1)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line"
-              data-group="src1"
-            />
-            <path
-              id="pathSrc2"
-              d="M 160 190 C 250 190, 300 175, 370 175"
-              fill="none"
-              stroke="url(#lineGradSrc2)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line"
-              data-group="src2"
-            />
-            <path
-              id="pathSrc3"
-              d="M 160 300 C 250 300, 300 200, 370 190"
-              fill="none"
-              stroke="url(#lineGradSrc3)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line"
-              data-group="src3"
-            />
-
-            <!-- Connection Paths: Center -> Recipient -->
-            <path
-              id="pathDst1"
-              d="M 530 145 C 600 140, 620 55, 700 52"
-              fill="none"
-              stroke="url(#lineGradBase)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line"
-              data-group="dst1"
-            />
-            <path
-              id="pathDst2"
-              d="M 530 160 C 600 158, 640 115, 700 118"
-              fill="none"
-              stroke="url(#lineGradArb)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line"
-              data-group="dst2"
-            />
-            <path
-              id="pathDst3"
-              d="M 530 175 C 600 175, 640 178, 700 185"
-              fill="none"
-              stroke="url(#lineGradEth)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line"
-              data-group="dst3"
-            />
-            <path
-              id="pathDst4"
-              d="M 530 190 C 600 195, 640 240, 700 252"
-              fill="none"
-              stroke="url(#lineGradOp)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line hide-mobile"
-              data-group="dst4"
-            />
-            <path
-              id="pathDst5"
-              d="M 530 200 C 600 210, 640 300, 700 318"
-              fill="none"
-              stroke="url(#lineGradAvax)"
-              stroke-width="1.5"
-              stroke-opacity="0.4"
-              class="flow-line hide-mobile"
-              data-group="dst5"
-            />
-
-            <!-- Source Cards (Left) -->
-            <!-- Treasury -->
-            <g
-              class="float-a source-card"
-              data-group="src1"
-              transform="translate(20, 45)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="66"
-                rx="10"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-                filter="url(#cardGlow)"
-              />
-              <polygon
-                points="10,0 140,0 130,-12 0,-12"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.7"
-              />
-              <polygon
-                points="140,0 140,66 130,54 130,-12"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.5"
-              />
-              <rect
-                x="16"
-                y="18"
-                width="24"
-                height="18"
-                rx="3"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1.5"
-              />
-              <rect x="28" y="24" width="8" height="6" rx="2" fill="#7C7E8A" />
-              <circle cx="33" cy="27" r="1.5" fill="#1A1D27" />
-              <text
-                x="50"
-                y="27"
-                fill="#E4E5EA"
-                font-size="13"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                Treasury
-              </text>
-              <text
-                x="50"
-                y="44"
-                fill="#7C7E8A"
-                font-size="10"
-                font-family="Sora, sans-serif"
-              >
-                Multi-sig
-              </text>
-            </g>
-
-            <!-- Payroll CSV -->
-            <g
-              class="float-b source-card"
-              data-group="src2"
-              transform="translate(20, 155)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="66"
-                rx="10"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-                filter="url(#cardGlow)"
-              />
-              <polygon
-                points="10,0 140,0 130,-12 0,-12"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.7"
-              />
-              <polygon
-                points="140,0 140,66 130,54 130,-12"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.5"
-              />
-              <rect
-                x="16"
-                y="16"
-                width="20"
-                height="26"
-                rx="2"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1.5"
-              />
-              <polyline
-                points="28,16 28,22 36,22"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1.5"
-              />
-              <line
-                x1="20"
-                y1="28"
-                x2="32"
-                y2="28"
-                stroke="#7C7E8A"
-                stroke-width="1"
-                opacity="0.6"
-              />
-              <line
-                x1="20"
-                y1="32"
-                x2="30"
-                y2="32"
-                stroke="#7C7E8A"
-                stroke-width="1"
-                opacity="0.6"
-              />
-              <line
-                x1="20"
-                y1="36"
-                x2="28"
-                y2="36"
-                stroke="#7C7E8A"
-                stroke-width="1"
-                opacity="0.6"
-              />
-              <text
-                x="50"
-                y="27"
-                fill="#E4E5EA"
-                font-size="13"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                Payroll CSV
-              </text>
-              <text
-                x="50"
-                y="44"
-                fill="#7C7E8A"
-                font-size="10"
-                font-family="Sora, sans-serif"
-              >
-                Batch upload
-              </text>
-            </g>
-
-            <!-- DAO Fund -->
-            <g
-              class="float-c source-card"
-              data-group="src3"
-              transform="translate(20, 265)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="66"
-                rx="10"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-                filter="url(#cardGlow)"
-              />
-              <polygon
-                points="10,0 140,0 130,-12 0,-12"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.7"
-              />
-              <polygon
-                points="140,0 140,66 130,54 130,-12"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.5"
-              />
-              <circle
-                cx="22"
-                cy="22"
-                r="5"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1.5"
-              />
-              <path
-                d="M 14 38 Q 14 30 22 30 Q 30 30 30 38"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1.5"
-              />
-              <circle
-                cx="34"
-                cy="24"
-                r="3.5"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1"
-                opacity="0.6"
-              />
-              <path
-                d="M 29 36 Q 30 30 34 30 Q 40 30 40 36"
-                fill="none"
-                stroke="#7C7E8A"
-                stroke-width="1"
-                opacity="0.6"
-              />
-              <text
-                x="50"
-                y="27"
-                fill="#E4E5EA"
-                font-size="13"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                DAO Fund
-              </text>
-              <text
-                x="50"
-                y="44"
-                fill="#7C7E8A"
-                font-size="10"
-                font-family="Sora, sans-serif"
-              >
-                Governance
-              </text>
-            </g>
-
-            <!-- Center Engine -->
-            <g class="float-d" id="centerEngine" transform="translate(350, 95)">
-              <ellipse
-                cx="100"
-                cy="85"
-                rx="110"
-                ry="80"
-                fill="none"
-                stroke="url(#brandGrad)"
-                stroke-width="1.5"
-                stroke-opacity="0.2"
-                class="center-glow"
-              />
-              <ellipse
-                cx="100"
-                cy="85"
-                rx="95"
-                ry="68"
-                fill="none"
-                stroke="url(#brandGrad)"
-                stroke-width="1"
-                stroke-opacity="0.1"
-                class="center-glow"
-                style="animation-delay: 0.5s"
-              />
-              <polygon
-                points="100,10 195,50 100,90 5,50"
-                fill="url(#brandGrad)"
-                opacity="0.9"
-              />
-              <polygon
-                points="5,50 100,90 100,150 5,110"
-                fill="#1060A8"
-                opacity="0.8"
-              />
-              <polygon
-                points="195,50 100,90 100,150 195,110"
-                fill="#6B40C0"
-                opacity="0.8"
-              />
-              <polygon
-                points="100,10 195,50 100,90 5,50"
-                fill="none"
-                stroke="rgba(255,255,255,0.15)"
-                stroke-width="1"
-              />
-              <polygon
-                points="5,50 100,90 100,150 5,110"
-                fill="none"
-                stroke="rgba(255,255,255,0.08)"
-                stroke-width="1"
-              />
-              <polygon
-                points="195,50 100,90 100,150 195,110"
-                fill="none"
-                stroke="rgba(255,255,255,0.08)"
-                stroke-width="1"
-              />
-              <text
-                x="100"
-                y="58"
-                text-anchor="middle"
-                fill="#FFFFFF"
-                font-size="16"
-                font-weight="700"
-                font-family="Sora, sans-serif"
-                opacity="0.95"
-                transform="rotate(-15, 100, 55) skewX(15)"
-              >
-                OmniFlow
-              </text>
-              <text
-                x="100"
-                y="76"
-                text-anchor="middle"
-                fill="rgba(255,255,255,0.6)"
-                font-size="9"
-                font-family="Sora, sans-serif"
-                transform="rotate(-15, 100, 73) skewX(15)"
-              >
-                Engine
-              </text>
-            </g>
-
-            <!-- Recipient Cards (Right) -->
-            <!-- alice.eth / Base -->
-            <g
-              class="float-e recipient-card"
-              data-group="dst1"
-              transform="translate(700, 22)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="56"
-                rx="8"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-              />
-              <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#0052FF" />
-              <polygon
-                points="8,0 140,0 132,-8 0,-8"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.6"
-              />
-              <polygon
-                points="140,0 140,56 132,48 132,-8"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.4"
-              />
-              <text
-                x="16"
-                y="22"
-                fill="#E4E5EA"
-                font-size="12"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                alice.eth
-              </text>
-              <text
-                x="16"
-                y="40"
-                fill="#0052FF"
-                font-size="10"
-                font-weight="500"
-                font-family="Sora, sans-serif"
-              >
-                Base
-              </text>
-              <circle cx="120" cy="28" r="8" fill="#0052FF" opacity="0.15" />
-              <text
-                x="120"
-                y="32"
-                text-anchor="middle"
-                fill="#0052FF"
-                font-size="8"
-                font-weight="700"
-                font-family="Sora, sans-serif"
-              >
-                B
-              </text>
-            </g>
-
-            <!-- bob.eth / Arbitrum -->
-            <g
-              class="float-f recipient-card"
-              data-group="dst2"
-              transform="translate(700, 90)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="56"
-                rx="8"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-              />
-              <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#28A0F0" />
-              <polygon
-                points="8,0 140,0 132,-8 0,-8"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.6"
-              />
-              <polygon
-                points="140,0 140,56 132,48 132,-8"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.4"
-              />
-              <text
-                x="16"
-                y="22"
-                fill="#E4E5EA"
-                font-size="12"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                bob.eth
-              </text>
-              <text
-                x="16"
-                y="40"
-                fill="#28A0F0"
-                font-size="10"
-                font-weight="500"
-                font-family="Sora, sans-serif"
-              >
-                Arbitrum
-              </text>
-              <circle cx="120" cy="28" r="8" fill="#28A0F0" opacity="0.15" />
-              <text
-                x="120"
-                y="32"
-                text-anchor="middle"
-                fill="#28A0F0"
-                font-size="8"
-                font-weight="700"
-                font-family="Sora, sans-serif"
-              >
-                A
-              </text>
-            </g>
-
-            <!-- carol.eth / Ethereum -->
-            <g
-              class="float-g recipient-card"
-              data-group="dst3"
-              transform="translate(700, 158)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="56"
-                rx="8"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-              />
-              <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#627EEA" />
-              <polygon
-                points="8,0 140,0 132,-8 0,-8"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.6"
-              />
-              <polygon
-                points="140,0 140,56 132,48 132,-8"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.4"
-              />
-              <text
-                x="16"
-                y="22"
-                fill="#E4E5EA"
-                font-size="12"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                carol.eth
-              </text>
-              <text
-                x="16"
-                y="40"
-                fill="#627EEA"
-                font-size="10"
-                font-weight="500"
-                font-family="Sora, sans-serif"
-              >
-                Ethereum
-              </text>
-              <circle cx="120" cy="28" r="8" fill="#627EEA" opacity="0.15" />
-              <text
-                x="120"
-                y="32"
-                text-anchor="middle"
-                fill="#627EEA"
-                font-size="8"
-                font-weight="700"
-                font-family="Sora, sans-serif"
-              >
-                E
-              </text>
-            </g>
-
-            <!-- dave.eth / Optimism -->
-            <g
-              class="float-h recipient-card hide-mobile"
-              data-group="dst4"
-              transform="translate(700, 226)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="56"
-                rx="8"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-              />
-              <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#FF0420" />
-              <polygon
-                points="8,0 140,0 132,-8 0,-8"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.6"
-              />
-              <polygon
-                points="140,0 140,56 132,48 132,-8"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.4"
-              />
-              <text
-                x="16"
-                y="22"
-                fill="#E4E5EA"
-                font-size="12"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                dave.eth
-              </text>
-              <text
-                x="16"
-                y="40"
-                fill="#FF0420"
-                font-size="10"
-                font-weight="500"
-                font-family="Sora, sans-serif"
-              >
-                Optimism
-              </text>
-              <circle cx="120" cy="28" r="8" fill="#FF0420" opacity="0.15" />
-              <text
-                x="120"
-                y="32"
-                text-anchor="middle"
-                fill="#FF0420"
-                font-size="8"
-                font-weight="700"
-                font-family="Sora, sans-serif"
-              >
-                O
-              </text>
-            </g>
-
-            <!-- eve.eth / Avalanche -->
-            <g
-              class="float-a recipient-card hide-mobile"
-              data-group="dst5"
-              transform="translate(700, 294)"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="140"
-                height="56"
-                rx="8"
-                fill="#1A1D27"
-                stroke="#2A2D37"
-                stroke-width="1"
-              />
-              <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#E84142" />
-              <polygon
-                points="8,0 140,0 132,-8 0,-8"
-                fill="#222530"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.6"
-              />
-              <polygon
-                points="140,0 140,56 132,48 132,-8"
-                fill="#16181f"
-                stroke="#2A2D37"
-                stroke-width="0.5"
-                opacity="0.4"
-              />
-              <text
-                x="16"
-                y="22"
-                fill="#E4E5EA"
-                font-size="12"
-                font-weight="600"
-                font-family="Sora, sans-serif"
-              >
-                eve.eth
-              </text>
-              <text
-                x="16"
-                y="40"
-                fill="#E84142"
-                font-size="10"
-                font-weight="500"
-                font-family="Sora, sans-serif"
-              >
-                Avalanche
-              </text>
-              <circle cx="120" cy="28" r="8" fill="#E84142" opacity="0.15" />
-              <text
-                x="120"
-                y="32"
-                text-anchor="middle"
-                fill="#E84142"
-                font-size="8"
-                font-weight="700"
-                font-family="Sora, sans-serif"
-              >
-                A
-              </text>
-            </g>
-          </svg>
+          <!-- Right half — flow field particles visible through transparent area -->
         </div>
       </div>
     </section>
 
     <main>
-      <!-- #2 Problem -->
-      <section class="section bg-mesh bg-mesh--problem" id="problem">
+      <!-- #2 Isometric Visualization -->
+      <section class="section section--isometric" id="isometric">
         <div class="container">
-          <span class="section__label">The Problem</span>
-          <h2 class="section__headline">
-            Crypto teams waste 2+ hours on every payout run
-          </h2>
-          <p class="section__subtitle">
-            Manual transactions, spreadsheet chaos, bridge hopping. No tool
-            solves cross-chain batch payments.
-          </p>
-          <div class="problem__cards grid-2">
-            <div class="card problem__card">
-              <span
-                class="problem__card-stat"
-                data-counter="2"
-                data-counter-suffix="+ hours"
-                >0</span
+          <div class="isometric__wrap">
+            <svg
+              class="isometric-svg"
+              id="isometricSvg"
+              viewBox="0 0 860 380"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <!-- Gradient: brand -->
+                <linearGradient
+                  id="brandGrad"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="100%"
+                >
+                  <stop offset="0%" stop-color="#1894E8" />
+                  <stop offset="100%" stop-color="#9F72FF" />
+                </linearGradient>
+
+                <!-- Line gradients: source side -->
+                <linearGradient
+                  id="lineGradSrc1"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#7C7E8A" />
+                  <stop offset="100%" stop-color="#1894E8" />
+                </linearGradient>
+                <linearGradient
+                  id="lineGradSrc2"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#7C7E8A" />
+                  <stop offset="100%" stop-color="#1894E8" />
+                </linearGradient>
+                <linearGradient
+                  id="lineGradSrc3"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#7C7E8A" />
+                  <stop offset="100%" stop-color="#1894E8" />
+                </linearGradient>
+
+                <!-- Line gradients: recipient side (brand -> chain color) -->
+                <linearGradient
+                  id="lineGradBase"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#9F72FF" />
+                  <stop offset="100%" stop-color="#0052FF" />
+                </linearGradient>
+                <linearGradient
+                  id="lineGradArb"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#9F72FF" />
+                  <stop offset="100%" stop-color="#28A0F0" />
+                </linearGradient>
+                <linearGradient
+                  id="lineGradEth"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#9F72FF" />
+                  <stop offset="100%" stop-color="#627EEA" />
+                </linearGradient>
+                <linearGradient
+                  id="lineGradOp"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#9F72FF" />
+                  <stop offset="100%" stop-color="#FF0420" />
+                </linearGradient>
+                <linearGradient
+                  id="lineGradAvax"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stop-color="#9F72FF" />
+                  <stop offset="100%" stop-color="#E84142" />
+                </linearGradient>
+
+                <!-- Glow filters -->
+                <filter
+                  id="cardGlow"
+                  x="-20%"
+                  y="-20%"
+                  width="140%"
+                  height="140%"
+                >
+                  <feGaussianBlur
+                    in="SourceAlpha"
+                    stdDeviation="6"
+                    result="blur"
+                  />
+                  <feFlood
+                    flood-color="#1894E8"
+                    flood-opacity="0.15"
+                    result="color"
+                  />
+                  <feComposite
+                    in="color"
+                    in2="blur"
+                    operator="in"
+                    result="glow"
+                  />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <filter
+                  id="centerGlowFilter"
+                  x="-40%"
+                  y="-40%"
+                  width="180%"
+                  height="180%"
+                >
+                  <feGaussianBlur
+                    in="SourceAlpha"
+                    stdDeviation="16"
+                    result="blur"
+                  />
+                  <feFlood
+                    flood-color="#6B7FE8"
+                    flood-opacity="0.4"
+                    result="color"
+                  />
+                  <feComposite
+                    in="color"
+                    in2="blur"
+                    operator="in"
+                    result="glow"
+                  />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <filter
+                  id="lineGlow"
+                  x="-10%"
+                  y="-50%"
+                  width="120%"
+                  height="200%"
+                >
+                  <feGaussianBlur stdDeviation="3" />
+                </filter>
+                <filter
+                  id="packetGlow"
+                  x="-100%"
+                  y="-100%"
+                  width="300%"
+                  height="300%"
+                >
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+                </filter>
+              </defs>
+
+              <!-- Connection Paths: Source -> Center -->
+              <path
+                id="pathSrc1"
+                d="M 160 80 C 250 80, 300 155, 370 160"
+                fill="none"
+                stroke="url(#lineGradSrc1)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line"
+                data-group="src1"
+              />
+              <path
+                id="pathSrc2"
+                d="M 160 190 C 250 190, 300 175, 370 175"
+                fill="none"
+                stroke="url(#lineGradSrc2)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line"
+                data-group="src2"
+              />
+              <path
+                id="pathSrc3"
+                d="M 160 300 C 250 300, 300 200, 370 190"
+                fill="none"
+                stroke="url(#lineGradSrc3)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line"
+                data-group="src3"
+              />
+
+              <!-- Connection Paths: Center -> Recipient -->
+              <path
+                id="pathDst1"
+                d="M 530 145 C 600 140, 620 55, 700 52"
+                fill="none"
+                stroke="url(#lineGradBase)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line"
+                data-group="dst1"
+              />
+              <path
+                id="pathDst2"
+                d="M 530 160 C 600 158, 640 115, 700 118"
+                fill="none"
+                stroke="url(#lineGradArb)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line"
+                data-group="dst2"
+              />
+              <path
+                id="pathDst3"
+                d="M 530 175 C 600 175, 640 178, 700 185"
+                fill="none"
+                stroke="url(#lineGradEth)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line"
+                data-group="dst3"
+              />
+              <path
+                id="pathDst4"
+                d="M 530 190 C 600 195, 640 240, 700 252"
+                fill="none"
+                stroke="url(#lineGradOp)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line hide-mobile"
+                data-group="dst4"
+              />
+              <path
+                id="pathDst5"
+                d="M 530 200 C 600 210, 640 300, 700 318"
+                fill="none"
+                stroke="url(#lineGradAvax)"
+                stroke-width="1.5"
+                stroke-opacity="0.4"
+                class="flow-line hide-mobile"
+                data-group="dst5"
+              />
+
+              <!-- Source Cards (Left) -->
+              <!-- Treasury -->
+              <g
+                class="float-a source-card"
+                data-group="src1"
+                transform="translate(20, 45)"
               >
-              <h3 class="problem__card-title">Per payout cycle</h3>
-              <p class="problem__card-text">
-                50 transactions across 3 chains. Each one manual. Each one a
-                risk.
-              </p>
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="66"
+                  rx="10"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                  filter="url(#cardGlow)"
+                />
+                <polygon
+                  points="10,0 140,0 130,-12 0,-12"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.7"
+                />
+                <polygon
+                  points="140,0 140,66 130,54 130,-12"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.5"
+                />
+                <rect
+                  x="16"
+                  y="18"
+                  width="24"
+                  height="18"
+                  rx="3"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1.5"
+                />
+                <rect
+                  x="28"
+                  y="24"
+                  width="8"
+                  height="6"
+                  rx="2"
+                  fill="#7C7E8A"
+                />
+                <circle cx="33" cy="27" r="1.5" fill="#1A1D27" />
+                <text
+                  x="50"
+                  y="27"
+                  fill="#E4E5EA"
+                  font-size="13"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  Treasury
+                </text>
+                <text
+                  x="50"
+                  y="44"
+                  fill="#7C7E8A"
+                  font-size="10"
+                  font-family="Sora, sans-serif"
+                >
+                  Multi-sig
+                </text>
+              </g>
+
+              <!-- Payroll CSV -->
+              <g
+                class="float-b source-card"
+                data-group="src2"
+                transform="translate(20, 155)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="66"
+                  rx="10"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                  filter="url(#cardGlow)"
+                />
+                <polygon
+                  points="10,0 140,0 130,-12 0,-12"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.7"
+                />
+                <polygon
+                  points="140,0 140,66 130,54 130,-12"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.5"
+                />
+                <rect
+                  x="16"
+                  y="16"
+                  width="20"
+                  height="26"
+                  rx="2"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1.5"
+                />
+                <polyline
+                  points="28,16 28,22 36,22"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1.5"
+                />
+                <line
+                  x1="20"
+                  y1="28"
+                  x2="32"
+                  y2="28"
+                  stroke="#7C7E8A"
+                  stroke-width="1"
+                  opacity="0.6"
+                />
+                <line
+                  x1="20"
+                  y1="32"
+                  x2="30"
+                  y2="32"
+                  stroke="#7C7E8A"
+                  stroke-width="1"
+                  opacity="0.6"
+                />
+                <line
+                  x1="20"
+                  y1="36"
+                  x2="28"
+                  y2="36"
+                  stroke="#7C7E8A"
+                  stroke-width="1"
+                  opacity="0.6"
+                />
+                <text
+                  x="50"
+                  y="27"
+                  fill="#E4E5EA"
+                  font-size="13"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  Payroll CSV
+                </text>
+                <text
+                  x="50"
+                  y="44"
+                  fill="#7C7E8A"
+                  font-size="10"
+                  font-family="Sora, sans-serif"
+                >
+                  Batch upload
+                </text>
+              </g>
+
+              <!-- DAO Fund -->
+              <g
+                class="float-c source-card"
+                data-group="src3"
+                transform="translate(20, 265)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="66"
+                  rx="10"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                  filter="url(#cardGlow)"
+                />
+                <polygon
+                  points="10,0 140,0 130,-12 0,-12"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.7"
+                />
+                <polygon
+                  points="140,0 140,66 130,54 130,-12"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.5"
+                />
+                <circle
+                  cx="22"
+                  cy="22"
+                  r="5"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M 14 38 Q 14 30 22 30 Q 30 30 30 38"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1.5"
+                />
+                <circle
+                  cx="34"
+                  cy="24"
+                  r="3.5"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1"
+                  opacity="0.6"
+                />
+                <path
+                  d="M 29 36 Q 30 30 34 30 Q 40 30 40 36"
+                  fill="none"
+                  stroke="#7C7E8A"
+                  stroke-width="1"
+                  opacity="0.6"
+                />
+                <text
+                  x="50"
+                  y="27"
+                  fill="#E4E5EA"
+                  font-size="13"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  DAO Fund
+                </text>
+                <text
+                  x="50"
+                  y="44"
+                  fill="#7C7E8A"
+                  font-size="10"
+                  font-family="Sora, sans-serif"
+                >
+                  Governance
+                </text>
+              </g>
+
+              <!-- Center Engine -->
+              <g
+                class="float-d"
+                id="centerEngine"
+                transform="translate(350, 95)"
+              >
+                <ellipse
+                  cx="100"
+                  cy="85"
+                  rx="110"
+                  ry="80"
+                  fill="none"
+                  stroke="url(#brandGrad)"
+                  stroke-width="1.5"
+                  stroke-opacity="0.2"
+                  class="center-glow"
+                />
+                <ellipse
+                  cx="100"
+                  cy="85"
+                  rx="95"
+                  ry="68"
+                  fill="none"
+                  stroke="url(#brandGrad)"
+                  stroke-width="1"
+                  stroke-opacity="0.1"
+                  class="center-glow"
+                  style="animation-delay: 0.5s"
+                />
+                <polygon
+                  points="100,10 195,50 100,90 5,50"
+                  fill="url(#brandGrad)"
+                  opacity="0.9"
+                />
+                <polygon
+                  points="5,50 100,90 100,150 5,110"
+                  fill="#1060A8"
+                  opacity="0.8"
+                />
+                <polygon
+                  points="195,50 100,90 100,150 195,110"
+                  fill="#6B40C0"
+                  opacity="0.8"
+                />
+                <polygon
+                  points="100,10 195,50 100,90 5,50"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.15)"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="5,50 100,90 100,150 5,110"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="195,50 100,90 100,150 195,110"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  stroke-width="1"
+                />
+                <text
+                  x="100"
+                  y="58"
+                  text-anchor="middle"
+                  fill="#FFFFFF"
+                  font-size="16"
+                  font-weight="700"
+                  font-family="Sora, sans-serif"
+                  opacity="0.95"
+                  transform="rotate(-15, 100, 55) skewX(15)"
+                >
+                  OmniFlow
+                </text>
+                <text
+                  x="100"
+                  y="76"
+                  text-anchor="middle"
+                  fill="rgba(255,255,255,0.6)"
+                  font-size="9"
+                  font-family="Sora, sans-serif"
+                  transform="rotate(-15, 100, 73) skewX(15)"
+                >
+                  Engine
+                </text>
+              </g>
+
+              <!-- Recipient Cards (Right) -->
+              <!-- alice.eth / Base -->
+              <g
+                class="float-e recipient-card"
+                data-group="dst1"
+                transform="translate(700, 22)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="56"
+                  rx="8"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                />
+                <rect
+                  x="0"
+                  y="8"
+                  width="3"
+                  height="40"
+                  rx="1.5"
+                  fill="#0052FF"
+                />
+                <polygon
+                  points="8,0 140,0 132,-8 0,-8"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="140,0 140,56 132,48 132,-8"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.4"
+                />
+                <text
+                  x="16"
+                  y="22"
+                  fill="#E4E5EA"
+                  font-size="12"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  alice.eth
+                </text>
+                <text
+                  x="16"
+                  y="40"
+                  fill="#0052FF"
+                  font-size="10"
+                  font-weight="500"
+                  font-family="Sora, sans-serif"
+                >
+                  Base
+                </text>
+                <circle cx="120" cy="28" r="8" fill="#0052FF" opacity="0.15" />
+                <text
+                  x="120"
+                  y="32"
+                  text-anchor="middle"
+                  fill="#0052FF"
+                  font-size="8"
+                  font-weight="700"
+                  font-family="Sora, sans-serif"
+                >
+                  B
+                </text>
+              </g>
+
+              <!-- bob.eth / Arbitrum -->
+              <g
+                class="float-f recipient-card"
+                data-group="dst2"
+                transform="translate(700, 90)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="56"
+                  rx="8"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                />
+                <rect
+                  x="0"
+                  y="8"
+                  width="3"
+                  height="40"
+                  rx="1.5"
+                  fill="#28A0F0"
+                />
+                <polygon
+                  points="8,0 140,0 132,-8 0,-8"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="140,0 140,56 132,48 132,-8"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.4"
+                />
+                <text
+                  x="16"
+                  y="22"
+                  fill="#E4E5EA"
+                  font-size="12"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  bob.eth
+                </text>
+                <text
+                  x="16"
+                  y="40"
+                  fill="#28A0F0"
+                  font-size="10"
+                  font-weight="500"
+                  font-family="Sora, sans-serif"
+                >
+                  Arbitrum
+                </text>
+                <circle cx="120" cy="28" r="8" fill="#28A0F0" opacity="0.15" />
+                <text
+                  x="120"
+                  y="32"
+                  text-anchor="middle"
+                  fill="#28A0F0"
+                  font-size="8"
+                  font-weight="700"
+                  font-family="Sora, sans-serif"
+                >
+                  A
+                </text>
+              </g>
+
+              <!-- carol.eth / Ethereum -->
+              <g
+                class="float-g recipient-card"
+                data-group="dst3"
+                transform="translate(700, 158)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="56"
+                  rx="8"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                />
+                <rect
+                  x="0"
+                  y="8"
+                  width="3"
+                  height="40"
+                  rx="1.5"
+                  fill="#627EEA"
+                />
+                <polygon
+                  points="8,0 140,0 132,-8 0,-8"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="140,0 140,56 132,48 132,-8"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.4"
+                />
+                <text
+                  x="16"
+                  y="22"
+                  fill="#E4E5EA"
+                  font-size="12"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  carol.eth
+                </text>
+                <text
+                  x="16"
+                  y="40"
+                  fill="#627EEA"
+                  font-size="10"
+                  font-weight="500"
+                  font-family="Sora, sans-serif"
+                >
+                  Ethereum
+                </text>
+                <circle cx="120" cy="28" r="8" fill="#627EEA" opacity="0.15" />
+                <text
+                  x="120"
+                  y="32"
+                  text-anchor="middle"
+                  fill="#627EEA"
+                  font-size="8"
+                  font-weight="700"
+                  font-family="Sora, sans-serif"
+                >
+                  E
+                </text>
+              </g>
+
+              <!-- dave.eth / Optimism -->
+              <g
+                class="float-h recipient-card hide-mobile"
+                data-group="dst4"
+                transform="translate(700, 226)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="56"
+                  rx="8"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                />
+                <rect
+                  x="0"
+                  y="8"
+                  width="3"
+                  height="40"
+                  rx="1.5"
+                  fill="#FF0420"
+                />
+                <polygon
+                  points="8,0 140,0 132,-8 0,-8"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="140,0 140,56 132,48 132,-8"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.4"
+                />
+                <text
+                  x="16"
+                  y="22"
+                  fill="#E4E5EA"
+                  font-size="12"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  dave.eth
+                </text>
+                <text
+                  x="16"
+                  y="40"
+                  fill="#FF0420"
+                  font-size="10"
+                  font-weight="500"
+                  font-family="Sora, sans-serif"
+                >
+                  Optimism
+                </text>
+                <circle cx="120" cy="28" r="8" fill="#FF0420" opacity="0.15" />
+                <text
+                  x="120"
+                  y="32"
+                  text-anchor="middle"
+                  fill="#FF0420"
+                  font-size="8"
+                  font-weight="700"
+                  font-family="Sora, sans-serif"
+                >
+                  O
+                </text>
+              </g>
+
+              <!-- eve.eth / Avalanche -->
+              <g
+                class="float-a recipient-card hide-mobile"
+                data-group="dst5"
+                transform="translate(700, 294)"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="140"
+                  height="56"
+                  rx="8"
+                  fill="#1A1D27"
+                  stroke="#2A2D37"
+                  stroke-width="1"
+                />
+                <rect
+                  x="0"
+                  y="8"
+                  width="3"
+                  height="40"
+                  rx="1.5"
+                  fill="#E84142"
+                />
+                <polygon
+                  points="8,0 140,0 132,-8 0,-8"
+                  fill="#222530"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.6"
+                />
+                <polygon
+                  points="140,0 140,56 132,48 132,-8"
+                  fill="#16181f"
+                  stroke="#2A2D37"
+                  stroke-width="0.5"
+                  opacity="0.4"
+                />
+                <text
+                  x="16"
+                  y="22"
+                  fill="#E4E5EA"
+                  font-size="12"
+                  font-weight="600"
+                  font-family="Sora, sans-serif"
+                >
+                  eve.eth
+                </text>
+                <text
+                  x="16"
+                  y="40"
+                  fill="#E84142"
+                  font-size="10"
+                  font-weight="500"
+                  font-family="Sora, sans-serif"
+                >
+                  Avalanche
+                </text>
+                <circle cx="120" cy="28" r="8" fill="#E84142" opacity="0.15" />
+                <text
+                  x="120"
+                  y="32"
+                  text-anchor="middle"
+                  fill="#E84142"
+                  font-size="8"
+                  font-weight="700"
+                  font-family="Sora, sans-serif"
+                >
+                  A
+                </text>
+              </g>
+            </svg>
+          </div>
+          <div class="how-it-works__steps">
+            <div
+              class="how-it-works__step how-it-works__step--active"
+              data-step="1"
+            >
+              <span class="how-it-works__step-num">01</span>
+              <span class="how-it-works__step-title">Upload</span>
+              <span class="how-it-works__step-desc">CSV, ENS, any chain</span>
             </div>
-            <div class="card problem__card">
-              <span class="problem__card-stat">5-15%</span>
-              <h3 class="problem__card-title">Error rate</h3>
-              <p class="problem__card-text">
-                Wrong address, wrong chain, wrong amount. No undo in crypto.
-              </p>
+            <div class="how-it-works__step" data-step="2">
+              <span class="how-it-works__step-num">02</span>
+              <span class="how-it-works__step-title">Route</span>
+              <span class="how-it-works__step-desc">CCTP v2 + LI.FI</span>
             </div>
-            <div class="card problem__card">
-              <span class="problem__card-stat">$120K</span>
-              <h3 class="problem__card-title">Lost by PeopleDAO</h3>
-              <p class="problem__card-text">
-                Hacker edited their shared Google Sheets payroll. The
-                spreadsheet is the vulnerability.
-              </p>
-            </div>
-            <div class="card problem__card">
-              <span class="problem__card-stat">3 tools</span>
-              <h3 class="problem__card-title">Shut down in 18 months</h3>
-              <p class="problem__card-text">
-                Parcel, Utopia, Llama — all gone. No replacement exists for
-                cross-chain payroll.
-              </p>
+            <div class="how-it-works__step" data-step="3">
+              <span class="how-it-works__step-num">03</span>
+              <span class="how-it-works__step-title">Execute</span>
+              <span class="how-it-works__step-desc">Passkey, AA, gasless</span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- #3 Solution -->
-      <section class="section" id="solution">
-        <div class="container">
-          <span class="section__label">The Solution</span>
-          <h2 class="section__headline">Upload CSV. One click. Done.</h2>
-          <p class="section__subtitle">
-            OmniFlow takes a list of recipients and executes all payments
-            optimally in a single batch. Any chain, any token, any number of
-            recipients.
-          </p>
-          <div class="solution__wrap" id="solutionWrap">
-            <div class="solution__visual">
-              <div class="solution__before" id="solutionBefore">
-                <div class="solution__diagram">
-                  <div
-                    class="solution__node solution__node--chain"
-                    style="--chain-color: var(--color-chain-eth)"
-                  >
-                    ETH
-                  </div>
-                  <div
-                    class="solution__node solution__node--chain"
-                    style="--chain-color: var(--color-chain-base)"
-                  >
-                    Base
-                  </div>
-                  <div
-                    class="solution__node solution__node--chain"
-                    style="--chain-color: var(--color-chain-arb)"
-                  >
-                    ARB
-                  </div>
-                  <div class="solution__arrows-before">
-                    <span>&rarr;</span><span>&rarr;</span><span>&rarr;</span>
-                    <span>&rarr;</span><span>&rarr;</span><span>&rarr;</span>
-                  </div>
-                  <div class="solution__manual">
-                    <span class="solution__clock">&#9200; 2 hours</span>
-                    <span class="solution__steps">50 manual txns</span>
-                  </div>
-                </div>
-              </div>
-              <div class="solution__after" id="solutionAfter">
-                <div class="solution__diagram">
-                  <div class="solution__node solution__node--omni">
-                    OmniFlow
-                  </div>
-                  <div class="solution__arrows-after">
-                    <span>&rarr;</span>
-                  </div>
-                  <div class="solution__result">
-                    <span class="solution__fast">&#9889; 2 minutes</span>
-                    <span class="solution__steps">1 signature</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p class="solution__stat" data-animate="fade-up">
-              <span class="solution__stat-highlight"
-                >50 payouts &times; 3 chains</span
-              >
-              <span class="solution__stat-text"
-                >&rarr; 2 min instead of 2 hours</span
-              >
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- #4 How It Works -->
-      <section
-        class="section section--alt section--flow-demo"
-        id="how-it-works"
-      >
+      <!-- #3 How It Works -->
+      <section class="section section--alt" id="how-it-works">
         <div class="container">
           <span class="section__label">How It Works</span>
-          <h2 class="section__headline">Three steps. Any chain.</h2>
-        </div>
-        <div class="flow-demo" id="flowDemo">
-          <canvas class="flow-demo__canvas" id="flowDemoCanvas"></canvas>
-          <div class="flow-demo__nodes">
-            <!-- Senders (left) -->
-            <div class="flow-demo__column flow-demo__column--left">
-              <div
-                class="flow-demo__node flow-demo__node--sender"
-                data-node="s0"
-              >
-                <span class="flow-demo__node-icon">&#128188;</span>
-                <span class="flow-demo__node-label">Treasury</span>
-              </div>
-              <div
-                class="flow-demo__node flow-demo__node--sender"
-                data-node="s1"
-              >
-                <span class="flow-demo__node-icon">&#128196;</span>
-                <span class="flow-demo__node-label">CSV Upload</span>
-              </div>
-              <div
-                class="flow-demo__node flow-demo__node--sender"
-                data-node="s2"
-              >
-                <span class="flow-demo__node-icon">&#127963;</span>
-                <span class="flow-demo__node-label">DAO Fund</span>
-              </div>
+          <h2 class="section__headline">Three steps. Gasless. Any chain.</h2>
+          <div class="steps__list" data-animate="stagger">
+            <div class="card steps__item">
+              <span class="steps__number">01</span>
+              <h3 class="steps__title">Upload</h3>
+              <p class="steps__text">
+                Drop a CSV, paste from a spreadsheet, or enter ENS names. Any
+                chain, any token, any number of recipients.
+              </p>
             </div>
-            <!-- Hub (center) -->
-            <div class="flow-demo__hub" id="flowDemoHub">
-              <div class="flow-demo__hub-ring"></div>
-              <div class="flow-demo__hub-ring flow-demo__hub-ring--2"></div>
-              <div class="flow-demo__hub-core">OmniFlow</div>
+            <div class="card steps__item">
+              <span class="steps__number">02</span>
+              <h3 class="steps__title">Route</h3>
+              <p class="steps__text">
+                OmniFlow finds optimal paths via CCTP v2 and LI.FI. Cross-chain
+                swaps, bridging, and batching — automatic.
+              </p>
             </div>
-            <!-- Recipients (right) -->
-            <div class="flow-demo__column flow-demo__column--right">
-              <div
-                class="flow-demo__node flow-demo__node--recipient"
-                data-node="r0"
-                style="--chain-color: var(--color-chain-base)"
-              >
-                <span class="flow-demo__node-label">alice.eth</span>
-                <span class="flow-demo__node-chain">Base</span>
-              </div>
-              <div
-                class="flow-demo__node flow-demo__node--recipient"
-                data-node="r1"
-                style="--chain-color: var(--color-chain-arb)"
-              >
-                <span class="flow-demo__node-label">bob.eth</span>
-                <span class="flow-demo__node-chain">Arbitrum</span>
-              </div>
-              <div
-                class="flow-demo__node flow-demo__node--recipient"
-                data-node="r2"
-                style="--chain-color: var(--color-chain-eth)"
-              >
-                <span class="flow-demo__node-label">carol.eth</span>
-                <span class="flow-demo__node-chain">Ethereum</span>
-              </div>
-              <div
-                class="flow-demo__node flow-demo__node--recipient"
-                data-node="r3"
-                style="--chain-color: var(--color-chain-op)"
-              >
-                <span class="flow-demo__node-label">dave.eth</span>
-                <span class="flow-demo__node-chain">Optimism</span>
-              </div>
-              <div
-                class="flow-demo__node flow-demo__node--recipient"
-                data-node="r4"
-                style="--chain-color: var(--color-chain-sonic)"
-              >
-                <span class="flow-demo__node-label">eve.eth</span>
-                <span class="flow-demo__node-chain">Sonic</span>
-              </div>
-            </div>
-          </div>
-          <!-- Step overlay labels -->
-          <div class="flow-demo__steps">
-            <div class="flow-demo__step flow-demo__step--active" data-step="1">
-              <span class="flow-demo__step-num">01</span>
-              <span class="flow-demo__step-title">Upload</span>
-              <span class="flow-demo__step-desc"
-                >CSV or paste from spreadsheet</span
-              >
-            </div>
-            <div class="flow-demo__step" data-step="2">
-              <span class="flow-demo__step-num">02</span>
-              <span class="flow-demo__step-title">Route</span>
-              <span class="flow-demo__step-desc"
-                >Optimal paths via LI.FI + CCTP</span
-              >
-            </div>
-            <div class="flow-demo__step" data-step="3">
-              <span class="flow-demo__step-num">03</span>
-              <span class="flow-demo__step-title">Execute</span>
-              <span class="flow-demo__step-desc"
-                >One click. Everyone gets paid.</span
-              >
+            <div class="card steps__item">
+              <span class="steps__number">03</span>
+              <h3 class="steps__title">Execute</h3>
+              <p class="steps__text">
+                One passkey tap. Account Abstraction handles gas. Everyone gets
+                paid in the token they want, on the chain they want.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- #5 Batch Demo -->
-      <section class="section" id="batch-demo">
-        <div class="container">
-          <span class="section__label">Batch Payouts</span>
-          <h2 class="section__headline">
-            One Click. Five Chains. $12,000 Sent.
-          </h2>
-          <div class="batch" data-animate="fade-up">
-            <div class="batch__table-wrap">
-              <table class="batch__table" id="batchTable">
-                <thead>
-                  <tr>
-                    <th>Recipient</th>
-                    <th>Chain</th>
-                    <th>Token</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr data-row="1">
-                    <td><span class="batch__address">alice.eth</span></td>
-                    <td>
-                      <span
-                        class="batch__chain"
-                        style="--chain-color: var(--color-chain-base)"
-                        >Base</span
-                      >
-                    </td>
-                    <td>USDC</td>
-                    <td class="batch__amount">$2,400</td>
-                    <td>
-                      <span class="batch__status" data-status="pending"
-                        >Pending</span
-                      >
-                    </td>
-                  </tr>
-                  <tr data-row="2">
-                    <td><span class="batch__address">bob.eth</span></td>
-                    <td>
-                      <span
-                        class="batch__chain"
-                        style="--chain-color: var(--color-chain-arb)"
-                        >Arbitrum</span
-                      >
-                    </td>
-                    <td>USDT</td>
-                    <td class="batch__amount">$3,100</td>
-                    <td>
-                      <span class="batch__status" data-status="pending"
-                        >Pending</span
-                      >
-                    </td>
-                  </tr>
-                  <tr data-row="3">
-                    <td><span class="batch__address">carol.eth</span></td>
-                    <td>
-                      <span
-                        class="batch__chain"
-                        style="--chain-color: var(--color-chain-eth)"
-                        >Ethereum</span
-                      >
-                    </td>
-                    <td>DAI</td>
-                    <td class="batch__amount">$1,800</td>
-                    <td>
-                      <span class="batch__status" data-status="pending"
-                        >Pending</span
-                      >
-                    </td>
-                  </tr>
-                  <tr data-row="4">
-                    <td><span class="batch__address">dave.eth</span></td>
-                    <td>
-                      <span
-                        class="batch__chain"
-                        style="--chain-color: var(--color-chain-op)"
-                        >Optimism</span
-                      >
-                    </td>
-                    <td>USDC</td>
-                    <td class="batch__amount">$2,700</td>
-                    <td>
-                      <span class="batch__status" data-status="pending"
-                        >Pending</span
-                      >
-                    </td>
-                  </tr>
-                  <tr data-row="5">
-                    <td><span class="batch__address">eve.eth</span></td>
-                    <td>
-                      <span
-                        class="batch__chain"
-                        style="--chain-color: var(--color-chain-sonic)"
-                        >Sonic</span
-                      >
-                    </td>
-                    <td>USDC</td>
-                    <td class="batch__amount">$2,000</td>
-                    <td>
-                      <span class="batch__status" data-status="pending"
-                        >Pending</span
-                      >
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="batch__summary">
-              <span>5 recipients</span>
-              <span class="batch__dot">&middot;</span>
-              <span>5 chains</span>
-              <span class="batch__dot">&middot;</span>
-              <span>3 tokens</span>
-              <span class="batch__dot">&middot;</span>
-              <span>1 click</span>
-            </div>
-            <div class="batch__footer">
-              <div class="batch__timer">
-                <span class="batch__timer-label">Batch time:</span>
-                <span class="batch__timer-value" id="batchTimer">0.0s</span>
-              </div>
-              <div class="batch__gas-saved">
-                <span class="batch__gas-badge">$0 gas fees</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- #8 Features -->
+      <!-- #4 Features -->
       <section class="section bg-mesh bg-mesh--features" id="features">
         <div class="container">
-          <span class="section__label">Why OmniFlow</span>
-          <h2 class="section__headline">
-            The only platform that combines all five.
-          </h2>
+          <span class="section__label">Features</span>
+          <h2 class="section__headline">More than batch payouts.</h2>
+          <p class="section__subtitle">
+            Batch payouts today. Invoicing, recurring payments, and DeFi
+            operations next. One engine, expanding scope.
+          </p>
           <div class="features__grid" data-animate="stagger">
             <div class="card features__card" data-tilt>
               <div class="features__visual">
                 <span class="features__icon">&#127760;</span>
               </div>
-              <h3 class="features__title">Cross-Chain (30+ chains)</h3>
+              <h3 class="features__title">Cross-Chain</h3>
               <p class="features__text">
                 Route payments across 30+ EVM chains via CCTP v2 and LI.FI. No
                 manual bridging.
@@ -1453,15 +1201,15 @@
               </div>
               <h3 class="features__title">Batch Operations</h3>
               <p class="features__text">
-                50 recipients, 5 chains, 1 click. Upload CSV or paste from
-                spreadsheet.
+                Any number of recipients, any number of chains, one click.
+                Upload CSV or paste from spreadsheet.
               </p>
             </div>
             <div class="card features__card" data-tilt>
               <div class="features__visual">
                 <span class="features__icon">&#9889;</span>
               </div>
-              <h3 class="features__title">Gasless (Account Abstraction)</h3>
+              <h3 class="features__title">Gasless Execution</h3>
               <p class="features__text">
                 Account Abstraction handles gas. No native tokens needed. One
                 passkey tap to approve.
@@ -1471,7 +1219,7 @@
               <div class="features__visual">
                 <span class="features__icon">&#128260;</span>
               </div>
-              <h3 class="features__title">Any Token &rarr; Any Token</h3>
+              <h3 class="features__title">Any Token In/Out</h3>
               <p class="features__text">
                 Sender pays in ETH, recipient gets USDC on another chain.
                 Automatic conversion.
@@ -1487,85 +1235,26 @@
                 expiry, and contract whitelist.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- #9 Security -->
-      <section class="section bg-mesh bg-mesh--security" id="security">
-        <div class="container">
-          <span class="section__label">Security</span>
-          <h2 class="section__headline">Your keys. Your funds. Always.</h2>
-          <div class="security__visual" data-animate="fade-up">
-            <div class="security__flow">
-              <div class="security__flow-node security__flow-node--user">
-                <span>&#128100;</span>
-                <span>You</span>
+            <div class="card features__card" data-tilt>
+              <div class="features__visual">
+                <span class="features__icon">&#128203;</span>
               </div>
-              <div class="security__flow-arrow">&rarr;</div>
-              <div class="security__flow-node security__flow-node--smart">
-                <span>&#128274;</span>
-                <span>Smart Account</span>
-              </div>
-              <div class="security__flow-arrow">&rarr;</div>
-              <div class="security__flow-node security__flow-node--recipients">
-                <span>&#128101;</span>
-                <span>Recipients</span>
-              </div>
-            </div>
-            <p class="security__flow-caption">
-              No intermediary. No custodian. Direct execution via session keys.
-            </p>
-          </div>
-          <div class="security__grid grid-2" data-animate="stagger">
-            <div class="card security__card">
-              <h3 class="security__title">Non-custodial smart accounts</h3>
-              <p class="security__text">
-                ZeroDev Kernel v3.3 (ERC-7579). You own the keys. We never touch
-                your funds.
+              <h3 class="features__title">Invoicing (Coming Soon)</h3>
+              <p class="features__text">
+                Generate payment links. Recipients pay in any token on any
+                chain. You receive what you want.
               </p>
-            </div>
-            <div class="card security__card">
-              <h3 class="security__title">Session keys with guardrails</h3>
-              <p class="security__text">
-                Time-limited permissions. Spending caps. Contract whitelist.
-                Rate limits. Revocable instantly.
-              </p>
-            </div>
-            <div class="card security__card">
-              <h3 class="security__title">Audited infrastructure only</h3>
-              <p class="security__text">
-                ZeroDev (6M+ accounts), Circle CCTP ($110B+ volume), LI.FI
-                (production routing). Zero custom contract risk.
-              </p>
-            </div>
-            <div class="card security__card">
-              <h3 class="security__title">No spreadsheet attack vector</h3>
-              <p class="security__text">
-                PeopleDAO lost $120K via shared Google Sheets. OmniFlow verifies
-                recipients on-chain, not in a spreadsheet.
-              </p>
-            </div>
-          </div>
-          <div class="security__trust" data-animate="fade-up">
-            <span class="security__trust-label"
-              >Powered by audited infrastructure</span
-            >
-            <div class="security__trust-logos">
-              <span class="security__trust-logo">LI.FI</span>
-              <span class="security__trust-logo">ZeroDev</span>
-              <span class="security__trust-logo">Circle CCTP</span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- #13 Integrations -->
+      <!-- #5 Integrations -->
       <section class="section" id="integrations">
         <div class="container">
-          <span class="section__label">Built On</span>
+          <span class="section__label">Infrastructure</span>
           <h2 class="section__headline">
-            Built on audited, battle-tested infrastructure.
+            Composing the best infrastructure in crypto.
           </h2>
           <div class="integrations__primary" data-animate="fade-up">
             <div class="integrations__partner">
@@ -1665,10 +1354,10 @@
         </div>
       </section>
 
-      <!-- #14 Traction -->
+      <!-- #6 Traction -->
       <section class="section bg-mesh bg-mesh--traction" id="traction">
         <div class="container">
-          <span class="section__label">Team</span>
+          <span class="section__label">Traction</span>
           <h2 class="section__headline">Small team. Big leverage.</h2>
           <div class="traction__hero" data-animate="fade-up">
             <div class="traction__badge-large">
@@ -1685,29 +1374,28 @@
           </div>
           <div class="traction__grid grid-2" data-animate="stagger">
             <div class="card traction__card">
-              <span class="traction__stat">&#127942; 1st Place</span>
+              <span class="traction__stat">&#127942; 1st Place ETHGlobal</span>
               <p class="traction__text">
-                ETHGlobal HackMoney 2026 — "Best DeFi Composer App" by LI.FI
+                "Best DeFi Composer App" — LI.FI Prize Track, HackMoney 2026
               </p>
             </div>
             <div class="card traction__card">
-              <span class="traction__stat">2 engineers</span>
+              <span class="traction__stat">2 engineers + AI</span>
               <p class="traction__text">
-                + AI-assisted development (10-20x leverage)
+                AI-assisted development. 10-20x leverage per engineer.
               </p>
             </div>
             <div class="card traction__card">
-              <span class="traction__stat">$8-10K/mo</span>
+              <span class="traction__stat">$8-10K/mo burn</span>
               <p class="traction__text">
-                Burn rate = 20x more capital efficient than typical crypto
-                startup
+                Post-hackathon, pre-grant. Capital efficient by design.
               </p>
             </div>
             <div class="card traction__card">
-              <span class="traction__stat">Battle-tested stack</span>
+              <span class="traction__stat">60x market growth</span>
               <p class="traction__text">
-                Built on ZeroDev + LI.FI + CCTP v2 — audited, production
-                infrastructure
+                Cross-chain payment volume growing exponentially. Early mover
+                advantage.
               </p>
             </div>
           </div>
@@ -1730,25 +1418,25 @@
         </div>
       </section>
 
-      <!-- #15 CTA -->
+      <!-- #7 CTA -->
       <section class="section bg-mesh bg-mesh--cta" id="cta">
         <div class="container cta__container">
           <h2 class="section__headline cta__headline">
-            Stop wasting 2 hours on payroll.
+            Stop copy-pasting wallet addresses.
           </h2>
           <p class="cta__subtitle">
-            Start free. No credit card. Deploy in minutes.
+            Free 14-day trial. No credit card. First batch in under 5 minutes.
           </p>
           <div class="cta__buttons">
             <a
               href="/app/"
               class="btn btn--primary btn--rotating-border btn--lg"
-              >Launch App</a
+              >Start Your First Batch</a
             >
-            <a href="#" class="btn btn--ghost btn--lg">Book a Demo</a>
+            <a href="#" class="btn btn--ghost btn--lg">Talk to Founders</a>
           </div>
           <div class="cta__stats">
-            <span>30+ chains</span>
+            <span>Any chain</span>
             <span class="cta__dot">&middot;</span>
             <span>$0 gas</span>
             <span class="cta__dot">&middot;</span>
@@ -1760,13 +1448,13 @@
       </section>
     </main>
 
-    <!-- #16 Footer -->
+    <!-- #8 Footer -->
     <footer class="footer" id="footer">
       <div class="container footer__container">
         <div class="footer__brand">
           <span class="footer__logo">OmniFlow</span>
           <p class="footer__tagline">
-            Cross-chain payment infrastructure for crypto teams.
+            The cross-chain payment engine for crypto teams.
           </p>
         </div>
         <div class="footer__links">
@@ -1787,7 +1475,7 @@
           >
         </div>
         <div class="footer__tech">
-          Built with ZeroDev + CCTP v2 + LI.FI + Pimlico
+          Built on ZeroDev + Circle CCTP v2 + LI.FI + Pimlico
         </div>
         <div class="footer__legal">
           <span>&copy; 2026 OmniFlow</span>
@@ -1806,8 +1494,6 @@
     <script src="js/main.js"></script>
     <script src="js/flowfield.js"></script>
     <script src="js/animations.js"></script>
-    <script src="js/batch-demo.js"></script>
-    <script src="js/flow-demo.js"></script>
     <script src="js/interactions.js"></script>
     <script src="js/isometric.js"></script>
   </body>

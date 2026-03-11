@@ -8,7 +8,7 @@
   ).matches;
   if (prefersReduced) return;
 
-  var svg = document.querySelector(".hero__isometric");
+  var svg = document.querySelector(".isometric-svg");
   if (!svg) return;
 
   // Path IDs and their colors
@@ -59,11 +59,7 @@
     animMotion.setAttribute("fill", "freeze");
 
     var mpath = document.createElementNS(ns, "mpath");
-    mpath.setAttributeNS(
-      "http://www.w3.org/1999/xlink",
-      "href",
-      "#" + config.id,
-    );
+    mpath.setAttribute("href", "#" + config.id);
     animMotion.appendChild(mpath);
 
     // Fade in/out via animate
@@ -102,10 +98,10 @@
       var line = lines[i];
       if (on) {
         line.setAttribute("stroke-opacity", "0.9");
-        line.setAttribute("stroke-width", "2.5");
+        line.setAttribute("stroke-width", "3");
         line.style.animationDuration = "0.4s";
       } else {
-        line.setAttribute("stroke-opacity", "0.4");
+        line.setAttribute("stroke-opacity", "0.5");
         line.setAttribute("stroke-width", "1.5");
         line.style.animationDuration = "";
       }

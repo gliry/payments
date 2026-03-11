@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OmniFlow — Demo A: Enhanced Particle Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0b0d12;
+        font-family: "Sora", sans-serif;
+        color: #e4e5ea;
+      }
+
+      /* ── Canvas ── */
+      #particleCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+      }
+
+      /* ── Nav ── */
+      .nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 72px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 40px;
+        background: rgba(11, 13, 18, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .nav-logo {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        background: linear-gradient(135deg, #1894e8, #9f72ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 24px;
+        border-radius: 50px;
+        border: none;
+        background: linear-gradient(135deg, #1894e8, #9f72ff);
+        color: #fff;
+        font-family: "Sora", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          transform 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+
+      .nav-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(24, 148, 232, 0.35);
+      }
+
+      /* ── Hero overlay ── */
+      .hero {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 0 24px;
+        gap: 28px;
+      }
+
+      /* ── Badge ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #9f72ff;
+        position: relative;
+        background: rgba(159, 114, 255, 0.06);
+      }
+
+      .badge::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50px;
+        padding: 1px;
+        background: linear-gradient(135deg, #1894e8, #9f72ff, #62e2a4);
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      /* ── Headline ── */
+      .headline {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -1px;
+        color: #e4e5ea;
+        max-width: 700px;
+      }
+
+      /* ── Subtitle ── */
+      .subtitle {
+        font-size: clamp(1rem, 2vw, 1.25rem);
+        font-weight: 400;
+        color: #7c7e8a;
+        line-height: 1.65;
+        max-width: 600px;
+      }
+
+      /* ── Stats row ── */
+      .stats {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        padding: 0 20px;
+      }
+
+      .stat-value {
+        font-weight: 600;
+        color: #e4e5ea;
+      }
+
+      .stat-label {
+        font-weight: 400;
+        color: #7c7e8a;
+      }
+
+      .stat-divider {
+        width: 1px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.12);
+        flex-shrink: 0;
+      }
+
+      /* ── Buttons ── */
+      .buttons {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        padding: 14px 32px;
+        border-radius: 50px;
+        border: none;
+        background: linear-gradient(135deg, #1894e8, #9f72ff);
+        color: #fff;
+        font-family: "Sora", sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          transform 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 10px 40px rgba(24, 148, 232, 0.4),
+          0 4px 15px rgba(159, 114, 255, 0.3);
+      }
+
+      .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        padding: 14px 32px;
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: transparent;
+        color: #e4e5ea;
+        font-family: "Sora", sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background 0.25s ease,
+          border-color 0.25s ease;
+      }
+
+      .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.45);
+      }
+
+      /* ── Reduced motion ── */
+      @media (prefers-reduced-motion: reduce) {
+        #particleCanvas {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="particleCanvas"></canvas>
+
+    <nav class="nav">
+      <div class="nav-logo">OmniFlow</div>
+      <button class="nav-cta">Start Free Trial</button>
+    </nav>
+
+    <main class="hero">
+      <div class="badge">
+        <span>&#127942;</span>
+        <span>1st Place &mdash; ETHGlobal HackMoney 2026</span>
+      </div>
+
+      <h1 class="headline">Cross-Chain Payments.<br />One Click.</h1>
+
+      <p class="subtitle">
+        Upload CSV. Select recipients across any chain. Pay your entire team in
+        30 seconds &mdash; not 2 hours.
+      </p>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value">30+</span
+          ><span class="stat-label">Chains</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">Any</span
+          ><span class="stat-label">Token</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">$0</span><span class="stat-label">Gas</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-value">Non-Custodial</span></div>
+      </div>
+
+      <div class="buttons">
+        <button class="btn-primary">Start Free Trial</button>
+        <button class="btn-ghost">Watch Demo</button>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const BRAND_COLORS = [
+          "#1894E8",
+          "#9F72FF",
+          "#62E2A4",
+          "#627eea",
+          "#0052ff",
+        ];
+        const PARTICLE_COUNT = 120;
+        const CONNECTION_DIST = 180;
+        const MOUSE_RADIUS = 120;
+        const MOUSE_STRENGTH = 6;
+
+        let width, height;
+        let mouseX = -9999;
+        let mouseY = -9999;
+        let particles = [];
+        let animId;
+        let reducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+
+        function hexToRgb(hex) {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return { r, g, b };
+        }
+
+        function resize() {
+          const dpr = window.devicePixelRatio || 1;
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = width * dpr;
+          canvas.height = height * dpr;
+          canvas.style.width = width + "px";
+          canvas.style.height = height + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        let resizeTimer;
+        window.addEventListener("resize", function () {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(resize, 100);
+        });
+
+        function createParticle() {
+          const color =
+            BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)];
+          return {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            radius: 2 + Math.random() * 3,
+            baseRadius: 0,
+            color: color,
+            rgb: hexToRgb(color),
+            opacity: 0.2 + Math.random() * 0.2,
+            phase: Math.random() * Math.PI * 2,
+          };
+        }
+
+        function init() {
+          resize();
+          particles = [];
+          for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const p = createParticle();
+            p.baseRadius = p.radius;
+            particles.push(p);
+          }
+        }
+
+        function drawGlow() {
+          const grd = ctx.createRadialGradient(
+            width / 2,
+            height / 2,
+            0,
+            width / 2,
+            height / 2,
+            Math.max(width, height) * 0.5,
+          );
+          grd.addColorStop(0, "rgba(24, 148, 232, 0.04)");
+          grd.addColorStop(0.4, "rgba(159, 114, 255, 0.02)");
+          grd.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, width, height);
+        }
+
+        function update(time) {
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+
+            // Sinusoidal pulsing
+            p.radius = p.baseRadius + Math.sin(time * 0.002 + p.phase) * 0.5;
+
+            // Mouse repulsion
+            const dx = p.x - mouseX;
+            const dy = p.y - mouseY;
+            const distSq = dx * dx + dy * dy;
+            const dist = Math.sqrt(distSq);
+
+            if (dist < MOUSE_RADIUS && dist > 0) {
+              const force = (1 - dist / MOUSE_RADIUS) * MOUSE_STRENGTH;
+              const nx = dx / dist;
+              const ny = dy / dist;
+              p.vx += nx * force * 0.05;
+              p.vy += ny * force * 0.05;
+            }
+
+            // Damping
+            p.vx *= 0.98;
+            p.vy *= 0.98;
+
+            // Move
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Bounce off edges
+            if (p.x < 0) {
+              p.x = 0;
+              p.vx *= -1;
+            }
+            if (p.x > width) {
+              p.x = width;
+              p.vx *= -1;
+            }
+            if (p.y < 0) {
+              p.y = 0;
+              p.vy *= -1;
+            }
+            if (p.y > height) {
+              p.y = height;
+              p.vy *= -1;
+            }
+          }
+        }
+
+        function draw(time) {
+          ctx.clearRect(0, 0, width, height);
+          drawGlow();
+
+          // Connection lines
+          for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+              const a = particles[i];
+              const b = particles[j];
+              const dx = a.x - b.x;
+              const dy = a.y - b.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < CONNECTION_DIST) {
+                const opacity = (1 - dist / CONNECTION_DIST) * 0.15;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.strokeStyle =
+                  "rgba(" +
+                  a.rgb.r +
+                  "," +
+                  a.rgb.g +
+                  "," +
+                  a.rgb.b +
+                  "," +
+                  opacity +
+                  ")";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+              }
+            }
+          }
+
+          // Particles
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.max(p.radius, 0.5), 0, Math.PI * 2);
+            ctx.fillStyle =
+              "rgba(" +
+              p.rgb.r +
+              "," +
+              p.rgb.g +
+              "," +
+              p.rgb.b +
+              "," +
+              p.opacity +
+              ")";
+            ctx.fill();
+          }
+        }
+
+        function loop(time) {
+          update(time);
+          draw(time);
+          animId = requestAnimationFrame(loop);
+        }
+
+        // Mouse tracking
+        document.addEventListener("mousemove", function (e) {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+        });
+
+        document.addEventListener("mouseleave", function () {
+          mouseX = -9999;
+          mouseY = -9999;
+        });
+
+        // Init
+        init();
+
+        if (reducedMotion) {
+          // Static render
+          draw(0);
+        } else {
+          animId = requestAnimationFrame(loop);
+        }
+
+        // Listen for reduced motion change
+        window
+          .matchMedia("(prefers-reduced-motion: reduce)")
+          .addEventListener("change", function (e) {
+            reducedMotion = e.matches;
+            if (reducedMotion) {
+              cancelAnimationFrame(animId);
+              draw(0);
+            } else {
+              animId = requestAnimationFrame(loop);
+            }
+          });
+      })();
+    </script>
+  </body>
+</html>

@@ -20,6 +20,7 @@
 
   if (isReducedMotion) {
     gsap.set("[data-animate]", { opacity: 1, y: 0, x: 0, scale: 1 });
+    gsap.set("[data-split-cards] .card", { opacity: 1, y: 0 });
     return;
   }
 
@@ -98,139 +99,69 @@
     });
   }
 
-  // ── Problem: pinned sequential card reveal ──
-  function initProblemPin() {
-    var section = document.getElementById("problem");
-    var cards = section ? section.querySelectorAll(".problem__card") : [];
-    if (!section || cards.length === 0 || isMobile) return;
+  // ── Split-screen card reveal ──
+  function initSplitSections() {
+    var scrollContainers = document.querySelectorAll("[data-split-cards]");
 
-    // Hide all cards initially
-    gsap.set(cards, { opacity: 0, y: 40 });
+    scrollContainers.forEach(function (container) {
+      var cards = container.querySelectorAll(".card");
+      if (cards.length === 0) return;
 
-    var tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: "top top",
-        end: "+=" + cards.length * 50 + "%",
-        pin: true,
-        scrub: 1,
-      },
-    });
-
-    // Reveal each card sequentially
-    cards.forEach(function (card, i) {
-      tl.to(card, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
-      if (i < cards.length - 1) {
-        tl.to({}, { duration: 0.2 }); // pause between cards
+      if (isMobile) {
+        // Simple stagger reveal on mobile
+        gsap.from(cards, {
+          y: 40,
+          opacity: 0,
+          duration: 0.7,
+          stagger: 0.15,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: container,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        });
+        return;
       }
-    });
 
-    // Hold at end
-    tl.to({}, { duration: 0.3 });
-  }
-
-  // ── Solution: before → after morph ──
-  function initSolutionAnimation() {
-    const wrap = document.getElementById("solutionWrap");
-    const before = document.getElementById("solutionBefore");
-    const after = document.getElementById("solutionAfter");
-    if (!wrap || !before || !after) return;
-
-    if (isMobile) {
-      gsap.to(before, {
-        opacity: 0,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: wrap,
-          start: "top 60%",
-          toggleActions: "play none none reverse",
-        },
-      });
-      gsap.to(after, {
-        opacity: 1,
-        duration: 0.8,
-        scrollTrigger: {
-          trigger: wrap,
-          start: "top 50%",
-          toggleActions: "play none none reverse",
-        },
-      });
-    } else {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: "#solution",
-          start: "top top",
-          end: "+=150%",
-          pin: true,
-          scrub: 1,
-        },
-      });
-
-      tl.to(before, { opacity: 0, scale: 0.9, duration: 0.5 }).to(
-        after,
-        { opacity: 1, scale: 1, duration: 0.5 },
-        "-=0.3",
-      );
-    }
-  }
-
-  // ── How It Works: step progression ──
-  function initStepsAnimation() {
-    const wrap = document.getElementById("stepsWrap");
-    const fill = document.getElementById("stepsLineFill");
-    const items = wrap ? wrap.querySelectorAll(".steps__item") : [];
-    if (!wrap || items.length === 0) return;
-
-    if (isMobile) {
-      // Simple stagger reveal on mobile
-      gsap.from(items, {
-        y: 40,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.15,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: wrap,
-          start: "top 85%",
-          toggleActions: "play none none none",
-        },
-      });
-      return;
-    }
-
-    gsap.to(fill, {
-      width: "100%",
-      ease: "none",
-      scrollTrigger: {
-        trigger: wrap,
-        start: "top 70%",
-        end: "bottom 50%",
-        scrub: true,
-      },
-    });
-
-    items.forEach((item) => {
-      gsap.from(item, {
-        opacity: 0,
-        y: 30,
-        duration: 0.6,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: item,
-          start: "top 80%",
-          toggleActions: "play none none reverse",
-        },
+      // Desktop: reveal cards as they scroll into view
+      cards.forEach(function (card) {
+        gsap.to(card, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: card,
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+        });
       });
     });
   }
 
-  // ── Flow Demo: pinned scroll-driven phases ──
-  function initFlowDemoScroll() {
-    var demo = document.getElementById("flowDemo");
-    if (!demo || isMobile) return;
+  // ── Isometric section: pinned scroll with phases ──
+  function initIsometricScroll() {
+    var section = document.getElementById("isometric");
+    var svg = document.getElementById("isometricSvg");
+    var stepEls = section
+      ? section.querySelectorAll(".how-it-works__step")
+      : [];
+    if (!section || !svg || isMobile) return;
+
+    var sourceCards = svg.querySelectorAll(".source-card");
+    var recipientCards = svg.querySelectorAll(".recipient-card");
+    var flowLines = svg.querySelectorAll(".flow-line");
+    var centerEngine = svg.querySelector("#centerEngine");
+
+    // Start partially visible
+    gsap.set(sourceCards, { opacity: 0.7 });
+    gsap.set(recipientCards, { opacity: 0.6 });
+    gsap.set(flowLines, { attr: { "stroke-opacity": 0.5 } });
 
     ScrollTrigger.create({
-      trigger: "#how-it-works",
+      trigger: section,
       start: "top top",
       end: "+=200%",
       pin: true,
@@ -240,22 +171,62 @@
         var phase = 0;
         if (progress > 0.33) phase = 1;
         if (progress > 0.66) phase = 2;
-        if (typeof window.__flowDemoSetPhase === "function") {
-          window.__flowDemoSetPhase(phase);
+
+        // Update step indicators
+        for (var i = 0; i < stepEls.length; i++) {
+          if (i <= phase) {
+            stepEls[i].classList.add("how-it-works__step--active");
+          } else {
+            stepEls[i].classList.remove("how-it-works__step--active");
+          }
+        }
+
+        // Phase 0: Upload — highlight sources
+        var srcOpacity = progress > 0.1 ? 1 : 0.7;
+        for (var si = 0; si < sourceCards.length; si++) {
+          sourceCards[si].style.opacity = srcOpacity;
+        }
+
+        // Phase 1: Route — highlight flow lines and center
+        var lineOpacity = phase >= 1 ? "0.8" : "0.5";
+        for (var li = 0; li < flowLines.length; li++) {
+          flowLines[li].setAttribute("stroke-opacity", lineOpacity);
+          flowLines[li].setAttribute("stroke-width", phase >= 1 ? "3" : "1.5");
+        }
+
+        // Phase 2: Execute — highlight recipients
+        var rcpOpacity = phase >= 2 ? 1 : 0.6;
+        for (var ri = 0; ri < recipientCards.length; ri++) {
+          recipientCards[ri].style.opacity = rcpOpacity;
         }
       },
+    });
+  }
+
+  // ── Split-screen sticky via GSAP pin (replaces CSS sticky) ──
+  function initSplitStickyPins() {
+    if (isMobile) return;
+    document.querySelectorAll(".split-section").forEach(function (section) {
+      var sticky = section.querySelector(".split-section__sticky");
+      if (!sticky) return;
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "bottom bottom",
+        pin: sticky,
+        pinSpacing: false,
+      });
     });
   }
 
   function init() {
     initHeroAnimation();
     initScrollReveal();
-    initProblemPin();
     initStaggerReveal();
     initCounters();
-    initSolutionAnimation();
-    initStepsAnimation();
-    initFlowDemoScroll();
+    initSplitSections();
+    initSplitStickyPins();
+    initIsometricScroll();
   }
 
   if (document.readyState === "complete") {
