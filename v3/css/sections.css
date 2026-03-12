@@ -432,6 +432,11 @@
   color: transparent;
 }
 
+.problem-wall__slide:not(.problem-wall__slide--resolve) .problem-wall__card {
+  filter: drop-shadow(0 0 30px rgba(255, 107, 107, 0.3))
+          drop-shadow(0 0 60px rgba(255, 107, 107, 0.12));
+}
+
 .problem-wall__slide--resolve .problem-wall__card {
   filter: drop-shadow(0 0 30px rgba(24, 148, 232, 0.4))
           drop-shadow(0 0 60px rgba(159, 114, 255, 0.2));

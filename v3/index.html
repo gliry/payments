@@ -216,7 +216,7 @@
 
             <div class="problem-wall__slide">
               <div class="problem-wall__card">
-                <span class="problem-wall__red">"Which chain?"</span>
+                <span class="problem-wall__red">Which chain?</span>
                 <span class="problem-wall__light">Money is money. That's a bug, not a question.</span>
               </div>
             </div>
@@ -237,15 +237,15 @@
 
             <div class="problem-wall__slide">
               <div class="problem-wall__card">
-                <span class="problem-wall__red">ETH on Arbitrum. USDC on Base.</span>
-                <span class="problem-wall__light">Hope they know how to bridge.</span>
+                <span class="problem-wall__red">They pay in USDT on Arbitrum, you wanted USDC on Base.</span>
+                <span class="problem-wall__light">Hope someone know how to bridge.</span>
               </div>
             </div>
 
             <div class="problem-wall__slide">
               <div class="problem-wall__card">
                 <span class="problem-wall__red">Copy-paste address and pray.</span>
-                <span class="problem-wall__light">Your bank has autopay, invoices, subscriptions. Crypto?</span>
+                <span class="problem-wall__light">Your bank: autopay, invoices, subscriptions. Crypto?</span>
               </div>
             </div>
 
@@ -284,7 +284,7 @@
             <svg
               class="isometric-svg"
               id="isometricSvg"
-              viewBox="0 -10 860 400"
+              viewBox="0 -20 920 420"
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
@@ -395,17 +395,31 @@
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
                 </filter>
 
-                <!-- Sphere gradients -->
+                <!-- Sphere gradients (deeper blue-purple, more contrast) -->
                 <radialGradient id="sphereBody" cx="32%" cy="28%">
-                  <stop offset="0%" stop-color="#3A4A8E" />
-                  <stop offset="30%" stop-color="#252D65" />
-                  <stop offset="70%" stop-color="#181D48" />
-                  <stop offset="100%" stop-color="#101335" />
+                  <stop offset="0%" stop-color="#4A5ACA" />
+                  <stop offset="25%" stop-color="#2E3890" />
+                  <stop offset="55%" stop-color="#1A2068" />
+                  <stop offset="100%" stop-color="#0C0F3A" />
                 </radialGradient>
                 <radialGradient id="sphereRim" cx="50%" cy="50%">
-                  <stop offset="85%" stop-color="transparent" />
-                  <stop offset="100%" stop-color="#1894E8" stop-opacity="0.15" />
+                  <stop offset="80%" stop-color="transparent" />
+                  <stop offset="100%" stop-color="#1894E8" stop-opacity="0.25" />
                 </radialGradient>
+
+                <!-- Glassmorphism filter for sphere -->
+                <filter id="glassBlur" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                  <feColorMatrix in="blur" type="matrix"
+                    values="1 0 0 0 0.05
+                            0 1 0 0 0.05
+                            0 0 1 0 0.15
+                            0 0 0 0.6 0" result="glass" />
+                  <feMerge>
+                    <feMergeNode in="glass" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
                 <linearGradient id="specular" x1="0.3" y1="0" x2="0.7" y2="1">
                   <stop offset="0%" stop-color="#fff" stop-opacity="0.18" />
                   <stop offset="50%" stop-color="#fff" stop-opacity="0.03" />
@@ -741,14 +755,14 @@
                 id="centerEngine"
                 transform="translate(450, 145)"
               >
-                <!-- Back halves of rings (behind sphere) -->
+                <!-- Back halves of rings (behind sphere) — 2 rings only -->
                 <ellipse
                   rx="105"
                   ry="32"
                   fill="none"
                   stroke="url(#brandGrad)"
                   stroke-width="1"
-                  stroke-opacity="0.1"
+                  stroke-opacity="0.12"
                   transform="rotate(-8)"
                 />
                 <path
@@ -756,26 +770,21 @@
                   fill="none"
                   stroke="url(#brandGrad)"
                   stroke-width="1"
-                  stroke-opacity="0.08"
-                />
-                <path
-                  d="M -8 -80 A 18 80 0 0 1 -8 80"
-                  fill="none"
-                  stroke="url(#brandGrad)"
-                  stroke-width="1"
-                  stroke-opacity="0.06"
+                  stroke-opacity="0.1"
                 />
 
-                <!-- Sphere body -->
-                <circle r="58" fill="url(#sphereBody)" />
-                <circle r="58" fill="url(#sphereRim)" />
+                <!-- Sphere body with glassmorphism -->
+                <circle r="60" fill="url(#sphereBody)" filter="url(#glassBlur)" class="sphere-pulse" />
+                <circle r="60" fill="url(#sphereRim)" class="sphere-pulse" />
+                <!-- Semi-transparent glass overlay -->
+                <circle r="58" fill="rgba(30, 40, 100, 0.15)" class="sphere-pulse" />
                 <circle
-                  r="58"
+                  r="60"
                   fill="none"
                   stroke="url(#brandGrad)"
-                  stroke-width="1.2"
-                  stroke-opacity="0.35"
-                  class="center-glow"
+                  stroke-width="1.5"
+                  stroke-opacity="0.5"
+                  class="center-glow sphere-pulse"
                 />
 
                 <!-- Specular highlight (top-left) -->
@@ -830,13 +839,13 @@
                   Engine
                 </text>
 
-                <!-- Front halves of rings -->
+                <!-- Front halves of rings (2 rings) -->
                 <path
                   d="M 105 0 A 105 32 0 0 1 -105 0"
                   fill="none"
                   stroke="url(#brandGrad)"
                   stroke-width="1.5"
-                  stroke-opacity="0.35"
+                  stroke-opacity="0.4"
                   transform="rotate(-8)"
                 />
                 <path
@@ -844,14 +853,7 @@
                   fill="none"
                   stroke="url(#brandGrad)"
                   stroke-width="1.5"
-                  stroke-opacity="0.3"
-                />
-                <path
-                  d="M -8 80 A 18 80 0 0 1 -8 -80"
-                  fill="none"
-                  stroke="url(#brandGrad)"
-                  stroke-width="1.5"
-                  stroke-opacity="0.25"
+                  stroke-opacity="0.35"
                 />
 
                 <!-- Full orbital paths (hidden, for animateMotion) -->
@@ -868,13 +870,6 @@
                   fill="none"
                   stroke-opacity="0"
                 />
-                <path
-                  id="orbitPath3"
-                  d="M -8 -80 A 18 80 0 1 1 -8 80 A 18 80 0 1 1 -8 -80"
-                  fill="none"
-                  stroke-opacity="0"
-                />
-
                 <!-- Orbiting particles (animated via animateMotion) -->
                 <!-- Ring 1: horizontal — 2 particles -->
                 <circle r="3.5" fill="#1894E8" opacity="0.75" filter="url(#pktGlow)">
@@ -903,20 +898,6 @@
                   </animateMotion>
                   <animate attributeName="opacity" values="0.4;0.15;0.4" dur="7s" repeatCount="indefinite" begin="4.5s" />
                 </circle>
-
-                <!-- Ring 3: vertical — 2 particles -->
-                <circle r="2.5" fill="#4B5CE8" opacity="0.55" filter="url(#pktGlow)">
-                  <animateMotion dur="5s" repeatCount="indefinite" begin="0.5s">
-                    <mpath href="#orbitPath3" />
-                  </animateMotion>
-                  <animate attributeName="opacity" values="0.55;0.2;0.55" dur="5s" repeatCount="indefinite" begin="0.5s" />
-                </circle>
-                <circle r="2" fill="#9F72FF" opacity="0.35" filter="url(#pktGlow)">
-                  <animateMotion dur="5s" repeatCount="indefinite" begin="3s">
-                    <mpath href="#orbitPath3" />
-                  </animateMotion>
-                  <animate attributeName="opacity" values="0.35;0.12;0.35" dur="5s" repeatCount="indefinite" begin="3s" />
-                </circle>
               </g>
 
               <!-- Recipient Cards (Right) -->
@@ -924,363 +905,101 @@
               <g
                 class="float-e recipient-card"
                 data-group="dst1"
-                transform="translate(700, 22)"
+                transform="translate(720, 22)"
               >
-                <rect
-                  x="0"
-                  y="0"
-                  width="140"
-                  height="56"
-                  rx="2"
-                  fill="#1A1D27"
-                  stroke="#2A2D37"
-                  stroke-width="1"
-                />
-                <rect
-                  x="0"
-                  y="8"
-                  width="3"
-                  height="40"
-                  rx="1.5"
-                  fill="#0052FF"
-                />
-                <polygon
-                  points="0,0 140,0 150,-12 10,-12"
-                  fill="#282B38"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                  opacity="0.8"
-                />
-                <polygon
-                  points="140,0 140,56 150,44 150,-12"
-                  fill="#222530"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                />
-                <text
-                  x="16"
-                  y="22"
-                  fill="#E4E5EA"
-                  font-size="12"
-                  font-weight="600"
-                  font-family="Sora, sans-serif"
-                >
-                  alice.eth
-                </text>
-                <text
-                  x="16"
-                  y="40"
-                  fill="#0052FF"
-                  font-size="10"
-                  font-weight="500"
-                  font-family="Sora, sans-serif"
-                >
-                  Base
-                </text>
-                <circle cx="120" cy="28" r="8" fill="#0052FF" opacity="0.15" />
-                <text
-                  x="120"
-                  y="32"
-                  text-anchor="middle"
-                  fill="#0052FF"
-                  font-size="8"
-                  font-weight="700"
-                  font-family="Sora, sans-serif"
-                >
-                  B
-                </text>
+                <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
+                <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#0052FF" />
+                <polygon points="0,0 140,0 150,-12 10,-12" fill="#282B38" stroke="#2A2D37" stroke-width="0.5" opacity="0.8" />
+                <polygon points="140,0 140,56 150,44 150,-12" fill="#222530" stroke="#2A2D37" stroke-width="0.5" />
+                <text x="16" y="22" fill="#E4E5EA" font-size="12" font-weight="600" font-family="Sora, sans-serif">alice.eth</text>
+                <text x="16" y="40" fill="#0052FF" font-size="10" font-weight="500" font-family="Sora, sans-serif">Base</text>
+                <!-- Base chain icon -->
+                <circle cx="120" cy="28" r="9" fill="#0052FF" opacity="0.2" />
+                <circle cx="120" cy="28" r="6" fill="#0052FF" />
+                <path d="M 120 22.5 L 120 33.5 M 115 28 L 125 28" stroke="white" stroke-width="1.5" fill="none" opacity="0.9" />
               </g>
 
               <!-- bob.eth / Arbitrum -->
               <g
                 class="float-f recipient-card"
                 data-group="dst2"
-                transform="translate(700, 90)"
+                transform="translate(720, 90)"
               >
-                <rect
-                  x="0"
-                  y="0"
-                  width="140"
-                  height="56"
-                  rx="2"
-                  fill="#1A1D27"
-                  stroke="#2A2D37"
-                  stroke-width="1"
-                />
-                <rect
-                  x="0"
-                  y="8"
-                  width="3"
-                  height="40"
-                  rx="1.5"
-                  fill="#28A0F0"
-                />
-                <polygon
-                  points="0,0 140,0 150,-12 10,-12"
-                  fill="#282B38"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                  opacity="0.8"
-                />
-                <polygon
-                  points="140,0 140,56 150,44 150,-12"
-                  fill="#222530"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                />
-                <text
-                  x="16"
-                  y="22"
-                  fill="#E4E5EA"
-                  font-size="12"
-                  font-weight="600"
-                  font-family="Sora, sans-serif"
-                >
-                  bob.eth
-                </text>
-                <text
-                  x="16"
-                  y="40"
-                  fill="#28A0F0"
-                  font-size="10"
-                  font-weight="500"
-                  font-family="Sora, sans-serif"
-                >
-                  Arbitrum
-                </text>
-                <circle cx="120" cy="28" r="8" fill="#28A0F0" opacity="0.15" />
-                <text
-                  x="120"
-                  y="32"
-                  text-anchor="middle"
-                  fill="#28A0F0"
-                  font-size="8"
-                  font-weight="700"
-                  font-family="Sora, sans-serif"
-                >
-                  A
-                </text>
+                <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
+                <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#28A0F0" />
+                <polygon points="0,0 140,0 150,-12 10,-12" fill="#282B38" stroke="#2A2D37" stroke-width="0.5" opacity="0.8" />
+                <polygon points="140,0 140,56 150,44 150,-12" fill="#222530" stroke="#2A2D37" stroke-width="0.5" />
+                <text x="16" y="22" fill="#E4E5EA" font-size="12" font-weight="600" font-family="Sora, sans-serif">bob.eth</text>
+                <text x="16" y="40" fill="#28A0F0" font-size="10" font-weight="500" font-family="Sora, sans-serif">Arbitrum</text>
+                <!-- Arbitrum chain icon (stylized A) -->
+                <circle cx="120" cy="28" r="9" fill="#28A0F0" opacity="0.2" />
+                <circle cx="120" cy="28" r="6" fill="#1B4ADD" />
+                <path d="M 116.5 32 L 120 23 L 123.5 32 M 117.5 30 L 122.5 30" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" />
               </g>
 
               <!-- carol.eth / Ethereum -->
               <g
                 class="float-g recipient-card"
                 data-group="dst3"
-                transform="translate(700, 158)"
+                transform="translate(720, 158)"
               >
-                <rect
-                  x="0"
-                  y="0"
-                  width="140"
-                  height="56"
-                  rx="2"
-                  fill="#1A1D27"
-                  stroke="#2A2D37"
-                  stroke-width="1"
-                />
-                <rect
-                  x="0"
-                  y="8"
-                  width="3"
-                  height="40"
-                  rx="1.5"
-                  fill="#627EEA"
-                />
-                <polygon
-                  points="0,0 140,0 150,-12 10,-12"
-                  fill="#282B38"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                  opacity="0.8"
-                />
-                <polygon
-                  points="140,0 140,56 150,44 150,-12"
-                  fill="#222530"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                />
-                <text
-                  x="16"
-                  y="22"
-                  fill="#E4E5EA"
-                  font-size="12"
-                  font-weight="600"
-                  font-family="Sora, sans-serif"
-                >
-                  carol.eth
-                </text>
-                <text
-                  x="16"
-                  y="40"
-                  fill="#627EEA"
-                  font-size="10"
-                  font-weight="500"
-                  font-family="Sora, sans-serif"
-                >
-                  Ethereum
-                </text>
-                <circle cx="120" cy="28" r="8" fill="#627EEA" opacity="0.15" />
-                <text
-                  x="120"
-                  y="32"
-                  text-anchor="middle"
-                  fill="#627EEA"
-                  font-size="8"
-                  font-weight="700"
-                  font-family="Sora, sans-serif"
-                >
-                  E
-                </text>
+                <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
+                <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#627EEA" />
+                <polygon points="0,0 140,0 150,-12 10,-12" fill="#282B38" stroke="#2A2D37" stroke-width="0.5" opacity="0.8" />
+                <polygon points="140,0 140,56 150,44 150,-12" fill="#222530" stroke="#2A2D37" stroke-width="0.5" />
+                <text x="16" y="22" fill="#E4E5EA" font-size="12" font-weight="600" font-family="Sora, sans-serif">carol.eth</text>
+                <text x="16" y="40" fill="#627EEA" font-size="10" font-weight="500" font-family="Sora, sans-serif">Ethereum</text>
+                <!-- Ethereum diamond icon -->
+                <circle cx="120" cy="28" r="9" fill="#627EEA" opacity="0.2" />
+                <path d="M 120 21 L 125 28 L 120 35 L 115 28 Z" fill="#627EEA" />
+                <path d="M 120 21 L 125 28 L 120 26 L 115 28 Z" fill="white" opacity="0.4" />
               </g>
 
               <!-- dave.eth / Optimism -->
               <g
                 class="float-h recipient-card hide-mobile"
                 data-group="dst4"
-                transform="translate(700, 226)"
+                transform="translate(720, 226)"
               >
-                <rect
-                  x="0"
-                  y="0"
-                  width="140"
-                  height="56"
-                  rx="2"
-                  fill="#1A1D27"
-                  stroke="#2A2D37"
-                  stroke-width="1"
-                />
-                <rect
-                  x="0"
-                  y="8"
-                  width="3"
-                  height="40"
-                  rx="1.5"
-                  fill="#FF0420"
-                />
-                <polygon
-                  points="0,0 140,0 150,-12 10,-12"
-                  fill="#282B38"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                  opacity="0.8"
-                />
-                <polygon
-                  points="140,0 140,56 150,44 150,-12"
-                  fill="#222530"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                />
-                <text
-                  x="16"
-                  y="22"
-                  fill="#E4E5EA"
-                  font-size="12"
-                  font-weight="600"
-                  font-family="Sora, sans-serif"
-                >
-                  dave.eth
-                </text>
-                <text
-                  x="16"
-                  y="40"
-                  fill="#FF0420"
-                  font-size="10"
-                  font-weight="500"
-                  font-family="Sora, sans-serif"
-                >
-                  Optimism
-                </text>
-                <circle cx="120" cy="28" r="8" fill="#FF0420" opacity="0.15" />
-                <text
-                  x="120"
-                  y="32"
-                  text-anchor="middle"
-                  fill="#FF0420"
-                  font-size="8"
-                  font-weight="700"
-                  font-family="Sora, sans-serif"
-                >
-                  O
-                </text>
+                <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
+                <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#FF0420" />
+                <polygon points="0,0 140,0 150,-12 10,-12" fill="#282B38" stroke="#2A2D37" stroke-width="0.5" opacity="0.8" />
+                <polygon points="140,0 140,56 150,44 150,-12" fill="#222530" stroke="#2A2D37" stroke-width="0.5" />
+                <text x="16" y="22" fill="#E4E5EA" font-size="12" font-weight="600" font-family="Sora, sans-serif">dave.eth</text>
+                <text x="16" y="40" fill="#FF0420" font-size="10" font-weight="500" font-family="Sora, sans-serif">Optimism</text>
+                <!-- Optimism icon (red circle + OP) -->
+                <circle cx="120" cy="28" r="9" fill="#FF0420" opacity="0.2" />
+                <circle cx="120" cy="28" r="6" fill="#FF0420" />
+                <text x="120" y="31" text-anchor="middle" fill="white" font-size="7" font-weight="700" font-family="Sora, sans-serif">OP</text>
               </g>
 
               <!-- eve.eth / Avalanche -->
               <g
                 class="float-a recipient-card hide-mobile"
                 data-group="dst5"
-                transform="translate(700, 294)"
+                transform="translate(720, 294)"
               >
-                <rect
-                  x="0"
-                  y="0"
-                  width="140"
-                  height="56"
-                  rx="2"
-                  fill="#1A1D27"
-                  stroke="#2A2D37"
-                  stroke-width="1"
-                />
-                <rect
-                  x="0"
-                  y="8"
-                  width="3"
-                  height="40"
-                  rx="1.5"
-                  fill="#E84142"
-                />
-                <polygon
-                  points="0,0 140,0 150,-12 10,-12"
-                  fill="#282B38"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                  opacity="0.8"
-                />
-                <polygon
-                  points="140,0 140,56 150,44 150,-12"
-                  fill="#222530"
-                  stroke="#2A2D37"
-                  stroke-width="0.5"
-                />
-                <text
-                  x="16"
-                  y="22"
-                  fill="#E4E5EA"
-                  font-size="12"
-                  font-weight="600"
-                  font-family="Sora, sans-serif"
-                >
-                  eve.eth
-                </text>
-                <text
-                  x="16"
-                  y="40"
-                  fill="#E84142"
-                  font-size="10"
-                  font-weight="500"
-                  font-family="Sora, sans-serif"
-                >
-                  Avalanche
-                </text>
-                <circle cx="120" cy="28" r="8" fill="#E84142" opacity="0.15" />
-                <text
-                  x="120"
-                  y="32"
-                  text-anchor="middle"
-                  fill="#E84142"
-                  font-size="8"
-                  font-weight="700"
-                  font-family="Sora, sans-serif"
-                >
-                  A
-                </text>
+                <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
+                <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#E84142" />
+                <polygon points="0,0 140,0 150,-12 10,-12" fill="#282B38" stroke="#2A2D37" stroke-width="0.5" opacity="0.8" />
+                <polygon points="140,0 140,56 150,44 150,-12" fill="#222530" stroke="#2A2D37" stroke-width="0.5" />
+                <text x="16" y="22" fill="#E4E5EA" font-size="12" font-weight="600" font-family="Sora, sans-serif">eve.eth</text>
+                <text x="16" y="40" fill="#E84142" font-size="10" font-weight="500" font-family="Sora, sans-serif">Avalanche</text>
+                <!-- Avalanche icon (red circle + triangle) -->
+                <circle cx="120" cy="28" r="9" fill="#E84142" opacity="0.2" />
+                <circle cx="120" cy="28" r="6" fill="#E84142" />
+                <path d="M 120 23 L 124 32 L 116 32 Z" fill="white" opacity="0.9" />
               </g>
 
               <!-- Hidden flow paths (tokens fly along these) -->
+              <!-- Flow lines — visible at rest with gradient stroke -->
               <path
                 id="pathSrc1"
                 d="M 166 71 C 250 71, 340 145, 390 145"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradSrc1)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line"
                 data-group="src1"
               />
@@ -1288,7 +1007,9 @@
                 id="pathSrc2"
                 d="M 166 181 C 250 181, 340 145, 390 145"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradSrc2)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line"
                 data-group="src2"
               />
@@ -1296,47 +1017,59 @@
                 id="pathSrc3"
                 d="M 166 291 C 250 291, 340 145, 390 145"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradSrc3)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line"
                 data-group="src3"
               />
               <path
                 id="pathDst1"
-                d="M 510 145 C 570 145, 650 50, 700 50"
+                d="M 510 145 C 570 145, 670 50, 720 50"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradBase)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line"
                 data-group="dst1"
               />
               <path
                 id="pathDst2"
-                d="M 510 145 C 570 145, 650 118, 700 118"
+                d="M 510 145 C 570 145, 670 118, 720 118"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradArb)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line"
                 data-group="dst2"
               />
               <path
                 id="pathDst3"
-                d="M 510 145 C 570 145, 650 186, 700 186"
+                d="M 510 145 C 570 145, 670 186, 720 186"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradEth)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line"
                 data-group="dst3"
               />
               <path
                 id="pathDst4"
-                d="M 510 145 C 570 145, 650 254, 700 254"
+                d="M 510 145 C 570 145, 670 254, 720 254"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradOp)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line hide-mobile"
                 data-group="dst4"
               />
               <path
                 id="pathDst5"
-                d="M 510 145 C 570 145, 650 322, 700 322"
+                d="M 510 145 C 570 145, 670 322, 720 322"
                 fill="none"
-                stroke-opacity="0"
+                stroke="url(#lineGradAvax)"
+                stroke-opacity="0.15"
+                stroke-width="1.5"
                 class="flow-line hide-mobile"
                 data-group="dst5"
               />

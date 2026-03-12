@@ -152,13 +152,17 @@
 
     var sourceCards = svg.querySelectorAll(".source-card");
     var recipientCards = svg.querySelectorAll(".recipient-card");
-    var flowLines = svg.querySelectorAll(".flow-line");
+    var srcFlowLines = svg.querySelectorAll('.flow-line[data-group^="src"]');
+    var dstFlowLines = svg.querySelectorAll('.flow-line[data-group^="dst"]');
+    var allFlowLines = svg.querySelectorAll(".flow-line");
     var centerEngine = svg.querySelector("#centerEngine");
+    var spherePulseEls = svg.querySelectorAll(".sphere-pulse");
 
-    // Start partially visible
-    gsap.set(sourceCards, { opacity: 0.7 });
-    gsap.set(recipientCards, { opacity: 0.6 });
-    gsap.set(flowLines, { attr: { "stroke-opacity": 0.5 } });
+    var lastPhase = -1;
+
+    // Start state
+    gsap.set(sourceCards, { opacity: 0.5, scale: 1 });
+    gsap.set(recipientCards, { opacity: 0.4, scale: 1 });
 
     ScrollTrigger.create({
       trigger: section,
@@ -181,24 +185,51 @@
           }
         }
 
-        // Phase 0: Upload — highlight sources
-        var srcOpacity = progress > 0.1 ? 1 : 0.7;
-        for (var si = 0; si < sourceCards.length; si++) {
-          sourceCards[si].style.opacity = srcOpacity;
+        // Only animate on phase change
+        if (phase === lastPhase) return;
+        lastPhase = phase;
+
+        // Phase 0: Upload — highlight sources, src lines glow
+        gsap.to(sourceCards, {
+          opacity: phase === 0 ? 1 : 0.6,
+          scale: phase === 0 ? 1.05 : 1,
+          duration: 0.5,
+          ease: "power2.out",
+        });
+        gsap.to(srcFlowLines, {
+          attr: { "stroke-opacity": phase >= 0 ? 0.5 : 0.15, "stroke-width": phase === 0 ? 2.5 : 1.5 },
+          duration: 0.5,
+        });
+
+        // Phase 1: Route — engine glow intensifies, all lines bright
+        gsap.to(allFlowLines, {
+          attr: {
+            "stroke-opacity": phase >= 1 ? 0.6 : 0.15,
+            "stroke-width": phase >= 1 ? 2.5 : 1.5,
+          },
+          duration: 0.5,
+        });
+        if (centerEngine) {
+          gsap.to(centerEngine, {
+            filter: phase >= 1 ? "brightness(1.3)" : "brightness(1)",
+            duration: 0.5,
+          });
         }
 
-        // Phase 1: Route — highlight flow lines and center
-        var lineOpacity = phase >= 1 ? "0.8" : "0.5";
-        for (var li = 0; li < flowLines.length; li++) {
-          flowLines[li].setAttribute("stroke-opacity", lineOpacity);
-          flowLines[li].setAttribute("stroke-width", phase >= 1 ? "3" : "1.5");
-        }
-
-        // Phase 2: Execute — highlight recipients
-        var rcpOpacity = phase >= 2 ? 1 : 0.6;
-        for (var ri = 0; ri < recipientCards.length; ri++) {
-          recipientCards[ri].style.opacity = rcpOpacity;
-        }
+        // Phase 2: Execute — highlight recipients, dst lines glow strong
+        gsap.to(recipientCards, {
+          opacity: phase >= 2 ? 1 : 0.4,
+          scale: phase >= 2 ? 1.05 : 1,
+          duration: 0.5,
+          ease: "power2.out",
+        });
+        gsap.to(dstFlowLines, {
+          attr: {
+            "stroke-opacity": phase >= 2 ? 0.8 : phase >= 1 ? 0.6 : 0.15,
+            "stroke-width": phase >= 2 ? 3 : phase >= 1 ? 2.5 : 1.5,
+          },
+          duration: 0.5,
+        });
       },
     });
   }

@@ -54,6 +54,10 @@ body {
   z-index: 1;
   background: var(--color-bg-primary);
   padding: var(--space-20) 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   overflow: hidden;
 }
 
