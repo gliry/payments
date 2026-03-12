@@ -284,7 +284,7 @@
             <svg
               class="isometric-svg"
               id="isometricSvg"
-              viewBox="0 -20 920 420"
+              viewBox="0 -20 980 450"
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
@@ -300,90 +300,6 @@
                   <stop offset="100%" stop-color="#9F72FF" />
                 </linearGradient>
 
-                <!-- Line gradients: source side -->
-                <linearGradient
-                  id="lineGradSrc1"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#7C7E8A" />
-                  <stop offset="100%" stop-color="#1894E8" />
-                </linearGradient>
-                <linearGradient
-                  id="lineGradSrc2"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#7C7E8A" />
-                  <stop offset="100%" stop-color="#1894E8" />
-                </linearGradient>
-                <linearGradient
-                  id="lineGradSrc3"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#7C7E8A" />
-                  <stop offset="100%" stop-color="#1894E8" />
-                </linearGradient>
-
-                <!-- Line gradients: recipient side (brand -> chain color) -->
-                <linearGradient
-                  id="lineGradBase"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#9F72FF" />
-                  <stop offset="100%" stop-color="#0052FF" />
-                </linearGradient>
-                <linearGradient
-                  id="lineGradArb"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#9F72FF" />
-                  <stop offset="100%" stop-color="#28A0F0" />
-                </linearGradient>
-                <linearGradient
-                  id="lineGradEth"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#9F72FF" />
-                  <stop offset="100%" stop-color="#627EEA" />
-                </linearGradient>
-                <linearGradient
-                  id="lineGradOp"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#9F72FF" />
-                  <stop offset="100%" stop-color="#FF0420" />
-                </linearGradient>
-                <linearGradient
-                  id="lineGradAvax"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
-                  <stop offset="0%" stop-color="#9F72FF" />
-                  <stop offset="100%" stop-color="#E84142" />
-                </linearGradient>
-
                 <!-- Packet glow filter -->
                 <filter
                   id="pktGlow"
@@ -395,12 +311,12 @@
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
                 </filter>
 
-                <!-- Sphere gradients (deeper blue-purple, more contrast) -->
+                <!-- Sphere gradients (theme-matched blue-purple) -->
                 <radialGradient id="sphereBody" cx="32%" cy="28%">
-                  <stop offset="0%" stop-color="#4A5ACA" />
-                  <stop offset="25%" stop-color="#2E3890" />
-                  <stop offset="55%" stop-color="#1A2068" />
-                  <stop offset="100%" stop-color="#0C0F3A" />
+                  <stop offset="0%" stop-color="#6A7FE8" />
+                  <stop offset="25%" stop-color="#4A4DC8" />
+                  <stop offset="55%" stop-color="#2A2090" />
+                  <stop offset="100%" stop-color="#0F0F5A" />
                 </radialGradient>
                 <radialGradient id="sphereRim" cx="50%" cy="50%">
                   <stop offset="80%" stop-color="transparent" />
@@ -501,6 +417,26 @@
                 >
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
                 </filter>
+
+                <!-- Token icons for scroll-driven animation (from frontend/v2/icons/tokens/) -->
+                <symbol id="iconUSDC" viewBox="0 0 220 220">
+                  <path d="M110 220C131.756 220 153.023 213.549 171.113 201.462C189.202 189.375 203.301 172.195 211.627 152.095C219.952 131.995 222.131 109.878 217.886 88.5401C213.642 67.2022 203.165 47.6021 187.782 32.2183C172.398 16.8345 152.798 6.35804 131.46 2.11367C110.122 -2.13071 88.0045 0.0476608 67.9047 8.3733C47.8048 16.6989 30.6251 30.7979 18.5382 48.8873C6.45123 66.9767 -0.000155252 88.2441 -0.000155252 110C-0.035768 124.455 2.78516 138.775 8.30056 152.137C13.816 165.499 21.9171 177.64 32.1387 187.861C42.3602 198.083 54.5007 206.184 67.8626 211.699C81.2245 217.215 95.5444 220.036 110 220Z" fill="#2775CA"/>
+                  <path d="M140.25 127.42C140.25 111.42 130.63 105.87 111.38 103.58C97.6199 101.75 94.8799 98.0799 94.8799 91.6699C94.8799 85.2599 99.4599 81.1199 108.62 81.1199C116.88 81.1199 121.46 83.8699 123.75 90.7499C123.996 91.4127 124.439 91.984 125.021 92.3865C125.602 92.7889 126.293 93.003 127 92.9999H134.33C134.754 93.0109 135.177 92.9354 135.571 92.7779C135.966 92.6205 136.324 92.3845 136.624 92.0842C136.924 91.7839 137.16 91.4256 137.318 91.0312C137.475 90.6368 137.551 90.2144 137.54 89.7899V89.3399C136.654 84.3722 134.153 79.8362 130.424 76.4365C126.695 73.0369 121.948 70.964 116.92 70.5399V59.5399C116.92 57.7099 115.54 56.3399 113.25 55.8799H106.37C104.54 55.8799 103.17 57.2499 102.71 59.5399V70.1199C88.9199 71.9999 80.2099 81.1199 80.2099 92.5799C80.2099 107.71 89.3799 113.67 108.63 115.96C121.46 118.25 125.63 120.96 125.63 128.33C125.63 135.7 119.22 140.71 110.51 140.71C98.5899 140.71 94.5099 135.71 93.0899 128.79C92.9589 128.017 92.5609 127.314 91.9652 126.804C91.3695 126.295 90.6139 126.01 89.8299 126H81.9999C81.5757 125.99 81.154 126.067 80.7602 126.225C80.3664 126.383 80.0087 126.619 79.7087 126.919C79.4087 127.219 79.1726 127.576 79.0147 127.97C78.8568 128.364 78.7803 128.786 78.7899 129.21V129.67C80.6299 141.13 87.9599 149.38 103.09 151.67V162.67C103.09 164.5 104.46 165.88 106.75 166.34H113.63C115.46 166.34 116.84 164.96 117.29 162.67V151.67C131.04 149.38 140.21 139.75 140.21 127.38L140.25 127.42Z" fill="white"/>
+                  <path d="M86.6199 175.54C73.4321 170.703 62.0474 161.933 54.0047 150.417C45.962 138.9 41.6492 125.192 41.6492 111.145C41.6492 97.0979 45.962 83.3896 54.0047 71.873C62.0474 60.3565 73.4321 51.5869 86.6199 46.7498C87.4998 46.3692 88.2389 45.7232 88.7337 44.902C89.2286 44.0809 89.4545 43.1256 89.3799 42.1698V35.7498C89.4416 34.9077 89.196 34.0717 88.6885 33.3969C88.181 32.7221 87.446 32.2541 86.6199 32.0798C85.9747 32.0125 85.3265 32.1754 84.7899 32.5398C68.104 37.8433 53.5386 48.319 43.202 62.4505C32.8655 76.5821 27.2939 93.6363 27.2939 111.145C27.2939 128.653 32.8655 145.707 43.202 159.839C53.5386 173.971 68.104 184.446 84.7899 189.75C85.1709 189.971 85.599 190.099 86.0391 190.123C86.4792 190.147 86.9187 190.067 87.3216 189.888C87.7245 189.71 88.0794 189.438 88.3572 189.096C88.6351 188.754 88.8279 188.351 88.9199 187.92C89.3799 187.46 89.3799 187 89.3799 186.08V179.67C89.3799 178.29 87.9999 176.46 86.6199 175.54ZM135.21 32.5398C134.828 32.3184 134.399 32.1907 133.959 32.1673C133.518 32.1438 133.078 32.2252 132.675 32.4048C132.272 32.5844 131.917 32.8571 131.64 33.2004C131.362 33.5437 131.171 33.9479 131.08 34.3798C130.63 34.8298 130.63 35.2898 130.63 36.2098V42.6198C130.707 43.5441 130.995 44.4385 131.472 45.2341C131.949 46.0298 132.601 46.7057 133.38 47.2098C146.568 52.0469 157.952 60.8165 165.995 72.333C174.038 83.8496 178.351 97.5579 178.351 111.605C178.351 125.652 174.038 139.36 165.995 150.877C157.952 162.393 146.568 171.163 133.38 176C132.501 176.381 131.763 177.027 131.27 177.848C130.777 178.67 130.553 179.625 130.63 180.58V187C130.568 187.84 130.812 188.675 131.317 189.35C131.823 190.024 132.556 190.493 133.38 190.67C134.025 190.737 134.673 190.574 135.21 190.21C151.889 184.833 166.434 174.304 176.751 160.139C187.068 145.973 192.626 128.899 192.626 111.375C192.626 93.8501 187.068 76.7769 176.751 62.6111C166.434 48.4452 151.889 37.9167 135.21 32.5398Z" fill="white"/>
+                </symbol>
+                <symbol id="iconUSDT" viewBox="0 0 220 220">
+                  <path d="M110 220C170.751 220 220 170.751 220 110C220 49.2487 170.751 0 110 0C49.2487 0 0 49.2487 0 110C0 170.751 49.2487 220 110 220Z" fill="#26A17B"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M123.214 119.51V119.497C122.458 119.552 118.56 119.785 109.863 119.785C102.919 119.785 98.0311 119.579 96.3124 119.497V119.517C69.5824 118.342 49.6311 113.687 49.6311 108.118C49.6311 102.557 69.5824 97.9022 96.3124 96.7059V114.883C98.0586 115.007 103.064 115.303 109.98 115.303C118.278 115.303 122.437 114.959 123.214 114.89V96.7197C149.889 97.9091 169.792 102.563 169.792 108.118C169.792 113.687 149.889 118.328 123.214 119.51ZM123.214 94.8291V78.5628H160.435V53.7578H59.0911V78.5628H96.3124V94.8222C66.0624 96.2109 43.313 102.206 43.313 109.383C43.313 116.561 66.0624 122.549 96.3124 123.945V176.071H123.214V123.931C153.416 122.542 176.11 116.554 176.11 109.383C176.11 102.213 153.416 96.2247 123.214 94.8291Z" fill="white"/>
+                </symbol>
+                <symbol id="iconETH" viewBox="0 0 220 220">
+                  <path d="M110 220C170.751 220 220 170.751 220 110C220 49.2487 170.751 0 110 0C49.2487 0 0 49.2487 0 110C0 170.751 49.2487 220 110 220Z" fill="#627EEA"/>
+                  <path d="M113.424 27.5V88.4813L164.966 111.512L113.424 27.5Z" fill="white" fill-opacity="0.602"/>
+                  <path d="M113.424 27.5L61.875 111.512L113.424 88.4813V27.5Z" fill="white"/>
+                  <path d="M113.424 151.031V192.467L165 121.111L113.424 151.031Z" fill="white" fill-opacity="0.602"/>
+                  <path d="M113.424 192.467V151.024L61.875 121.111L113.424 192.467Z" fill="white"/>
+                  <path d="M113.424 141.44L164.966 111.513L113.424 88.4956V141.44Z" fill="white" fill-opacity="0.2"/>
+                  <path d="M61.875 111.513L113.424 141.44V88.4956L61.875 111.513Z" fill="white" fill-opacity="0.602"/>
+                </symbol>
               </defs>
 
               <!-- Source Cards (Left) -->
@@ -749,155 +685,112 @@
                 </text>
               </g>
 
+              <!-- Tokens behind sphere (rendered before sphere = visually behind) -->
+              <g id="scrollTokensBack"></g>
+
               <!-- Center Engine: Sphere + Orbital Rings -->
               <g
-                class="float-d"
                 id="centerEngine"
                 transform="translate(450, 145)"
               >
-                <!-- Back halves of rings (behind sphere) — 2 rings only -->
-                <ellipse
-                  rx="105"
-                  ry="32"
+                <!-- Back halves of rings (behind sphere) — 2 rings -->
+                <path
+                  d="M -162 0 A 162 50 0 0 1 162 0"
                   fill="none"
-                  stroke="url(#brandGrad)"
-                  stroke-width="1"
-                  stroke-opacity="0.12"
+                  stroke="#9F72FF"
+                  stroke-width="1.5"
+                  stroke-opacity="0.3"
                   transform="rotate(-8)"
                 />
                 <path
-                  d="M -60 -70 A 72 72 0 0 1 60 70"
+                  d="M -112 0 A 112 112 0 0 0 112 0"
                   fill="none"
-                  stroke="url(#brandGrad)"
-                  stroke-width="1"
-                  stroke-opacity="0.1"
-                />
-
-                <!-- Sphere body with glassmorphism -->
-                <circle r="60" fill="url(#sphereBody)" filter="url(#glassBlur)" class="sphere-pulse" />
-                <circle r="60" fill="url(#sphereRim)" class="sphere-pulse" />
-                <!-- Semi-transparent glass overlay -->
-                <circle r="58" fill="rgba(30, 40, 100, 0.15)" class="sphere-pulse" />
-                <circle
-                  r="60"
-                  fill="none"
-                  stroke="url(#brandGrad)"
+                  stroke="#9F72FF"
                   stroke-width="1.5"
-                  stroke-opacity="0.5"
-                  class="center-glow sphere-pulse"
+                  stroke-opacity="0.3"
                 />
 
-                <!-- Specular highlight (top-left) -->
-                <ellipse
-                  cx="-16"
-                  cy="-22"
-                  rx="30"
-                  ry="24"
-                  fill="url(#specular)"
-                />
-                <!-- Rim light (right, purple) -->
-                <path
-                  d="M 40 -40 A 58 58 0 0 1 40 40"
-                  fill="none"
-                  stroke="#7C3AED"
-                  stroke-width="2"
-                  stroke-opacity="0.08"
-                />
-
-                <!-- Equator hint -->
-                <ellipse
-                  cy="4"
-                  rx="56"
-                  ry="14"
-                  fill="none"
-                  stroke="url(#brandGrad)"
-                  stroke-width="0.5"
-                  stroke-opacity="0.12"
-                />
-
-                <!-- Text on surface -->
-                <text
-                  y="-4"
-                  text-anchor="middle"
-                  fill="#FFFFFF"
-                  font-size="15"
-                  font-weight="700"
-                  font-family="Sora, sans-serif"
-                  opacity="0.92"
-                  transform="rotate(-6) skewX(3)"
-                >
-                  OmniFlow
-                </text>
-                <text
-                  y="14"
-                  text-anchor="middle"
-                  fill="rgba(255,255,255,0.4)"
-                  font-size="9"
-                  font-family="Sora, sans-serif"
-                  transform="rotate(-6) skewX(3)"
-                >
-                  Engine
-                </text>
+                <!-- Sphere body (floats independently of orbits) -->
+                <g class="float-d">
+                  <circle r="69" fill="url(#sphereBody)" filter="url(#glassBlur)" class="sphere-pulse" />
+                  <circle r="69" fill="url(#sphereRim)" class="sphere-pulse" />
+                  <circle r="67" fill="rgba(30, 40, 100, 0.15)" class="sphere-pulse" />
+                  <circle
+                    r="69"
+                    fill="none"
+                    stroke="url(#brandGrad)"
+                    stroke-width="1.5"
+                    stroke-opacity="0.5"
+                    class="center-glow sphere-pulse"
+                  />
+                  <ellipse
+                    cx="-18"
+                    cy="-25"
+                    rx="35"
+                    ry="28"
+                    fill="url(#specular)"
+                  />
+                  <path
+                    d="M 46 -46 A 67 67 0 0 1 46 46"
+                    fill="none"
+                    stroke="#7C3AED"
+                    stroke-width="2"
+                    stroke-opacity="0.08"
+                  />
+                  <ellipse
+                    cy="5"
+                    rx="64"
+                    ry="16"
+                    fill="none"
+                    stroke="url(#brandGrad)"
+                    stroke-width="0.5"
+                    stroke-opacity="0.12"
+                  />
+                  <text
+                    y="0"
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                    fill="#FFFFFF"
+                    font-size="17"
+                    font-weight="700"
+                    font-family="Sora, sans-serif"
+                    opacity="0.92"
+                  >
+                    OmniFlow
+                  </text>
+                </g>
 
                 <!-- Front halves of rings (2 rings) -->
                 <path
-                  d="M 105 0 A 105 32 0 0 1 -105 0"
+                  d="M 162 0 A 162 50 0 0 1 -162 0"
                   fill="none"
-                  stroke="url(#brandGrad)"
+                  stroke="#9F72FF"
                   stroke-width="1.5"
-                  stroke-opacity="0.4"
+                  stroke-opacity="0.3"
                   transform="rotate(-8)"
                 />
                 <path
-                  d="M 60 70 A 72 72 0 0 1 -60 -70"
+                  d="M 112 0 A 112 112 0 0 0 -112 0"
                   fill="none"
-                  stroke="url(#brandGrad)"
+                  stroke="#9F72FF"
                   stroke-width="1.5"
-                  stroke-opacity="0.35"
+                  stroke-opacity="0.3"
                 />
 
-                <!-- Full orbital paths (hidden, for animateMotion) -->
+                <!-- Full orbital paths (hidden, for scroll-driven token animation) -->
                 <path
                   id="orbitPath"
-                  d="M -105 0 A 105 32 0 1 1 105 0 A 105 32 0 1 1 -105 0"
+                  d="M -162 0 A 162 50 0 1 1 162 0 A 162 50 0 1 1 -162 0"
                   fill="none"
                   stroke-opacity="0"
                   transform="rotate(-8)"
                 />
                 <path
                   id="orbitPath2"
-                  d="M -60 -70 A 72 72 0 1 1 60 70 A 72 72 0 1 1 -60 -70"
+                  d="M -112 0 A 112 112 0 1 0 112 0 A 112 112 0 1 0 -112 0"
                   fill="none"
                   stroke-opacity="0"
                 />
-                <!-- Orbiting particles (animated via animateMotion) -->
-                <!-- Ring 1: horizontal — 2 particles -->
-                <circle r="3.5" fill="#1894E8" opacity="0.75" filter="url(#pktGlow)">
-                  <animateMotion dur="6s" repeatCount="indefinite">
-                    <mpath href="#orbitPath" />
-                  </animateMotion>
-                  <animate attributeName="opacity" values="0.75;0.35;0.75" dur="6s" repeatCount="indefinite" />
-                </circle>
-                <circle r="2.5" fill="#9F72FF" opacity="0.5" filter="url(#pktGlow)">
-                  <animateMotion dur="6s" repeatCount="indefinite" begin="3s">
-                    <mpath href="#orbitPath" />
-                  </animateMotion>
-                  <animate attributeName="opacity" values="0.5;0.2;0.5" dur="6s" repeatCount="indefinite" begin="3s" />
-                </circle>
-
-                <!-- Ring 2: tilted 45° — 2 particles -->
-                <circle r="3" fill="#7C3AED" opacity="0.65" filter="url(#pktGlow)">
-                  <animateMotion dur="7s" repeatCount="indefinite" begin="1s">
-                    <mpath href="#orbitPath2" />
-                  </animateMotion>
-                  <animate attributeName="opacity" values="0.65;0.25;0.65" dur="7s" repeatCount="indefinite" begin="1s" />
-                </circle>
-                <circle r="2" fill="#1894E8" opacity="0.4" filter="url(#pktGlow)">
-                  <animateMotion dur="7s" repeatCount="indefinite" begin="4.5s">
-                    <mpath href="#orbitPath2" />
-                  </animateMotion>
-                  <animate attributeName="opacity" values="0.4;0.15;0.4" dur="7s" repeatCount="indefinite" begin="4.5s" />
-                </circle>
               </g>
 
               <!-- Recipient Cards (Right) -->
@@ -905,7 +798,7 @@
               <g
                 class="float-e recipient-card"
                 data-group="dst1"
-                transform="translate(720, 22)"
+                transform="translate(750, 0)"
               >
                 <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
                 <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#0052FF" />
@@ -923,7 +816,7 @@
               <g
                 class="float-f recipient-card"
                 data-group="dst2"
-                transform="translate(720, 90)"
+                transform="translate(810, 91)"
               >
                 <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
                 <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#28A0F0" />
@@ -941,7 +834,7 @@
               <g
                 class="float-g recipient-card"
                 data-group="dst3"
-                transform="translate(720, 158)"
+                transform="translate(750, 182)"
               >
                 <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
                 <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#627EEA" />
@@ -959,7 +852,7 @@
               <g
                 class="float-h recipient-card hide-mobile"
                 data-group="dst4"
-                transform="translate(720, 226)"
+                transform="translate(810, 273)"
               >
                 <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
                 <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#FF0420" />
@@ -977,7 +870,7 @@
               <g
                 class="float-a recipient-card hide-mobile"
                 data-group="dst5"
-                transform="translate(720, 294)"
+                transform="translate(750, 364)"
               >
                 <rect x="0" y="0" width="140" height="56" rx="2" fill="#1A1D27" stroke="#2A2D37" stroke-width="1" />
                 <rect x="0" y="8" width="3" height="40" rx="1.5" fill="#E84142" />
@@ -991,88 +884,8 @@
                 <path d="M 120 23 L 124 32 L 116 32 Z" fill="white" opacity="0.9" />
               </g>
 
-              <!-- Hidden flow paths (tokens fly along these) -->
-              <!-- Flow lines — visible at rest with gradient stroke -->
-              <path
-                id="pathSrc1"
-                d="M 166 71 C 250 71, 340 145, 390 145"
-                fill="none"
-                stroke="url(#lineGradSrc1)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line"
-                data-group="src1"
-              />
-              <path
-                id="pathSrc2"
-                d="M 166 181 C 250 181, 340 145, 390 145"
-                fill="none"
-                stroke="url(#lineGradSrc2)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line"
-                data-group="src2"
-              />
-              <path
-                id="pathSrc3"
-                d="M 166 291 C 250 291, 340 145, 390 145"
-                fill="none"
-                stroke="url(#lineGradSrc3)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line"
-                data-group="src3"
-              />
-              <path
-                id="pathDst1"
-                d="M 510 145 C 570 145, 670 50, 720 50"
-                fill="none"
-                stroke="url(#lineGradBase)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line"
-                data-group="dst1"
-              />
-              <path
-                id="pathDst2"
-                d="M 510 145 C 570 145, 670 118, 720 118"
-                fill="none"
-                stroke="url(#lineGradArb)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line"
-                data-group="dst2"
-              />
-              <path
-                id="pathDst3"
-                d="M 510 145 C 570 145, 670 186, 720 186"
-                fill="none"
-                stroke="url(#lineGradEth)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line"
-                data-group="dst3"
-              />
-              <path
-                id="pathDst4"
-                d="M 510 145 C 570 145, 670 254, 720 254"
-                fill="none"
-                stroke="url(#lineGradOp)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line hide-mobile"
-                data-group="dst4"
-              />
-              <path
-                id="pathDst5"
-                d="M 510 145 C 570 145, 670 322, 720 322"
-                fill="none"
-                stroke="url(#lineGradAvax)"
-                stroke-opacity="0.15"
-                stroke-width="1.5"
-                class="flow-line hide-mobile"
-                data-group="dst5"
-              />
+              <!-- Tokens in front of sphere (rendered after sphere = visually on top) -->
+              <g id="scrollTokensFront"></g>
             </svg>
           </div>
           <div class="how-it-works__steps">
@@ -1081,18 +894,18 @@
               data-step="1"
             >
               <span class="how-it-works__step-num">01</span>
-              <span class="how-it-works__step-title">Upload</span>
-              <span class="how-it-works__step-desc">CSV, ENS, any chain</span>
+              <span class="how-it-works__step-title">Pay in</span>
+              <span class="how-it-works__step-desc">Any source, any chain</span>
             </div>
             <div class="how-it-works__step" data-step="2">
               <span class="how-it-works__step-num">02</span>
-              <span class="how-it-works__step-title">Route</span>
-              <span class="how-it-works__step-desc">CCTP v2 + LI.FI</span>
+              <span class="how-it-works__step-title">Manage</span>
+              <span class="how-it-works__step-desc">Smart routing engine</span>
             </div>
             <div class="how-it-works__step" data-step="3">
               <span class="how-it-works__step-num">03</span>
-              <span class="how-it-works__step-title">Execute</span>
-              <span class="how-it-works__step-desc">Passkey, AA, gasless</span>
+              <span class="how-it-works__step-title">Payout</span>
+              <span class="how-it-works__step-desc">Multi-chain, gasless</span>
             </div>
           </div>
         </div>

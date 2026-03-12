@@ -1,5 +1,6 @@
 /* OmniFlow Isometric Animation
-   3-phase token flow: fly in → orbit → burst out */
+   Scroll-driven token flow: curve in → 1.5 orbits → curve out
+   Sphere occludes tokens via SVG z-order (two containers) */
 (function () {
   "use strict";
 
@@ -12,302 +13,223 @@
   if (!svg) return;
 
   var ns = "http://www.w3.org/2000/svg";
-  var defs = svg.querySelector("defs");
-  var engine = document.getElementById("centerEngine");
 
-  // Source paths (tokens fly in)
-  var srcPaths = [
-    { id: "pathSrc1", color: "#1894E8" },
-    { id: "pathSrc2", color: "#1894E8" },
-    { id: "pathSrc3", color: "#1894E8" },
+  // ── SCROLL-DRIVEN TOKEN SYSTEM ──
+
+  // Orbit paths are inside centerEngine at translate(450,145)
+  var ENGINE_TX = 450;
+  var ENGINE_TY = 145;
+  var ORBIT1_ANGLE = -8 * Math.PI / 180;
+
+  // Source card centers
+  var SRC = [
+    { x: 166, y: 71 },   // src1
+    { x: 166, y: 181 },  // src2
+    { x: 166, y: 291 },  // src3
   ];
 
-  // Destination paths (tokens burst out)
-  var dstPaths = [
-    { id: "pathDst1", color: "#0052FF" },
-    { id: "pathDst2", color: "#28A0F0" },
-    { id: "pathDst3", color: "#627EEA" },
-    { id: "pathDst4", color: "#FF0420" },
-    { id: "pathDst5", color: "#E84142" },
+  // Destination card centers (card x, card y + 28)
+  var DST = [
+    { x: 750, y: 28 },   // dst1
+    { x: 810, y: 119 },  // dst2
+    { x: 750, y: 210 },  // dst3
+    { x: 810, y: 301 },  // dst4
+    { x: 750, y: 392 },  // dst5
   ];
 
-  // ── SOURCE PATH TRACKING ──
-  // Update source path start points to follow card float animation
-  var srcPathData = [
-    {
-      pathId: "pathSrc1",
-      cardSelector: '.source-card[data-group="src1"]',
-      baseX: 166,
-      baseY: 71,
-    },
-    {
-      pathId: "pathSrc2",
-      cardSelector: '.source-card[data-group="src2"]',
-      baseX: 166,
-      baseY: 181,
-    },
-    {
-      pathId: "pathSrc3",
-      cardSelector: '.source-card[data-group="src3"]',
-      baseX: 166,
-      baseY: 291,
-    },
+  // 15 tokens: 5 per source, alternating orbits, unified entry at t=0
+  var TOKEN_CONFIG = [
+    // Source 1 (5 tokens)
+    { src: SRC[0], dst: DST[0], orbit: "orbitPath",  entryT: 0.0,  icon: "iconUSDC", stagger: 0.0 },
+    { src: SRC[0], dst: DST[1], orbit: "orbitPath2", entryT: 0.0,  icon: "iconUSDT", stagger: 0.016 },
+    { src: SRC[0], dst: DST[2], orbit: "orbitPath",  entryT: 0.0,  icon: "iconETH",  stagger: 0.032 },
+    { src: SRC[0], dst: DST[3], orbit: "orbitPath2", entryT: 0.0,  icon: "iconUSDC", stagger: 0.048 },
+    { src: SRC[0], dst: DST[4], orbit: "orbitPath",  entryT: 0.0,  icon: "iconUSDT", stagger: 0.064 },
+    // Source 2 (5 tokens)
+    { src: SRC[1], dst: DST[0], orbit: "orbitPath2", entryT: 0.0,  icon: "iconETH",  stagger: 0.008 },
+    { src: SRC[1], dst: DST[1], orbit: "orbitPath",  entryT: 0.0,  icon: "iconUSDC", stagger: 0.024 },
+    { src: SRC[1], dst: DST[2], orbit: "orbitPath2", entryT: 0.0,  icon: "iconUSDT", stagger: 0.040 },
+    { src: SRC[1], dst: DST[3], orbit: "orbitPath",  entryT: 0.0,  icon: "iconETH",  stagger: 0.056 },
+    { src: SRC[1], dst: DST[4], orbit: "orbitPath2", entryT: 0.0,  icon: "iconUSDC", stagger: 0.072 },
+    // Source 3 (5 tokens)
+    { src: SRC[2], dst: DST[0], orbit: "orbitPath",  entryT: 0.0,  icon: "iconUSDT", stagger: 0.004 },
+    { src: SRC[2], dst: DST[1], orbit: "orbitPath2", entryT: 0.0,  icon: "iconETH",  stagger: 0.020 },
+    { src: SRC[2], dst: DST[2], orbit: "orbitPath",  entryT: 0.0,  icon: "iconUSDC", stagger: 0.036 },
+    { src: SRC[2], dst: DST[3], orbit: "orbitPath2", entryT: 0.0,  icon: "iconUSDT", stagger: 0.052 },
+    { src: SRC[2], dst: DST[4], orbit: "orbitPath",  entryT: 0.0,  icon: "iconETH",  stagger: 0.068 },
   ];
-  var endX = 390,
-    endY = 145;
 
-  function updateSourcePaths() {
-    for (var i = 0; i < srcPathData.length; i++) {
-      var d = srcPathData[i];
-      var pathEl = document.getElementById(d.pathId);
-      var card = document.querySelector(d.cardSelector);
-      if (!pathEl || !card) continue;
+  var tokenEls = [];
+  var backContainer = document.getElementById("scrollTokensBack");
+  var frontContainer = document.getElementById("scrollTokensFront");
 
-      var style = getComputedStyle(card);
-      var t = style.translate || "0 0";
-      var parts = t.split(/\s+/);
-      var offsetY = parseFloat(parts[1] || 0) || 0;
+  // Phase boundaries
+  var P1_END = 0.15;   // end of approach curve
+  var P2_END = 0.85;   // end of orbit
+  var P2_DUR = P2_END - P1_END; // 0.70
 
-      var sx = d.baseX;
-      var sy = d.baseY + offsetY;
-
-      pathEl.setAttribute(
-        "d",
-        "M " +
-          sx +
-          " " +
-          sy +
-          " C " +
-          250 +
-          " " +
-          sy +
-          ", " +
-          340 +
-          " " +
-          endY +
-          ", " +
-          endX +
-          " " +
-          endY,
-      );
-    }
-    requestAnimationFrame(updateSourcePaths);
+  function clamp(v, min, max) {
+    return v < min ? min : v > max ? max : v;
   }
-  requestAnimationFrame(updateSourcePaths);
 
-  // Chain icon paths for burst tokens (simplified 12x12 centered at 0,0)
-  var chainIcons = {
-    "#0052FF": function (g) {
-      // Base: cross on blue
-      var c = document.createElementNS(ns, "circle");
-      c.setAttribute("r", "5"); c.setAttribute("fill", "#0052FF");
-      g.appendChild(c);
-      var p = document.createElementNS(ns, "path");
-      p.setAttribute("d", "M 0 -3.5 L 0 3.5 M -3.5 0 L 3.5 0");
-      p.setAttribute("stroke", "white"); p.setAttribute("stroke-width", "1.2"); p.setAttribute("fill", "none");
-      g.appendChild(p);
-    },
-    "#28A0F0": function (g) {
-      // Arbitrum: stylized A
-      var c = document.createElementNS(ns, "circle");
-      c.setAttribute("r", "5"); c.setAttribute("fill", "#1B4ADD");
-      g.appendChild(c);
-      var p = document.createElementNS(ns, "path");
-      p.setAttribute("d", "M -3 3.5 L 0 -3.5 L 3 3.5 M -2 1.5 L 2 1.5");
-      p.setAttribute("stroke", "white"); p.setAttribute("stroke-width", "1"); p.setAttribute("fill", "none"); p.setAttribute("stroke-linecap", "round");
-      g.appendChild(p);
-    },
-    "#627EEA": function (g) {
-      // Ethereum: diamond
-      var p = document.createElementNS(ns, "path");
-      p.setAttribute("d", "M 0 -5 L 4.5 0 L 0 5 L -4.5 0 Z");
-      p.setAttribute("fill", "#627EEA");
-      g.appendChild(p);
-      var h = document.createElementNS(ns, "path");
-      h.setAttribute("d", "M 0 -5 L 4.5 0 L 0 -1.5 L -4.5 0 Z");
-      h.setAttribute("fill", "white"); h.setAttribute("opacity", "0.35");
-      g.appendChild(h);
-    },
-    "#FF0420": function (g) {
-      // Optimism: OP text
-      var c = document.createElementNS(ns, "circle");
-      c.setAttribute("r", "5"); c.setAttribute("fill", "#FF0420");
-      g.appendChild(c);
-      var t = document.createElementNS(ns, "text");
-      t.setAttribute("text-anchor", "middle"); t.setAttribute("y", "2.5");
-      t.setAttribute("fill", "white"); t.setAttribute("font-size", "6"); t.setAttribute("font-weight", "700");
-      t.setAttribute("font-family", "Sora, sans-serif");
-      t.textContent = "OP";
-      g.appendChild(t);
-    },
-    "#E84142": function (g) {
-      // Avalanche: triangle
-      var c = document.createElementNS(ns, "circle");
-      c.setAttribute("r", "5"); c.setAttribute("fill", "#E84142");
-      g.appendChild(c);
-      var p = document.createElementNS(ns, "path");
-      p.setAttribute("d", "M 0 -3 L 3.5 3 L -3.5 3 Z");
-      p.setAttribute("fill", "white"); p.setAttribute("opacity", "0.9");
-      g.appendChild(p);
-    },
+  // Cubic bezier interpolation
+  function cubicBezier(p0, p1, p2, p3, t) {
+    var u = 1 - t;
+    return {
+      x: u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
+      y: u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y,
+    };
+  }
+
+  // Get orbit point in SVG coordinates (applies centerEngine transform)
+  function getOrbitPoint(orbitPath, t, orbitId) {
+    var orbitLen = orbitPath.getTotalLength();
+    var pt = orbitPath.getPointAtLength(((t % 1.0) + 1.0) % 1.0 * orbitLen);
+    if (orbitId === "orbitPath") {
+      var cos = Math.cos(ORBIT1_ANGLE);
+      var sin = Math.sin(ORBIT1_ANGLE);
+      return {
+        x: ENGINE_TX + pt.x * cos - pt.y * sin,
+        y: ENGINE_TY + pt.x * sin + pt.y * cos,
+      };
+    }
+    // orbitPath2 has no rotation
+    return { x: ENGINE_TX + pt.x, y: ENGINE_TY + pt.y };
+  }
+
+  // Token icon colors for glow background
+  var ICON_COLORS = {
+    iconUSDC: "#2775CA",
+    iconUSDT: "#26A17B",
+    iconETH: "#627EEA",
   };
 
-  // ── HELPERS ──
+  // Precomputed data per token (filled in init)
+  var tokenData = [];
 
-  function createToken(color, r) {
-    var circle = document.createElementNS(ns, "circle");
-    circle.setAttribute("r", r || "4");
-    circle.setAttribute("fill", color);
-    circle.setAttribute("opacity", "0");
-    circle.setAttribute("filter", "url(#pktGlow)");
-    circle.classList.add("packet");
-    return circle;
-  }
+  function initScrollTokens() {
+    if (!frontContainer) return;
 
-  function createChainToken(color) {
-    var g = document.createElementNS(ns, "g");
-    g.setAttribute("opacity", "0");
-    g.setAttribute("filter", "url(#pktGlow)");
-    g.classList.add("packet");
+    for (var i = 0; i < TOKEN_CONFIG.length; i++) {
+      var cfg = TOKEN_CONFIG[i];
 
-    // Background glow circle
-    var bg = document.createElementNS(ns, "circle");
-    bg.setAttribute("r", "8");
-    bg.setAttribute("fill", color);
-    bg.setAttribute("opacity", "0.3");
-    g.appendChild(bg);
+      // Group element for token
+      var g = document.createElementNS(ns, "g");
+      g.setAttribute("opacity", "0");
+      g.classList.add("scroll-token");
 
-    // Chain-specific icon
-    if (chainIcons[color]) {
-      chainIcons[color](g);
-    } else {
-      var fallback = document.createElementNS(ns, "circle");
-      fallback.setAttribute("r", "4");
-      fallback.setAttribute("fill", color);
-      g.appendChild(fallback);
-    }
+      // Glow background circle
+      var glow = document.createElementNS(ns, "circle");
+      glow.setAttribute("r", "10");
+      glow.setAttribute("fill", ICON_COLORS[cfg.icon] || "#1894E8");
+      glow.setAttribute("opacity", "0.3");
+      glow.setAttribute("filter", "url(#pktGlow)");
+      g.appendChild(glow);
 
-    return g;
-  }
+      // SVG icon via <use>
+      var use = document.createElementNS(ns, "use");
+      use.setAttribute("href", "#" + cfg.icon);
+      use.setAttribute("width", "16");
+      use.setAttribute("height", "16");
+      use.setAttribute("x", "-8");
+      use.setAttribute("y", "-8");
+      g.appendChild(use);
 
-  function addMotion(el, pathId, dur, onEnd) {
-    var motion = document.createElementNS(ns, "animateMotion");
-    motion.setAttribute("dur", dur + "s");
-    motion.setAttribute("repeatCount", "1");
-    motion.setAttribute("fill", "freeze");
+      frontContainer.appendChild(g);
+      tokenEls.push(g);
 
-    var mpath = document.createElementNS(ns, "mpath");
-    mpath.setAttribute("href", "#" + pathId);
-    motion.appendChild(mpath);
+      // Precompute orbit entry/exit points
+      var orbitEl = document.getElementById(cfg.orbit);
+      var entry = orbitEl ? getOrbitPoint(orbitEl, cfg.entryT, cfg.orbit) : { x: ENGINE_TX, y: ENGINE_TY };
+      var exitT = (cfg.entryT + 1.5) % 1.0;
+      var exit = orbitEl ? getOrbitPoint(orbitEl, exitT, cfg.orbit) : { x: ENGINE_TX, y: ENGINE_TY };
 
-    el.appendChild(motion);
+      // Approach bezier: source → orbit entry (left side)
+      var approachCP1 = { x: cfg.src.x + 80, y: cfg.src.y };
+      var approachCP2 = { x: entry.x - 50, y: entry.y };
 
-    if (onEnd) {
-      setTimeout(onEnd, dur * 1000);
-    }
-  }
+      // Departure bezier: orbit exit (right side) → destination
+      var departCP1 = { x: exit.x + 50, y: exit.y };
+      var departCP2 = { x: cfg.dst.x - 80, y: cfg.dst.y };
 
-  function addFade(el, dur, fadeIn, fadeOut) {
-    var anim = document.createElementNS(ns, "animate");
-    anim.setAttribute("attributeName", "opacity");
-    if (fadeIn && fadeOut) {
-      anim.setAttribute("values", "0;0.9;0.9;0");
-      anim.setAttribute("keyTimes", "0;0.1;0.85;1");
-    } else if (fadeIn) {
-      anim.setAttribute("values", "0;0.9");
-      anim.setAttribute("keyTimes", "0;0.15");
-    } else if (fadeOut) {
-      anim.setAttribute("values", "0.9;0.9;0");
-      anim.setAttribute("keyTimes", "0;0.8;1");
-    }
-    anim.setAttribute("dur", dur + "s");
-    anim.setAttribute("fill", "freeze");
-    el.appendChild(anim);
-  }
-
-  // ── 3-PHASE TOKEN FLOW ──
-
-  function spawnFlow() {
-    // Pick a random source
-    var src = srcPaths[Math.floor(Math.random() * srcPaths.length)];
-    var srcPath = document.getElementById(src.id);
-    if (!srcPath) return;
-
-    var flyInDur = 1.8;
-    var orbitDur = 2.5;
-    var flyOutDur = 1.8;
-
-    // Phase 1: Fly in from source card to sphere
-    var tokenIn = createToken(src.color, "4");
-    addMotion(tokenIn, src.id, flyInDur, function () {
-      tokenIn.remove();
-      startOrbit();
-    });
-    addFade(tokenIn, flyInDur, true, false);
-    svg.appendChild(tokenIn);
-
-    // Phase 2: Orbit around sphere
-    function startOrbit() {
-      var tokenOrbit = createToken("#9F72FF", "3.5");
-      tokenOrbit.setAttribute("opacity", "0.9");
-
-      var motion = document.createElementNS(ns, "animateMotion");
-      motion.setAttribute("dur", orbitDur + "s");
-      motion.setAttribute("repeatCount", "1");
-      motion.setAttribute("fill", "freeze");
-
-      var mpath = document.createElementNS(ns, "mpath");
-      mpath.setAttribute("href", "#orbitPath");
-      motion.appendChild(mpath);
-      tokenOrbit.appendChild(motion);
-
-      // Pulse while orbiting
-      var pulse = document.createElementNS(ns, "animate");
-      pulse.setAttribute("attributeName", "opacity");
-      pulse.setAttribute("values", "0.9;0.5;0.9;0.5;0.9");
-      pulse.setAttribute("dur", orbitDur + "s");
-      pulse.setAttribute("fill", "freeze");
-      tokenOrbit.appendChild(pulse);
-
-      engine.appendChild(tokenOrbit);
-
-      setTimeout(function () {
-        tokenOrbit.remove();
-        burstOut();
-      }, orbitDur * 1000);
-    }
-
-    // Phase 3: Burst out to 2-3 random recipients with chain icons
-    function burstOut() {
-      var count = 2 + Math.floor(Math.random() * 2); // 2 or 3
-      var shuffled = dstPaths.slice().sort(function () {
-        return Math.random() - 0.5;
+      tokenData.push({
+        orbitEl: orbitEl,
+        entry: entry,
+        exit: exit,
+        exitT: exitT,
+        approachCP1: approachCP1,
+        approachCP2: approachCP2,
+        departCP1: departCP1,
+        departCP2: departCP2,
       });
-
-      for (var i = 0; i < count && i < shuffled.length; i++) {
-        var dst = shuffled[i];
-        var dstPath = document.getElementById(dst.id);
-        if (!dstPath) continue;
-
-        var tokenOut = createChainToken(dst.color);
-        addMotion(tokenOut, dst.id, flyOutDur);
-        addFade(tokenOut, flyOutDur, true, true);
-        svg.appendChild(tokenOut);
-
-        // Cleanup
-        (function (t) {
-          setTimeout(function () {
-            t.remove();
-          }, (flyOutDur + 0.2) * 1000);
-        })(tokenOut);
-      }
     }
   }
 
-  // Stagger flows (faster spawn rate)
-  setInterval(spawnFlow, 2500);
-  setTimeout(spawnFlow, 500);
-  setTimeout(spawnFlow, 1500);
+  function updateScrollTokens(scrollProgress) {
+    if (!frontContainer || tokenEls.length === 0) return;
+
+    for (var i = 0; i < TOKEN_CONFIG.length; i++) {
+      var cfg = TOKEN_CONFIG[i];
+      var el = tokenEls[i];
+      var td = tokenData[i];
+
+      // Effective progress with stagger offset
+      var p = clamp((scrollProgress - cfg.stagger) / (1 - cfg.stagger), 0, 1);
+
+      if (p <= 0) {
+        el.setAttribute("opacity", "0");
+        continue;
+      }
+
+      var x, y, opacity;
+      var isBehind = false;
+
+      if (p <= P1_END) {
+        // Phase 1: Approach curve (source card → orbit entry)
+        var t = p / P1_END;
+        var pt = cubicBezier(cfg.src, td.approachCP1, td.approachCP2, td.entry, t);
+        x = pt.x;
+        y = pt.y;
+        opacity = t < 0.3 ? t / 0.3 : 1;
+        opacity *= 0.9;
+
+      } else if (p <= P2_END) {
+        // Phase 2: 1.5 orbits strictly on orbit path
+        if (!td.orbitEl) { el.setAttribute("opacity", "0"); continue; }
+        var t = (p - P1_END) / P2_DUR;
+        var actualT = (cfg.entryT + t * 1.5) % 1.0;
+        var orbitPt = getOrbitPoint(td.orbitEl, actualT, cfg.orbit);
+        x = orbitPt.x;
+        y = orbitPt.y;
+        opacity = 0.9;
+        // Back half of orbit (t=0→0.5) → behind sphere; front half → in front
+        isBehind = actualT < 0.5;
+
+      } else {
+        // Phase 3: Departure curve (orbit exit → destination card)
+        var t = (p - P2_END) / (1 - P2_END);
+        var pt = cubicBezier(td.exit, td.departCP1, td.departCP2, cfg.dst, t);
+        x = pt.x;
+        y = pt.y;
+        opacity = t > 0.7 ? (1 - t) / 0.3 : 1;
+        opacity *= 0.9;
+      }
+
+      var targetContainer = isBehind ? backContainer : frontContainer;
+      if (el.parentNode !== targetContainer) {
+        targetContainer.appendChild(el);
+      }
+
+      el.setAttribute("transform", "translate(" + x + "," + y + ")");
+      el.setAttribute("opacity", String(clamp(opacity, 0, 0.9)));
+    }
+  }
+
+  // Export for animations.js to call
+  window.OmniFlowTokens = {
+    init: initScrollTokens,
+    update: updateScrollTokens,
+  };
 
   // ── HOVER INTERACTIONS ──
 
