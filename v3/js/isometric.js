@@ -18,7 +18,7 @@
 
   // Orbit paths are inside centerEngine at translate(450,145)
   var ENGINE_TX = 450;
-  var ENGINE_TY = 145;
+  var ENGINE_TY = 200;
   var ORBIT1_ANGLE = -8 * Math.PI / 180;
 
   // Source card centers
@@ -30,11 +30,11 @@
 
   // Destination card centers (card x, card y + 28)
   var DST = [
-    { x: 750, y: 28 },   // dst1
-    { x: 810, y: 119 },  // dst2
-    { x: 750, y: 210 },  // dst3
-    { x: 810, y: 301 },  // dst4
-    { x: 750, y: 392 },  // dst5
+    { x: 820, y: 28 },   // dst1
+    { x: 880, y: 119 },  // dst2
+    { x: 820, y: 210 },  // dst3
+    { x: 880, y: 301 },  // dst4
+    { x: 820, y: 392 },  // dst5
   ];
 
   // 15 tokens: 5 per source, alternating orbits, unified entry at t=0

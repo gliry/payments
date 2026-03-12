@@ -152,17 +152,19 @@
 
     var sourceCards = svg.querySelectorAll(".source-card");
     var recipientCards = svg.querySelectorAll(".recipient-card");
-    var srcFlowLines = svg.querySelectorAll('.flow-line[data-group^="src"]');
-    var dstFlowLines = svg.querySelectorAll('.flow-line[data-group^="dst"]');
-    var allFlowLines = svg.querySelectorAll(".flow-line");
     var centerEngine = svg.querySelector("#centerEngine");
-    var spherePulseEls = svg.querySelectorAll(".sphere-pulse");
 
     var lastPhase = -1;
 
-    // Start state
-    gsap.set(sourceCards, { opacity: 0.5, scale: 1 });
-    gsap.set(recipientCards, { opacity: 0.4, scale: 1 });
+    // Init scroll-driven tokens
+    if (window.OmniFlowTokens) {
+      window.OmniFlowTokens.init();
+    }
+
+    // Start state: only sources bright
+    gsap.set(sourceCards, { opacity: 1 });
+    gsap.set(centerEngine, { opacity: 0.2 });
+    gsap.set(recipientCards, { opacity: 0.2 });
 
     ScrollTrigger.create({
       trigger: section,
@@ -172,13 +174,19 @@
       scrub: 1,
       onUpdate: function (self) {
         var progress = self.progress;
+
+        // Update scroll-driven tokens every frame
+        if (window.OmniFlowTokens) {
+          window.OmniFlowTokens.update(progress);
+        }
+
         var phase = 0;
-        if (progress > 0.33) phase = 1;
-        if (progress > 0.66) phase = 2;
+        if (progress > 0.15) phase = 1;
+        if (progress > 0.85) phase = 2;
 
         // Update step indicators
         for (var i = 0; i < stepEls.length; i++) {
-          if (i <= phase) {
+          if (i === phase) {
             stepEls[i].classList.add("how-it-works__step--active");
           } else {
             stepEls[i].classList.remove("how-it-works__step--active");
@@ -189,47 +197,25 @@
         if (phase === lastPhase) return;
         lastPhase = phase;
 
-        // Phase 0: Upload — highlight sources, src lines glow
+        // Exclusive highlighting: active block bright, others dimmed
         gsap.to(sourceCards, {
-          opacity: phase === 0 ? 1 : 0.6,
-          scale: phase === 0 ? 1.05 : 1,
+          opacity: phase === 0 ? 1 : 0.2,
           duration: 0.5,
           ease: "power2.out",
-        });
-        gsap.to(srcFlowLines, {
-          attr: { "stroke-opacity": phase >= 0 ? 0.5 : 0.15, "stroke-width": phase === 0 ? 2.5 : 1.5 },
-          duration: 0.5,
-        });
-
-        // Phase 1: Route — engine glow intensifies, all lines bright
-        gsap.to(allFlowLines, {
-          attr: {
-            "stroke-opacity": phase >= 1 ? 0.6 : 0.15,
-            "stroke-width": phase >= 1 ? 2.5 : 1.5,
-          },
-          duration: 0.5,
         });
         if (centerEngine) {
           gsap.to(centerEngine, {
-            filter: phase >= 1 ? "brightness(1.3)" : "brightness(1)",
+            opacity: phase === 1 ? 1 : 0.2,
             duration: 0.5,
+            ease: "power2.out",
           });
         }
-
-        // Phase 2: Execute — highlight recipients, dst lines glow strong
         gsap.to(recipientCards, {
-          opacity: phase >= 2 ? 1 : 0.4,
-          scale: phase >= 2 ? 1.05 : 1,
+          opacity: phase === 2 ? 1 : 0.2,
           duration: 0.5,
           ease: "power2.out",
         });
-        gsap.to(dstFlowLines, {
-          attr: {
-            "stroke-opacity": phase >= 2 ? 0.8 : phase >= 1 ? 0.6 : 0.15,
-            "stroke-width": phase >= 2 ? 3 : phase >= 1 ? 2.5 : 1.5,
-          },
-          duration: 0.5,
-        });
+
       },
     });
   }

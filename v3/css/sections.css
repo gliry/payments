@@ -1395,13 +1395,14 @@
 }
 
 .how-it-works__steps {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-8);
-  margin-top: var(--space-6);
+  position: relative;
+  margin-top: var(--space-16);
+  height: 60px;
 }
 
 .how-it-works__step {
+  position: absolute;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1410,27 +1411,32 @@
   transition: opacity 0.5s;
 }
 
+.how-it-works__step:nth-child(1) { left: 10.7%; }
+.how-it-works__step:nth-child(2) { left: 45.9%; }
+.how-it-works__step:nth-child(3) { left: 86.7%; }
+
 .how-it-works__step--active {
   opacity: 1;
 }
 
 .how-it-works__step-num {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--color-primary);
 }
 
 .how-it-works__step-title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .how-it-works__step-desc {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 /* ── Problem bridge (#2) ── */
