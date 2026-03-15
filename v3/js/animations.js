@@ -464,6 +464,63 @@
     });
   }
 
+  function initSecurityPills() {
+    var pills = document.querySelectorAll(".security-pill");
+    var cards = document.querySelectorAll(".security-card");
+    var slider = document.querySelector(".security-pill-slider");
+    var glow = document.querySelector(".security-glow");
+    if (!pills.length) return;
+
+    // Glow colors per tab (blue/purple palette)
+    var glowColors = [
+      "radial-gradient(circle, rgba(24,148,232,0.14) 0%, transparent 70%)",
+      "radial-gradient(circle, rgba(24,148,232,0.10) 0%, rgba(159,114,255,0.06) 50%, transparent 70%)",
+      "radial-gradient(circle, rgba(159,114,255,0.12) 0%, rgba(24,148,232,0.04) 50%, transparent 70%)",
+      "radial-gradient(circle, rgba(24,148,232,0.12) 0%, rgba(159,114,255,0.05) 50%, transparent 70%)",
+      "radial-gradient(circle, rgba(159,114,255,0.10) 0%, rgba(24,148,232,0.05) 50%, transparent 70%)",
+      "radial-gradient(circle, rgba(24,148,232,0.12) 0%, transparent 70%)",
+      "radial-gradient(circle, rgba(159,114,255,0.12) 0%, rgba(24,148,232,0.04) 50%, transparent 70%)",
+    ];
+
+    // Position slider on a pill
+    function positionSlider(pill) {
+      if (!slider) return;
+      slider.style.left = pill.offsetLeft + "px";
+      slider.style.width = pill.offsetWidth + "px";
+    }
+
+    // Init slider on active pill
+    var activePill = document.querySelector(".security-pill.active");
+    if (activePill) positionSlider(activePill);
+
+    pills.forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        var idx = this.getAttribute("data-tab");
+
+        // Update pills
+        pills.forEach(function (p) { p.classList.remove("active"); });
+        this.classList.add("active");
+
+        // Move slider
+        positionSlider(this);
+
+        // Update glow color
+        if (glow) glow.style.background = glowColors[idx] || glowColors[0];
+
+        // Update cards with re-triggered animation
+        cards.forEach(function (card) {
+          if (card.getAttribute("data-card") === idx) {
+            card.classList.remove("active");
+            void card.offsetHeight;
+            card.classList.add("active");
+          } else {
+            card.classList.remove("active");
+          }
+        });
+      });
+    });
+  }
+
   function init() {
     initHeroAnimation();
     initScrollReveal();
@@ -476,6 +533,7 @@
     initIsometricScroll();      // PIN #2: +200% scroll space
     initFeaturesAccordion();    // PIN #3: after all space is added
     initMidCta();               // No pin, just scroll-triggered entrance
+    initSecurityPills();         // Tab switching for security section
     // initSectionSnap();
     ScrollTrigger.refresh();
   }

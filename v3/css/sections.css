@@ -1010,116 +1010,276 @@
 }
 
 /* ── Security (#9) ── */
-.security__title {
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
-}
+/* ── Security Glass Pills (#5) ── */
 
-.security__text {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
-.security__trust {
-  margin-top: var(--space-12);
-  text-align: center;
-}
-
-.security__trust-label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: var(--space-4);
-}
-
-.security__trust-logos {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-8);
-  flex-wrap: wrap;
-}
-
-.security__trust-logo {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  opacity: 0.6;
-  transition: opacity var(--duration-hover) var(--ease-default);
-}
-
-.security__trust-logo:hover {
-  opacity: 1;
-}
-
-/* Security flow diagram */
-.security__visual {
-  margin-bottom: var(--space-12);
-}
-
-.security__flow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  padding: var(--space-8);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card-lg);
-}
-
-.security__flow-node {
+/* Security hero headline */
+.security-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-6);
-  border-radius: var(--radius-card);
-  font-family: var(--font-mono);
+  justify-content: center;
+  text-align: center;
+  padding: 0 var(--space-8);
+  margin-bottom: var(--space-20);
+}
+
+.security-hero .section__label {
+  display: none;
+}
+
+.security-hero__h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  position: relative;
+  z-index: 1;
+}
+
+/* Headline glow */
+.security-hero__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(24, 148, 232, 0.12) 0%, rgba(159, 114, 255, 0.06) 40%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(40px);
+  z-index: 0;
+}
+
+@media (max-width: 767px) {
+  .security-hero__h2 {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+  }
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: var(--color-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pills bar */
+.security-pills {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 5px;
+  width: fit-content;
+  margin: 0 auto var(--space-4);
+  position: relative;
+}
+
+.security-pill {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-display);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+}
+
+.security-pill:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.security-pill.active {
   color: var(--color-text-primary);
 }
 
-.security__flow-node span:first-child {
-  font-size: 2rem;
+/* Sliding pill indicator */
+.security-pill-slider {
+  position: absolute;
+  height: calc(100% - 10px);
+  top: 5px;
+  border-radius: 12px;
+  background: rgba(24, 148, 232, 0.1);
+  box-shadow: 0 0 20px rgba(24, 148, 232, 0.06);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
 }
 
-.security__flow-node--user {
-  background: rgba(24, 148, 232, 0.08);
-  border: 1px solid rgba(24, 148, 232, 0.2);
+/* Cards wrapper */
+.security-cards {
+  position: relative;
+  min-height: 220px;
+  z-index: 0;
 }
 
-.security__flow-node--smart {
-  background: rgba(98, 226, 164, 0.08);
-  border: 1px solid rgba(98, 226, 164, 0.2);
+/* Ambient glow behind card — changes color per tab */
+.security-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: -1;
+  transition: background 0.8s;
+  background: radial-gradient(circle, rgba(24, 148, 232, 0.14) 0%, transparent 70%);
 }
 
-.security__flow-node--recipients {
-  background: rgba(159, 114, 255, 0.08);
-  border: 1px solid rgba(159, 114, 255, 0.2);
+/* Individual card */
+.security-card {
+  display: none;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 64px 48px;
+  text-align: center;
+  position: relative;
 }
 
-.security__flow-arrow {
-  font-size: 1.5rem;
+.security-card.active {
+  display: block;
+  animation: securityCardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes securityCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card content */
+.security-card__h3 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #e4e5ea 40%, #7c7e8a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.security-card__divider {
+  width: 48px;
+  height: 2px;
+  margin: 0 auto 24px;
+  background: linear-gradient(90deg, var(--color-primary), #9f72ff);
+  border-radius: 1px;
+}
+
+.security-card__p {
+  font-size: 1rem;
+  color: #666;
+  line-height: 1.7;
+  max-width: 500px;
+  margin: 0 auto;
+  font-weight: 300;
+}
+
+.security-card__badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--color-mint);
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(98, 226, 164, 0.05);
+  border: 1px solid rgba(98, 226, 164, 0.1);
+}
+
+.security-card__badge--red {
+  color: #e84444;
+  background: rgba(232, 68, 68, 0.05);
+  border-color: rgba(232, 68, 68, 0.1);
+}
+
+/* CTA */
+.security-cta {
+  text-align: center;
+  margin-top: var(--space-8);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.security-cta__link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.security-cta__link:hover {
+  text-decoration: underline;
+}
+
+/* Trust footer */
+.security-trust {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.security-trust__item {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--color-text-secondary);
   opacity: 0.5;
 }
 
-.security__flow-caption {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  margin-top: var(--space-4);
+/* Mobile */
+@media (max-width: 767px) {
+  .security-pills {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .security-pills::-webkit-scrollbar {
+    display: none;
+  }
+  .security-pill {
+    font-size: 0.75rem;
+    padding: 8px 14px;
+  }
+  .security-card {
+    padding: 40px 28px 36px;
+  }
+  .security-card__p {
+    font-size: 0.95rem;
+  }
+  .security-trust {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
 }
 
 /* ── Integrations (#13) ── */
@@ -1582,18 +1742,7 @@
   background-clip: text;
 }
 
-/* ── Security grid (#5) ── */
-.security__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-6);
-}
-
-@media (min-width: 768px) {
-  .security__grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
+/* (security grid removed — replaced by glass pills layout) */
 
 /* ── Team (#8) ── */
 .team__grid {

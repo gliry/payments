@@ -941,18 +941,18 @@
             </div>
             <div class="features-accordion__sep"></div>
             <div class="features-accordion__item" data-feature="2">
-              <h3 class="features-accordion__title">Non-Custodial</h3>
-              <p class="features-accordion__desc">Funds are always yours — even from the first step of pay-in. We never have access to your money.</p>
-            </div>
-            <div class="features-accordion__sep"></div>
-            <div class="features-accordion__item" data-feature="3">
               <h3 class="features-accordion__title">Gasless</h3>
               <p class="features-accordion__desc">Zero gas pop-ups. Zero failed transactions. Account Abstraction handles everything.</p>
             </div>
             <div class="features-accordion__sep"></div>
-            <div class="features-accordion__item" data-feature="4">
+            <div class="features-accordion__item" data-feature="3">
               <h3 class="features-accordion__title">Recurring</h3>
               <p class="features-accordion__desc">Scheduled payouts and subscription pay-ins. Set once, runs automatically.</p>
+            </div>
+            <div class="features-accordion__sep"></div>
+            <div class="features-accordion__item" data-feature="4">
+              <h3 class="features-accordion__title">Flexible Auth</h3>
+              <p class="features-accordion__desc">Passkeys, crypto wallet, email — access your account however you prefer. No forced workflow, no mandatory browser extensions.</p>
             </div>
           </div>
         </div>
@@ -979,67 +979,65 @@
         </div>
       </section>
 
-      <!-- #5 Security & Compliance -->
+      <!-- #5 Security -->
       <section class="section section--alt" id="security">
-        <div class="container">
+        <div class="security-hero" data-animate="fade-up">
+          <div class="security-hero__glow"></div>
           <span class="section__label">Security</span>
-          <h2 class="section__headline">Enterprise-grade security. Zero custody.</h2>
+          <h2 class="security-hero__h2">Enterprise-grade<br><span class="gradient-text">security.</span></h2>
+        </div>
 
-          <div class="security__visual" data-animate="fade-up">
-            <div class="security__flow">
-              <div class="security__flow-node security__flow-node--user">
-                <span>&#128100;</span>
-                <span>User Wallet</span>
-              </div>
-              <span class="security__flow-arrow">&rarr;</span>
-              <div class="security__flow-node security__flow-node--smart">
-                <span>&#128737;</span>
-                <span>Smart Account</span>
-              </div>
-              <span class="security__flow-arrow">&rarr;</span>
-              <div class="security__flow-node security__flow-node--recipients">
-                <span>&#128101;</span>
-                <span>Recipients</span>
-              </div>
-            </div>
-            <p class="security__flow-caption">
-              Funds flow directly from user wallets through isolated smart
-              accounts. OmniFlow never touches your keys or holds your funds.
-            </p>
+        <div class="container">
+          <div class="security-pills" data-animate="fade-up">
+            <div class="security-pill-slider"></div>
+            <button class="security-pill active" data-tab="0">Non-Custodial</button>
+            <button class="security-pill" data-tab="1">No Own Code</button>
+            <button class="security-pill" data-tab="2">Access Control</button>
+            <button class="security-pill" data-tab="3">Limits</button>
+            <button class="security-pill" data-tab="4">Your Account</button>
+            <button class="security-pill" data-tab="5">Recovery</button>
+            <button class="security-pill" data-tab="6">Revoke</button>
           </div>
 
-          <div class="security__grid grid-3" data-animate="stagger">
-            <div class="card security__card">
-              <h3 class="security__title">Non-custodial by design</h3>
-              <p class="security__text">
-                No hot wallets, no pooled funds. Every user gets an isolated
-                smart account with their own keys.
-              </p>
+          <div class="security-cards" data-animate="fade-up">
+            <div class="security-glow"></div>
+            <div class="security-card active" data-card="0">
+              <h3 class="security-card__h3">Your keys,<br>your funds</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">Your own smart account. We never hold, pool, or have access to your money. Full self-custody from day one.</p>
             </div>
-            <div class="card security__card">
-              <h3 class="security__title">Smart account isolation (ERC-4337)</h3>
-              <p class="security__text">
-                ZeroDev Kernel v3.3 + Safe modules. Scoped permissions via
-                Zodiac Roles v2. No over-privileged contracts.
-              </p>
+            <div class="security-card" data-card="1">
+              <h3 class="security-card__h3">Zero custom<br>contracts</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">Audited ZeroDev Kernel v3.3 with 6M+ deployed accounts. No proprietary Solidity. Battle-tested infrastructure only.</p>
             </div>
-            <div class="card security__card">
-              <h3 class="security__title">Open-source contracts</h3>
-              <p class="security__text">
-                All smart contracts are open-source and verifiable. Trail of
-                Bits audit planned Q3 2026.
-              </p>
+            <div class="security-card" data-card="2">
+              <h3 class="security-card__h3">Enforced<br>onchain</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">Recipient lock, protocol whitelist, parameter constraints. Every rule enforced by the smart contract — not by promises.</p>
+            </div>
+            <div class="security-card" data-card="3">
+              <h3 class="security-card__h3">You set<br>the rules</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">Daily spending caps, auto-expiring permissions, per-token limits. Anything beyond your boundaries requires explicit approval.</p>
+            </div>
+            <div class="security-card" data-card="4">
+              <h3 class="security-card__h3">Isolated<br>account</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">Not a shared pool. Your own dedicated smart account. One compromised account never affects another.</p>
+            </div>
+            <div class="security-card" data-card="5">
+              <h3 class="security-card__h3">Recovery on<br>your terms</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">Email, trusted contacts, hardware key, dead man's switch. Modular recovery you configure — not us.</p>
+            </div>
+            <div class="security-card" data-card="6">
+              <h3 class="security-card__h3">Revoke<br>anytime</h3>
+              <div class="security-card__divider"></div>
+              <p class="security-card__p">One click. No lock-in period. No waiting. Full control returns to you instantly.</p>
             </div>
           </div>
 
-          <div class="security__trust" data-animate="fade-up">
-            <span class="security__trust-label">Built on</span>
-            <div class="security__trust-logos">
-              <span class="security__trust-logo">ZeroDev Kernel v3.3</span>
-              <span class="security__trust-logo">Safe</span>
-              <span class="security__trust-logo">Circle CCTP v2</span>
-            </div>
-          </div>
         </div>
       </section>
 
