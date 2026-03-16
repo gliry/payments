@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString, IsObject, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsGatewayChain } from '../../common/validators/chain.validator';
 
@@ -9,5 +9,19 @@ export class SubmitDelegateDto {
 
   @ApiProperty({ example: '0xabc123...' })
   @IsString()
-  txHash: string;
+  signature: string;
+
+  @ApiProperty({
+    description: 'WebAuthn assertion metadata for Kernel passkey validator encoding',
+    required: false,
+  })
+  @IsObject()
+  @IsOptional()
+  webauthn?: {
+    authenticatorData: string;
+    clientDataJSON: string;
+    challengeIndex: number;
+    typeIndex: number;
+    userVerificationRequired: boolean;
+  };
 }

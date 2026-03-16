@@ -1,29 +1,16 @@
-// Polyfill: Circle SDK's fetchFromApi references window.location.hostname
-// which doesn't exist in Node.js. Provide a minimal shim.
-if (typeof globalThis.window === 'undefined') {
-  (globalThis as any).window = {
-    location: {
-      hostname: process.env.CIRCLE_ALLOWED_DOMAIN || 'localhost',
-      protocol: 'https:',
-    },
-  };
-}
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createPublicClient, defineChain, formatUnits } from 'viem';
-import { toWebAuthnAccount } from 'viem/account-abstraction';
-import {
-  toCircleSmartAccount,
-  toModularTransport,
-} from '@circle-fin/modular-wallets-core';
+import { createPublicClient, defineChain, formatUnits, keccak256, toBytes, http } from 'viem';
+import { p256 } from '@noble/curves/nist.js';
+import { createKernelAccount } from '@zerodev/sdk';
+import { toPasskeyValidator, PasskeyValidatorContractVersion } from '@zerodev/passkey-validator';
+import { KERNEL_V3_1, getEntryPoint } from '@zerodev/sdk/constants';
 import { GatewayService } from './gateway/gateway.service';
 import {
   AA_GATEWAY_CHAINS,
-  ALL_CHAINS,
   getUsdcAddress,
 } from './config/chains';
-import { CIRCLE_BUNDLER_RPCS } from './config/bundler';
+import { getZeroDevRpc } from './config/bundler';
 import {
   buildGatewayDepositCalls,
   buildGatewayMintCalls,
@@ -32,15 +19,8 @@ import {
 import type { UserOperationCall } from './gateway/gateway.types';
 import { USDC_DECIMALS } from './gateway/gateway.types';
 
-// Polygon mainnet chain definition for viem (hub chain)
-const polygonMainnet = defineChain({
-  id: 137,
-  name: 'Polygon',
-  nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
-  rpcUrls: {
-    default: { http: ['https://polygon-rpc.com'] },
-  },
-});
+// Use Polygon as the reference chain for address computation
+const REFERENCE_CHAIN_KEY = 'polygon';
 
 export interface AggregatedBalances {
   total: string;
@@ -58,38 +38,57 @@ export class CircleService {
   ) {}
 
   /**
-   * Compute MSCA wallet address from Passkey credential.
-   * Uses Circle's bundler RPC to resolve the deterministic CREATE2 address.
+   * Compute Kernel wallet address from Passkey credential.
+   * Uses ZeroDev SDK to derive the deterministic CREATE2 address.
    * The address is the same on all chains for the same owner.
    */
   async computeWalletAddress(
     credentialId: string,
     publicKey: string,
   ): Promise<string> {
-    const clientKey = this.configService.getOrThrow<string>('CLIENT_KEY');
-    const bundlerRpc = CIRCLE_BUNDLER_RPCS['polygon'];
-
-    const transport = toModularTransport(
-      `${bundlerRpc}`,
-      clientKey as any,
-    );
-
-    const client = createPublicClient({
-      chain: polygonMainnet,
-      transport,
+    const refChain = AA_GATEWAY_CHAINS[REFERENCE_CHAIN_KEY];
+    const chain = defineChain({
+      id: refChain.chainId,
+      name: 'Polygon',
+      nativeCurrency: refChain.nativeCurrency,
+      rpcUrls: {
+        default: { http: [getZeroDevRpc(refChain.chainId)] },
+      },
     });
 
-    const owner = toWebAuthnAccount({
-      credential: { id: credentialId, publicKey: publicKey as `0x${string}` },
+    const publicClient = createPublicClient({
+      chain,
+      transport: http(getZeroDevRpc(refChain.chainId)),
     });
 
-    const account = await toCircleSmartAccount({
-      client: client as any,
-      owner,
+    // Decompress stored P256 public key (33 bytes compressed) → get x, y
+    const cleanKey = publicKey.startsWith('0x') ? publicKey.slice(2) : publicKey;
+    const point = p256.Point.fromHex(cleanKey);
+    const authenticatorIdHash = keccak256(toBytes(credentialId));
+
+    const entryPoint = getEntryPoint('0.7');
+
+    const passkeyValidator = await toPasskeyValidator(publicClient as any, {
+      webAuthnKey: {
+        pubX: point.x,
+        pubY: point.y,
+        authenticatorId: credentialId,
+        authenticatorIdHash,
+        rpID: this.configService.getOrThrow<string>('RP_ID'),
+      },
+      entryPoint,
+      kernelVersion: KERNEL_V3_1,
+      validatorContractVersion: PasskeyValidatorContractVersion.V0_0_3_PATCHED,
+    });
+
+    const account = await createKernelAccount(publicClient as any, {
+      plugins: { sudo: passkeyValidator },
+      entryPoint,
+      kernelVersion: KERNEL_V3_1,
     });
 
     const address = account.address;
-    this.logger.log(`Computed MSCA address: ${address} for credential: ${credentialId}`);
+    this.logger.log(`Computed Kernel address: ${address} for credential: ${credentialId}`);
 
     return address;
   }

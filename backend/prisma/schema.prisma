@@ -35,9 +35,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  delegateSetups DelegateSetup[]
-  operations     Operation[]
-  webhooks       Webhook[]
+  delegateSetups   DelegateSetup[]
+  operations       Operation[]
+  webhooks         Webhook[]
+  merchantPayments Payment[]       @relation("MerchantPayments")
+  payerPayments    Payment[]       @relation("PayerPayments")
 
   @@map("users")
 }
@@ -52,8 +54,9 @@ model DelegateSetup {
   chain  String
   status DelegateSetupStatus @default(PENDING)
 
-  txHash       String?
-  errorMessage String?
+  txHash         String?
+  errorMessage   String?
+  unsignedUserOp Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,6 +115,7 @@ enum OperationType {
   BRIDGE
   BATCH_SEND
   SWAP_DEPOSIT
+  PAYMENT_SETTLE
 }
 
 enum OperationStatus {
@@ -167,6 +171,68 @@ enum StepStatus {
   CONFIRMED
   FAILED
   SKIPPED
+}
+
+// =============================================
+// PAYMENTS (Checkout / Pay-in)
+// =============================================
+
+model Payment {
+  id         String        @id @default(uuid())
+  paymentId  String        @unique // short hex (8 bytes), appended to calldata
+  merchantId String
+  status     PaymentStatus @default(PENDING)
+
+  // What merchant wants to receive
+  amount       String              // "100.00" human-readable
+  amountRaw    String              // raw units (depends on token decimals)
+  token        String @default("USDC")
+  tokenAddress String?             // ERC20 address on destination chain
+  chain        String @default("polygon")
+
+  description String?
+  metadata    Json?
+  successUrl  String?
+  cancelUrl   String?
+  expiresAt   DateTime?
+
+  // Payer info (filled on payment)
+  payerAddress String?
+  payerChain   String?
+  payerToken   String?
+  payerUserId  String?
+  payerTxHash  String?
+
+  // Settlement
+  settlementOperationId String?
+  netAmount    String?
+  feeAmount    String?
+  feePercent   String?
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  // Scanning state for fallback cron detection
+  lastScannedBlock Json?
+
+  merchant  User  @relation("MerchantPayments", fields: [merchantId], references: [id])
+  payerUser User? @relation("PayerPayments", fields: [payerUserId], references: [id])
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([paymentId])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  FAILED
 }
 
 // =============================================

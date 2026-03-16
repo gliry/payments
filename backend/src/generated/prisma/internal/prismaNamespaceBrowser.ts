@@ -55,6 +55,7 @@ export const ModelName = {
   DelegateSetup: 'DelegateSetup',
   Operation: 'Operation',
   OperationStep: 'OperationStep',
+  Payment: 'Payment',
   Webhook: 'Webhook',
   WebhookDelivery: 'WebhookDelivery'
 } as const
@@ -95,6 +96,7 @@ export const DelegateSetupScalarFieldEnum = {
   status: 'status',
   txHash: 'txHash',
   errorMessage: 'errorMessage',
+  unsignedUserOp: 'unsignedUserOp',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -131,6 +133,7 @@ export const OperationStepScalarFieldEnum = {
   status: 'status',
   callData: 'callData',
   txHash: 'txHash',
+  userOpHash: 'userOpHash',
   burnIntentData: 'burnIntentData',
   attestation: 'attestation',
   operatorSignature: 'operatorSignature',
@@ -141,6 +144,40 @@ export const OperationStepScalarFieldEnum = {
 } as const
 
 export type OperationStepScalarFieldEnum = (typeof OperationStepScalarFieldEnum)[keyof typeof OperationStepScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  paymentId: 'paymentId',
+  merchantId: 'merchantId',
+  status: 'status',
+  amount: 'amount',
+  amountRaw: 'amountRaw',
+  token: 'token',
+  tokenAddress: 'tokenAddress',
+  chain: 'chain',
+  description: 'description',
+  metadata: 'metadata',
+  successUrl: 'successUrl',
+  cancelUrl: 'cancelUrl',
+  expiresAt: 'expiresAt',
+  payerAddress: 'payerAddress',
+  payerChain: 'payerChain',
+  payerToken: 'payerToken',
+  payerUserId: 'payerUserId',
+  payerTxHash: 'payerTxHash',
+  settlementOperationId: 'settlementOperationId',
+  netAmount: 'netAmount',
+  feeAmount: 'feeAmount',
+  feePercent: 'feePercent',
+  errorMessage: 'errorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  completedAt: 'completedAt',
+  lastScannedBlock: 'lastScannedBlock'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
 
 
 export const WebhookScalarFieldEnum = {

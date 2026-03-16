@@ -53,6 +53,7 @@ export type DelegateSetupCountAggregateOutputType = {
   status: number
   txHash: number
   errorMessage: number
+  unsignedUserOp: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -88,6 +89,7 @@ export type DelegateSetupCountAggregateInputType = {
   status?: true
   txHash?: true
   errorMessage?: true
+  unsignedUserOp?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -172,6 +174,7 @@ export type DelegateSetupGroupByOutputType = {
   status: $Enums.DelegateSetupStatus
   txHash: string | null
   errorMessage: string | null
+  unsignedUserOp: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
   _count: DelegateSetupCountAggregateOutputType | null
@@ -204,6 +207,7 @@ export type DelegateSetupWhereInput = {
   status?: Prisma.EnumDelegateSetupStatusFilter<"DelegateSetup"> | $Enums.DelegateSetupStatus
   txHash?: Prisma.StringNullableFilter<"DelegateSetup"> | string | null
   errorMessage?: Prisma.StringNullableFilter<"DelegateSetup"> | string | null
+  unsignedUserOp?: Prisma.JsonNullableFilter<"DelegateSetup">
   createdAt?: Prisma.DateTimeFilter<"DelegateSetup"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DelegateSetup"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -216,6 +220,7 @@ export type DelegateSetupOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   txHash?: Prisma.SortOrderInput | Prisma.SortOrder
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder
+  unsignedUserOp?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
@@ -232,6 +237,7 @@ export type DelegateSetupWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumDelegateSetupStatusFilter<"DelegateSetup"> | $Enums.DelegateSetupStatus
   txHash?: Prisma.StringNullableFilter<"DelegateSetup"> | string | null
   errorMessage?: Prisma.StringNullableFilter<"DelegateSetup"> | string | null
+  unsignedUserOp?: Prisma.JsonNullableFilter<"DelegateSetup">
   createdAt?: Prisma.DateTimeFilter<"DelegateSetup"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DelegateSetup"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -244,6 +250,7 @@ export type DelegateSetupOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   txHash?: Prisma.SortOrderInput | Prisma.SortOrder
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder
+  unsignedUserOp?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.DelegateSetupCountOrderByAggregateInput
@@ -261,6 +268,7 @@ export type DelegateSetupScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumDelegateSetupStatusWithAggregatesFilter<"DelegateSetup"> | $Enums.DelegateSetupStatus
   txHash?: Prisma.StringNullableWithAggregatesFilter<"DelegateSetup"> | string | null
   errorMessage?: Prisma.StringNullableWithAggregatesFilter<"DelegateSetup"> | string | null
+  unsignedUserOp?: Prisma.JsonNullableWithAggregatesFilter<"DelegateSetup">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DelegateSetup"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"DelegateSetup"> | Date | string
 }
@@ -271,6 +279,7 @@ export type DelegateSetupCreateInput = {
   status?: $Enums.DelegateSetupStatus
   txHash?: string | null
   errorMessage?: string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutDelegateSetupsInput
@@ -283,6 +292,7 @@ export type DelegateSetupUncheckedCreateInput = {
   status?: $Enums.DelegateSetupStatus
   txHash?: string | null
   errorMessage?: string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -293,6 +303,7 @@ export type DelegateSetupUpdateInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutDelegateSetupsNestedInput
@@ -305,6 +316,7 @@ export type DelegateSetupUncheckedUpdateInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -316,6 +328,7 @@ export type DelegateSetupCreateManyInput = {
   status?: $Enums.DelegateSetupStatus
   txHash?: string | null
   errorMessage?: string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -326,6 +339,7 @@ export type DelegateSetupUpdateManyMutationInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -337,6 +351,7 @@ export type DelegateSetupUncheckedUpdateManyInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -363,6 +378,7 @@ export type DelegateSetupCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   txHash?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
+  unsignedUserOp?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -445,6 +461,7 @@ export type DelegateSetupCreateWithoutUserInput = {
   status?: $Enums.DelegateSetupStatus
   txHash?: string | null
   errorMessage?: string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -455,6 +472,7 @@ export type DelegateSetupUncheckedCreateWithoutUserInput = {
   status?: $Enums.DelegateSetupStatus
   txHash?: string | null
   errorMessage?: string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -494,6 +512,7 @@ export type DelegateSetupScalarWhereInput = {
   status?: Prisma.EnumDelegateSetupStatusFilter<"DelegateSetup"> | $Enums.DelegateSetupStatus
   txHash?: Prisma.StringNullableFilter<"DelegateSetup"> | string | null
   errorMessage?: Prisma.StringNullableFilter<"DelegateSetup"> | string | null
+  unsignedUserOp?: Prisma.JsonNullableFilter<"DelegateSetup">
   createdAt?: Prisma.DateTimeFilter<"DelegateSetup"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DelegateSetup"> | Date | string
 }
@@ -504,6 +523,7 @@ export type DelegateSetupCreateManyUserInput = {
   status?: $Enums.DelegateSetupStatus
   txHash?: string | null
   errorMessage?: string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -514,6 +534,7 @@ export type DelegateSetupUpdateWithoutUserInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -524,6 +545,7 @@ export type DelegateSetupUncheckedUpdateWithoutUserInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -534,6 +556,7 @@ export type DelegateSetupUncheckedUpdateManyWithoutUserInput = {
   status?: Prisma.EnumDelegateSetupStatusFieldUpdateOperationsInput | $Enums.DelegateSetupStatus
   txHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unsignedUserOp?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -547,6 +570,7 @@ export type DelegateSetupSelect<ExtArgs extends runtime.Types.Extensions.Interna
   status?: boolean
   txHash?: boolean
   errorMessage?: boolean
+  unsignedUserOp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -559,6 +583,7 @@ export type DelegateSetupSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   status?: boolean
   txHash?: boolean
   errorMessage?: boolean
+  unsignedUserOp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -571,6 +596,7 @@ export type DelegateSetupSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   status?: boolean
   txHash?: boolean
   errorMessage?: boolean
+  unsignedUserOp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -583,11 +609,12 @@ export type DelegateSetupSelectScalar = {
   status?: boolean
   txHash?: boolean
   errorMessage?: boolean
+  unsignedUserOp?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DelegateSetupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "chain" | "status" | "txHash" | "errorMessage" | "createdAt" | "updatedAt", ExtArgs["result"]["delegateSetup"]>
+export type DelegateSetupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "chain" | "status" | "txHash" | "errorMessage" | "unsignedUserOp" | "createdAt" | "updatedAt", ExtArgs["result"]["delegateSetup"]>
 export type DelegateSetupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -610,6 +637,7 @@ export type $DelegateSetupPayload<ExtArgs extends runtime.Types.Extensions.Inter
     status: $Enums.DelegateSetupStatus
     txHash: string | null
     errorMessage: string | null
+    unsignedUserOp: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["delegateSetup"]>
@@ -1042,6 +1070,7 @@ export interface DelegateSetupFieldRefs {
   readonly status: Prisma.FieldRef<"DelegateSetup", 'DelegateSetupStatus'>
   readonly txHash: Prisma.FieldRef<"DelegateSetup", 'String'>
   readonly errorMessage: Prisma.FieldRef<"DelegateSetup", 'String'>
+  readonly unsignedUserOp: Prisma.FieldRef<"DelegateSetup", 'Json'>
   readonly createdAt: Prisma.FieldRef<"DelegateSetup", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"DelegateSetup", 'DateTime'>
 }
