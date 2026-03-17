@@ -4,32 +4,48 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createPublicClient, http, parseUnits, formatUnits } from 'viem';
+import { createPublicClient, http } from 'viem';
+import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CircleService } from '../circle/circle.service';
-import { GatewayService } from '../circle/gateway/gateway.service';
-import { AuthService } from '../auth/auth.service';
-import { AA_GATEWAY_CHAINS, ALL_CHAINS, GATEWAY_CHAINS } from '../circle/config/chains';
-import { CIRCLE_BUNDLER_RPCS } from '../circle/config/bundler';
+import { UserOpService } from '../circle/userop.service';
+import { AA_GATEWAY_CHAINS, ALL_CHAINS } from '../circle/config/chains';
+import { getBundlerRpc } from '../circle/config/bundler';
 import { GATEWAY_WALLET } from '../circle/config/gateway';
 import { GATEWAY_WALLET_DELEGATE_ABI } from '../circle/gateway/gateway.operations';
-import { USDC_DECIMALS } from '../circle/gateway/gateway.types';
 import { PrepareDelegateDto } from './dto/prepare-delegate.dto';
 import { SubmitDelegateDto } from './dto/submit-delegate.dto';
-import { WithdrawDto } from './dto/withdraw.dto';
+import { PrepareUserOpDto } from './dto/prepare-userop.dto';
+import { SubmitUserOpDto } from './dto/submit-userop.dto';
+
+/** In-memory store for prepared UserOps awaiting signature (short-lived, ~10s TTL) */
+interface PendingUserOp {
+  userId: string;
+  chain: string;
+  unsignedUserOp: Record<string, any>;
+  entryPointAddress: string;
+  entryPointVersion: string;
+  createdAt: number;
+}
 
 @Injectable()
 export class WalletService {
   private readonly logger = new Logger(WalletService.name);
+  private readonly pendingUserOps = new Map<string, PendingUserOp>();
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly circleService: CircleService,
-    private readonly gatewayService: GatewayService,
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService,
-  ) {}
+    private readonly userOpService: UserOpService,
+  ) {
+    // Purge stale entries every 60s
+    setInterval(() => {
+      const now = Date.now();
+      for (const [id, entry] of this.pendingUserOps) {
+        if (now - entry.createdAt > 120_000) this.pendingUserOps.delete(id);
+      }
+    }, 60_000);
+  }
 
   async getWalletInfo(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -50,8 +66,50 @@ export class WalletService {
       walletAddress: user.walletAddress,
       delegateAddress: user.delegateAddress,
       supportedChains,
-      bundlerRpcs: CIRCLE_BUNDLER_RPCS,
+      bundlerRpcs: Object.fromEntries(
+        supportedChains.map((chain) => [
+          chain,
+          getBundlerRpc(AA_GATEWAY_CHAINS[chain].chainId).url,
+        ]),
+      ),
       delegateStatuses,
+    };
+  }
+
+  async getExecutorStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const chains = Object.keys(AA_GATEWAY_CHAINS);
+    const results: Record<string, {
+      delegateConfirmed: boolean;
+      ecdsaValidatorInstalled: boolean;
+      ecdsaValidatorEnabled: boolean;
+    }> = {};
+
+    await Promise.all(
+      chains.map(async (chain) => {
+        const delegate = await this.prisma.delegateSetup.findUnique({
+          where: { userId_chain: { userId, chain } },
+        });
+        const [ecdsaInstalled, ecdsaEnabled] = await Promise.all([
+          this.userOpService.isEcdsaValidatorInstalled(chain, user.walletAddress),
+          this.userOpService.isEcdsaValidatorEnabled(chain, user.walletAddress),
+        ]);
+        results[chain] = {
+          delegateConfirmed: delegate?.status === 'CONFIRMED',
+          ecdsaValidatorInstalled: ecdsaInstalled,
+          ecdsaValidatorEnabled: ecdsaEnabled,
+        };
+      }),
+    );
+
+    return {
+      walletAddress: user.walletAddress,
+      delegateAddress: user.delegateAddress,
+      chains: results,
     };
   }
 
@@ -77,9 +135,24 @@ export class WalletService {
       );
     }
 
-    const callData = this.circleService.buildDelegateCallData(
+    // Build delegate setup calls (addDelegate on GatewayWallet)
+    const calls = this.circleService.buildDelegateCallData(
       dto.chain,
       user.delegateAddress,
+    );
+
+    // NOTE: ECDSA validator is NOT installed via installModule here.
+    // installModule only registers the module but does NOT authorize it for
+    // the execute selector (isAllowedSelector returns false).
+    // Use POST /wallet/enable-executor after delegate setup to fully enable
+    // the ECDSA validator through the Kernel Enable flow (EIP-712 signed by passkey).
+
+    // Prepare UserOp server-side so frontend only needs to sign the hash
+    const prepared = await this.userOpService.prepareUserOp(
+      dto.chain,
+      user.credentialId,
+      user.publicKey,
+      calls,
     );
 
     const setup = await this.prisma.delegateSetup.upsert({
@@ -88,10 +161,12 @@ export class WalletService {
         userId,
         chain: dto.chain,
         status: 'AWAITING_SIGNATURE',
+        unsignedUserOp: prepared.unsignedUserOp as any,
       },
       update: {
         status: 'AWAITING_SIGNATURE',
         errorMessage: null,
+        unsignedUserOp: prepared.unsignedUserOp as any,
       },
     });
 
@@ -99,7 +174,7 @@ export class WalletService {
       delegateSetupId: setup.id,
       chain: dto.chain,
       delegateAddress: user.delegateAddress,
-      calls: callData,
+      userOpHash: prepared.userOpHash,
       description: `Add delegate ${user.delegateAddress} for USDC on ${dto.chain}`,
     };
   }
@@ -120,185 +195,465 @@ export class WalletService {
       );
     }
 
+    if (!setup.unsignedUserOp) {
+      throw new BadRequestException(
+        'No prepared UserOp found — call POST /v1/wallet/delegate first',
+      );
+    }
+
     const chainConfig = ALL_CHAINS[dto.chain];
     if (!chainConfig) {
       throw new BadRequestException(`Unknown chain: ${dto.chain}`);
     }
+
+    // Submit signed UserOp to bundler
+    const txHash = await this.userOpService.submitUserOp(
+      dto.chain,
+      {
+        unsignedUserOp: setup.unsignedUserOp as Record<string, any>,
+        entryPointAddress: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
+        entryPointVersion: '0.7',
+      },
+      dto.signature,
+      dto.webauthn,
+    );
+
+    this.logger.log(
+      `Delegate UserOp submitted: txHash=${txHash} for ${user.walletAddress} on ${dto.chain}`,
+    );
 
     // Verify delegate is actually registered on the Gateway contract
     const client = createPublicClient({
       transport: http(chainConfig.rpc),
     });
 
-    const isAuthorized = await client.readContract({
-      address: GATEWAY_WALLET as `0x${string}`,
-      abi: GATEWAY_WALLET_DELEGATE_ABI,
-      functionName: 'isAuthorizedForBalance',
-      args: [
-        chainConfig.usdc as `0x${string}`,
-        user.walletAddress as `0x${string}`,
-        user.delegateAddress as `0x${string}`,
-      ],
-    });
-
-    if (!isAuthorized) {
-      throw new BadRequestException(
-        'Delegate is not registered on the Gateway contract',
-      );
+    let isAuthorized = false;
+    try {
+      isAuthorized = await client.readContract({
+        address: GATEWAY_WALLET as `0x${string}`,
+        abi: GATEWAY_WALLET_DELEGATE_ABI,
+        functionName: 'isAuthorizedForBalance',
+        args: [
+          chainConfig.usdc as `0x${string}`,
+          user.walletAddress as `0x${string}`,
+          user.delegateAddress as `0x${string}`,
+        ],
+      }) as boolean;
+    } catch (err) {
+      this.logger.warn(`Delegate on-chain check failed (may need time): ${err}`);
     }
 
-    this.logger.log(
-      `Delegate verified on-chain: ${user.delegateAddress} authorized for ${user.walletAddress} on ${dto.chain}`,
-    );
+    const status = isAuthorized ? 'CONFIRMED' : 'SUBMITTED';
 
     await this.prisma.delegateSetup.update({
       where: { id: setup.id },
       data: {
-        status: 'CONFIRMED',
-        txHash: dto.txHash,
+        status,
+        txHash,
         errorMessage: null,
+        unsignedUserOp: Prisma.JsonNull,
       },
     });
 
     return {
       chain: dto.chain,
-      status: 'CONFIRMED',
-      txHash: dto.txHash,
+      status,
+      txHash,
     };
   }
 
-  async withdraw(userId: string, dto: WithdrawDto) {
+  // ── Generic UserOp prepare/submit (used by operations frontend) ──────
+
+  async prepareGenericUserOp(userId: string, dto: PrepareUserOpDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
     if (!user) throw new NotFoundException('User not found');
 
-    if (!(dto.chain in GATEWAY_CHAINS)) {
-      throw new BadRequestException(
-        `Chain ${dto.chain} does not support Gateway. Supported: ${Object.keys(GATEWAY_CHAINS).join(', ')}`,
-      );
+    if (!(dto.chain in ALL_CHAINS)) {
+      throw new BadRequestException(`Unsupported chain: ${dto.chain}`);
     }
 
-    // Get Gateway balances
-    const balances = await this.gatewayService.getBalance(user.walletAddress);
-    const balanceMap: Record<string, bigint> = {};
-    for (const b of balances) {
-      balanceMap[b.chain] = b.balance;
-    }
+    const calls = dto.calls.map((c) => ({
+      to: c.to as `0x${string}`,
+      data: c.data as `0x${string}`,
+      ...(c.value ? { value: BigInt(c.value) } : {}),
+    }));
 
-    // Determine source chain
-    let sourceChain = dto.sourceChain;
-    if (sourceChain) {
-      if (!(sourceChain in GATEWAY_CHAINS)) {
-        throw new BadRequestException(`Source chain ${sourceChain} not supported`);
-      }
-      if (!balanceMap[sourceChain] || balanceMap[sourceChain] === 0n) {
-        throw new BadRequestException(`No Gateway balance on ${sourceChain}`);
-      }
-    } else {
-      // Pick chain with highest balance (excluding destination if same-chain)
-      let best: string | null = null;
-      let bestBal = 0n;
-      for (const [chain, bal] of Object.entries(balanceMap)) {
-        if (bal > bestBal) {
-          best = chain;
-          bestBal = bal;
-        }
-      }
-      if (!best) throw new BadRequestException('No Gateway balance found');
-      sourceChain = best;
-    }
-
-    // Same chain = no burn/mint needed, just a note
-    if (sourceChain === dto.chain) {
-      throw new BadRequestException(
-        `Source and destination are both ${dto.chain}. Use the Gateway deposit/withdraw directly, or choose a different source chain.`,
-      );
-    }
-
-    const sourceBalance = balanceMap[sourceChain];
-
-    // Determine amount: account for ~2% gateway fee
-    let burnAmount: bigint;
-    if (dto.amount) {
-      burnAmount = parseUnits(dto.amount, USDC_DECIMALS);
-      const requiredBalance = (burnAmount * 10205n) / 10000n;
-      if (requiredBalance > sourceBalance) {
-        throw new BadRequestException(
-          `Insufficient Gateway balance on ${sourceChain}: have ${formatUnits(sourceBalance, USDC_DECIMALS)}, need ~${formatUnits(requiredBalance, USDC_DECIMALS)} (amount + ~2% gateway fee)`,
-        );
-      }
-    } else {
-      // Full balance: reduce by gateway fee
-      burnAmount = (sourceBalance * 10000n) / 10205n;
-    }
-
-    // Minimum viable withdraw: burn amount must cover Gateway maxFee (0.05 USDC = 50000)
-    // plus the amount itself. With 3% maxFee, need at least ~0.10 USDC balance.
-    const MIN_WITHDRAW_BALANCE = 100_000n; // 0.10 USDC
-    if (sourceBalance < MIN_WITHDRAW_BALANCE) {
-      throw new BadRequestException(
-        `Gateway balance on ${sourceChain} too small to withdraw: ${formatUnits(sourceBalance, USDC_DECIMALS)} USDC (minimum ~0.10 USDC)`,
-      );
-    }
-
-    if (burnAmount === 0n) {
-      throw new BadRequestException('Amount too small to withdraw');
-    }
-
-    this.logger.log(
-      `Withdraw: ${formatUnits(burnAmount, USDC_DECIMALS)} USDC from ${sourceChain} → ${dto.chain} for ${user.walletAddress}`,
+    const prepared = await this.userOpService.prepareUserOp(
+      dto.chain,
+      user.credentialId,
+      user.publicKey,
+      calls,
     );
 
-    // 1. Sign and submit burn intent
-    const delegateKey = this.authService.getDelegatePrivateKey(user);
+    const requestId = crypto.randomUUID();
+    this.pendingUserOps.set(requestId, {
+      userId,
+      chain: dto.chain,
+      unsignedUserOp: prepared.unsignedUserOp,
+      entryPointAddress: prepared.entryPointAddress,
+      entryPointVersion: prepared.entryPointVersion,
+      createdAt: Date.now(),
+    });
 
-    let transfer: { attestation: string; signature: string };
-    try {
-      ({ transfer } = await this.circleService.submitBurnIntent(
-        sourceChain,
-        dto.chain,
-        burnAmount,
-        user.walletAddress,
-        user.walletAddress,
-        delegateKey,
-      ));
-    } catch (err) {
-      throw new BadRequestException(
-        `Burn intent failed: ${err.message}`,
+    return {
+      requestId,
+      chain: dto.chain,
+      userOpHash: prepared.userOpHash,
+    };
+  }
+
+  async submitGenericUserOp(userId: string, dto: SubmitUserOpDto) {
+    const pending = this.pendingUserOps.get(dto.requestId);
+    if (!pending) {
+      throw new NotFoundException(
+        'Prepared UserOp not found or expired — call POST /v1/wallet/userop/prepare first',
       );
     }
 
-    this.logger.log(`Burn intent confirmed: attestation=${transfer.attestation?.slice(0, 20)}...`);
-
-    // 2. Execute mint via relayer
-    const relayerKey = this.configService.get<string>('RELAYER_PRIVATE_KEY');
-    let mintTxHash: string | null = null;
-
-    if (relayerKey) {
-      try {
-        mintTxHash = await this.gatewayService.executeMint(
-          dto.chain,
-          transfer.attestation,
-          transfer.signature,
-          relayerKey,
-        );
-        this.logger.log(`Mint executed on ${dto.chain}: ${mintTxHash}`);
-      } catch (err) {
-        this.logger.warn(`Mint failed (may need retry): ${err.message}`);
-      }
+    if (pending.userId !== userId) {
+      throw new BadRequestException('UserOp belongs to a different user');
     }
 
+    // Remove from store immediately (one-shot use)
+    this.pendingUserOps.delete(dto.requestId);
+
+    const txHash = await this.userOpService.submitUserOp(
+      pending.chain,
+      {
+        unsignedUserOp: pending.unsignedUserOp,
+        entryPointAddress: pending.entryPointAddress,
+        entryPointVersion: pending.entryPointVersion,
+      },
+      dto.signature,
+      dto.webauthn,
+    );
+
+    this.logger.log(
+      `Generic UserOp submitted: txHash=${txHash} on ${pending.chain}`,
+    );
+
     return {
-      status: mintTxHash ? 'COMPLETED' : 'BURN_CONFIRMED',
-      sourceChain,
-      destinationChain: dto.chain,
-      amount: formatUnits(burnAmount, USDC_DECIMALS),
-      attestation: transfer.attestation,
-      mintTxHash,
-      message: mintTxHash
-        ? `Withdrawn ${formatUnits(burnAmount, USDC_DECIMALS)} USDC to ${dto.chain}`
-        : 'Burn confirmed, mint pending (relayer will retry)',
+      chain: pending.chain,
+      txHash,
     };
+  }
+
+  async checkPaymasterStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    return this.userOpService.checkPaymasterStatus(
+      user.credentialId,
+      user.publicKey,
+    );
+  }
+
+  // ── Enable ECDSA Validator (for server-side settlement) ───────────────
+
+  async prepareEnableExecutor(userId: string, dto: { chain: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (!(dto.chain in ALL_CHAINS)) {
+      throw new BadRequestException(`Unsupported chain: ${dto.chain}`);
+    }
+
+    // Check if already enabled
+    const isEnabled = await this.userOpService.isEcdsaValidatorEnabled(
+      dto.chain, user.walletAddress,
+    );
+    if (isEnabled) {
+      return {
+        chain: dto.chain,
+        alreadyEnabled: true,
+        message: 'ECDSA validator already enabled for execute on this chain',
+      };
+    }
+
+    // Check if module is installed but not enabled (needs uninstall first)
+    const needsUninstall = await this.userOpService.isEcdsaValidatorInstalled(
+      dto.chain, user.walletAddress,
+    );
+
+    let uninstallUserOpHash: string | undefined;
+    let uninstallRequestId: string | undefined;
+
+    if (needsUninstall) {
+      // Prepare uninstall UserOp — client must sign it with passkey
+      const uninstallCalls = this.userOpService.buildUninstallEcdsaCalls(
+        user.walletAddress as `0x${string}`,
+        user.delegateAddress as `0x${string}`,
+      );
+      const prepared = await this.userOpService.prepareUserOp(
+        dto.chain,
+        user.credentialId,
+        user.publicKey,
+        uninstallCalls,
+      );
+      uninstallRequestId = crypto.randomUUID();
+      this.pendingUserOps.set(uninstallRequestId, {
+        userId,
+        chain: dto.chain,
+        unsignedUserOp: prepared.unsignedUserOp,
+        entryPointAddress: prepared.entryPointAddress,
+        entryPointVersion: prepared.entryPointVersion,
+        createdAt: Date.now(),
+      });
+      uninstallUserOpHash = prepared.userOpHash;
+    }
+
+    const result = await this.userOpService.getEnableEcdsaTypedData(
+      dto.chain,
+      user.credentialId,
+      user.publicKey,
+      this.getDelegatePrivateKey(),
+    );
+
+    return {
+      chain: dto.chain,
+      enableHash: result.enableHash,
+      mscaAddress: result.mscaAddress,
+      needsUninstall,
+      ...(needsUninstall ? { uninstallUserOpHash, uninstallRequestId } : {}),
+      description: needsUninstall
+        ? `Uninstall + re-enable ECDSA validator on ${dto.chain} (2 signatures needed)`
+        : `Enable ECDSA validator for server-side execution on ${dto.chain}`,
+    };
+  }
+
+  async submitEnableExecutor(
+    userId: string,
+    dto: {
+      chain: string;
+      enableSignature: string;
+      webauthn?: {
+        authenticatorData: string;
+        clientDataJSON: string;
+        challengeIndex: number;
+        typeIndex: number;
+      };
+      // For uninstall step (when needsUninstall=true from prepare)
+      uninstallRequestId?: string;
+      uninstallSignature?: string;
+      uninstallWebauthn?: {
+        authenticatorData: string;
+        clientDataJSON: string;
+        challengeIndex: number;
+        typeIndex: number;
+      };
+    },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const chainConfig = ALL_CHAINS[dto.chain];
+    if (!chainConfig) throw new BadRequestException(`Unsupported chain: ${dto.chain}`);
+
+    // Step 1: If uninstall is needed, submit it first and wait
+    if (dto.uninstallRequestId && dto.uninstallSignature) {
+      const pending = this.pendingUserOps.get(dto.uninstallRequestId);
+      if (!pending) {
+        throw new NotFoundException('Uninstall UserOp not found or expired');
+      }
+      if (pending.userId !== userId) {
+        throw new BadRequestException('UserOp belongs to a different user');
+      }
+      this.pendingUserOps.delete(dto.uninstallRequestId);
+
+      const uninstallTxHash = await this.userOpService.submitUserOp(
+        pending.chain,
+        {
+          unsignedUserOp: pending.unsignedUserOp,
+          entryPointAddress: pending.entryPointAddress,
+          entryPointVersion: pending.entryPointVersion,
+        },
+        dto.uninstallSignature,
+        dto.uninstallWebauthn,
+      );
+      this.logger.log(`ECDSA uninstall confirmed on ${dto.chain}: txHash=${uninstallTxHash}`);
+    }
+
+    // Step 2: Submit enable UserOp
+    let encodedEnableSignature = dto.enableSignature;
+    if (dto.webauthn) {
+      encodedEnableSignature = this.userOpService.encodeWebAuthnSignature(
+        dto.enableSignature,
+        dto.webauthn,
+        chainConfig.chainId,
+      );
+    }
+
+    const txHash = await this.userOpService.submitEnableEcdsaValidator(
+      dto.chain,
+      user.credentialId,
+      user.publicKey,
+      this.getDelegatePrivateKey(),
+      encodedEnableSignature,
+    );
+
+    return { chain: dto.chain, txHash, status: 'ENABLED' };
+  }
+
+  /**
+   * Combined setup: enable ECDSA validator + add delegate in a single UserOp, one passkey signature.
+   */
+  async prepareSetupSettlement(userId: string, dto: { chain: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { delegateSetups: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (!(dto.chain in ALL_CHAINS)) {
+      throw new BadRequestException(`Unsupported chain: ${dto.chain}`);
+    }
+
+    // Check current state
+    const isEnabled = await this.userOpService.isEcdsaValidatorEnabled(
+      dto.chain, user.walletAddress,
+    );
+    const delegateSetup = user.delegateSetups.find(d => d.chain === dto.chain);
+    const delegateConfirmed = delegateSetup?.status === 'CONFIRMED';
+
+    if (isEnabled && delegateConfirmed) {
+      return { chain: dto.chain, alreadySetup: true, message: 'Settlement already configured on this chain' };
+    }
+
+    const needsUninstall = await this.userOpService.isEcdsaValidatorInstalled(
+      dto.chain, user.walletAddress,
+    );
+
+    let uninstallUserOpHash: string | undefined;
+    let uninstallRequestId: string | undefined;
+
+    if (needsUninstall) {
+      const uninstallCalls = this.userOpService.buildUninstallEcdsaCalls(
+        user.walletAddress as `0x${string}`,
+        user.delegateAddress as `0x${string}`,
+      );
+      const prepared = await this.userOpService.prepareUserOp(
+        dto.chain, user.credentialId, user.publicKey, uninstallCalls,
+      );
+      uninstallRequestId = crypto.randomUUID();
+      this.pendingUserOps.set(uninstallRequestId, {
+        userId, chain: dto.chain,
+        unsignedUserOp: prepared.unsignedUserOp,
+        entryPointAddress: prepared.entryPointAddress,
+        entryPointVersion: prepared.entryPointVersion,
+        createdAt: Date.now(),
+      });
+      uninstallUserOpHash = prepared.userOpHash;
+    }
+
+    // Get enable EIP-712 hash (one passkey signature needed)
+    // Pass delegate private key so SDK can build the exact same ECDSA validator
+    // internally, guaranteeing the enable hash matches the UserOp signature
+    const result = await this.userOpService.getEnableEcdsaTypedData(
+      dto.chain, user.credentialId, user.publicKey, this.getDelegatePrivateKey(),
+    );
+
+    return {
+      chain: dto.chain,
+      enableHash: result.enableHash,
+      mscaAddress: result.mscaAddress,
+      needsDelegate: !delegateConfirmed,
+      needsUninstall,
+      ...(needsUninstall ? { uninstallUserOpHash, uninstallRequestId } : {}),
+      description: 'Enable settlement module' + (!delegateConfirmed ? ' + add delegate' : '') + ` on ${dto.chain}`,
+    };
+  }
+
+  async submitSetupSettlement(
+    userId: string,
+    dto: {
+      chain: string;
+      enableSignature: string;
+      webauthn?: { authenticatorData: string; clientDataJSON: string; challengeIndex: number; typeIndex: number };
+      uninstallRequestId?: string;
+      uninstallSignature?: string;
+      uninstallWebauthn?: { authenticatorData: string; clientDataJSON: string; challengeIndex: number; typeIndex: number };
+    },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const chainConfig = ALL_CHAINS[dto.chain];
+    if (!chainConfig) throw new BadRequestException(`Unsupported chain: ${dto.chain}`);
+
+    // Step 1: Uninstall if needed
+    if (dto.uninstallRequestId && dto.uninstallSignature) {
+      const pending = this.pendingUserOps.get(dto.uninstallRequestId);
+      if (!pending) throw new NotFoundException('Uninstall UserOp not found or expired');
+      if (pending.userId !== userId) throw new BadRequestException('UserOp belongs to a different user');
+      this.pendingUserOps.delete(dto.uninstallRequestId);
+
+      const uninstallTxHash = await this.userOpService.submitUserOp(
+        pending.chain,
+        { unsignedUserOp: pending.unsignedUserOp, entryPointAddress: pending.entryPointAddress, entryPointVersion: pending.entryPointVersion },
+        dto.uninstallSignature, dto.uninstallWebauthn,
+      );
+      this.logger.log(`ECDSA uninstall confirmed on ${dto.chain}: txHash=${uninstallTxHash}`);
+    }
+
+    // Step 2: Encode enable signature
+    let encodedEnableSignature = dto.enableSignature;
+    if (dto.webauthn) {
+      encodedEnableSignature = this.userOpService.encodeWebAuthnSignature(
+        dto.enableSignature, dto.webauthn, chainConfig.chainId,
+      );
+    }
+
+    // Step 3: Submit enable ECDSA + addDelegate in one UserOp
+    // The enable happens via the signature (ENABLE mode), and addDelegate
+    // executes as the actual call within the same UserOp.
+    const delegateCalls = this.circleService.buildDelegateCallData(dto.chain, user.delegateAddress);
+    const formattedCalls = delegateCalls.map(c => ({
+      to: c.to as `0x${string}`,
+      data: c.data as `0x${string}`,
+      value: c.value ?? 0n,
+    }));
+
+    const txHash = await this.userOpService.submitEnableEcdsaValidator(
+      dto.chain, user.credentialId, user.publicKey,
+      this.getDelegatePrivateKey(), encodedEnableSignature,
+      formattedCalls,
+    );
+    this.logger.log(`ECDSA enabled + delegate added on ${dto.chain}: txHash=${txHash}`);
+
+    // Step 4: Verify delegate and mark confirmed
+    let isAuthorized = false;
+    try {
+      const client = createPublicClient({ transport: http(chainConfig.rpc) });
+      isAuthorized = await client.readContract({
+        address: GATEWAY_WALLET as `0x${string}`,
+        abi: GATEWAY_WALLET_DELEGATE_ABI,
+        functionName: 'isAuthorizedForBalance',
+        args: [
+          chainConfig.usdc as `0x${string}`,
+          user.walletAddress as `0x${string}`,
+          user.delegateAddress as `0x${string}`,
+        ],
+      }) as boolean;
+    } catch (err) {
+      this.logger.warn(`Delegate on-chain check failed: ${err}`);
+    }
+
+    await this.prisma.delegateSetup.upsert({
+      where: { userId_chain: { userId, chain: dto.chain } },
+      create: { userId, chain: dto.chain, status: isAuthorized ? 'CONFIRMED' : 'SUBMITTED', txHash },
+      update: { status: isAuthorized ? 'CONFIRMED' : 'SUBMITTED', txHash, errorMessage: null },
+    });
+
+    return { chain: dto.chain, txHash, status: isAuthorized ? 'SETUP_COMPLETE' : 'DELEGATE_PENDING' };
+  }
+
+  private getDelegatePrivateKey(): string {
+    const key = process.env.SHARED_DELEGATE_PRIVATE_KEY;
+    if (!key) throw new BadRequestException('SHARED_DELEGATE_PRIVATE_KEY not configured');
+    return key;
   }
 }

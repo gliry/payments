@@ -38,6 +38,11 @@ export type Operation = Prisma.OperationModel
  */
 export type OperationStep = Prisma.OperationStepModel
 /**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel
+/**
  * Model Webhook
  * 
  */

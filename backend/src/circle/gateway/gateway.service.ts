@@ -294,6 +294,42 @@ export class GatewayService {
     }
   }
 
+  async getTokenBalance(
+    chainKey: string,
+    tokenAddress: string,
+    walletAddress: string,
+  ): Promise<bigint> {
+    const chain = ALL_CHAINS[chainKey];
+    if (!chain) throw new Error(`Unknown chain: ${chainKey}`);
+
+    const client = createPublicClient({
+      transport: http(chain.rpc),
+    });
+
+    try {
+      const balance = await client.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: [
+          {
+            type: 'function',
+            name: 'balanceOf',
+            inputs: [{ name: 'account', type: 'address' }],
+            outputs: [{ type: 'uint256' }],
+            stateMutability: 'view',
+          },
+        ] as const,
+        functionName: 'balanceOf',
+        args: [walletAddress as `0x${string}`],
+      });
+      return balance;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to read token balance on ${chainKey} (${tokenAddress}): ${error.message}`,
+      );
+      return 0n;
+    }
+  }
+
   async isDelegateAuthorized(
     chainKey: string,
     depositorAddress: string,

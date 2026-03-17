@@ -1,0 +1,15 @@
+{
+  "name": "omniflow-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "echo 'No build step'",
+    "start": "npx serve . -l $PORT -s"
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  }
+}

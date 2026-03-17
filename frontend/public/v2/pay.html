@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pay - OmniFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f8f9fc;
+      background-image:
+        radial-gradient(ellipse 70% 50% at 50% -10%, #F1EBFF 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 70% 10%, #E8F4FD 0%, transparent 70%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1c132c;
+      padding: 20px;
+    }
+    .checkout-card {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    .checkout-logo {
+      font-size: 14px;
+      font-weight: 700;
+      color: #7c3aed;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .checkout-logo .dot {
+      width: 8px; height: 8px;
+      background: #7c3aed;
+      border-radius: 50%;
+    }
+    .checkout-status {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 14px;
+      border-radius: 12px;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-processing { background: #dbeafe; color: #1e40af; }
+    .status-completed { background: #d1fae5; color: #065f46; }
+    .status-expired { background: #fee2e2; color: #991b1b; }
+    .status-failed { background: #fee2e2; color: #991b1b; }
+    .status-cancelled { background: #f3f4f6; color: #6b7280; }
+
+    .checkout-amount {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .checkout-token {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+    .checkout-desc {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+    .checkout-qr {
+      margin: 20px auto;
+      padding: 16px;
+      background: #fff;
+      border-radius: 12px;
+      display: inline-block;
+      border: 1px solid #e5e7eb;
+    }
+    .checkout-qr svg { display: block; }
+    .checkout-details {
+      text-align: left;
+      margin-top: 20px;
+      border-top: 1px solid #f3f4f6;
+      padding-top: 16px;
+    }
+    .checkout-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 12px;
+    }
+    .checkout-row-label { color: #9ca3af; }
+    .checkout-row-value {
+      color: #1c132c;
+      font-weight: 600;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      text-align: right;
+      max-width: 65%;
+      font-size: 11px;
+    }
+    .checkout-recipient {
+      font-size: 11px;
+      color: #6b7280;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      word-break: break-all;
+      text-align: center;
+    }
+    .checkout-recipient-label {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .checkout-timer {
+      font-size: 12px;
+      color: #ef4444;
+      margin-top: 12px;
+    }
+    .checkout-actions {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .checkout-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .checkout-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .checkout-btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff;
+    }
+    .checkout-btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .checkout-btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .checkout-btn-secondary:hover:not(:disabled) { background: #e5e7eb; }
+    .checkout-error {
+      color: #ef4444;
+      font-size: 13px;
+      padding: 40px 0;
+    }
+    .checkout-loading {
+      color: #9ca3af;
+      font-size: 13px;
+      padding: 40px 0;
+    }
+    .checkout-footer {
+      margin-top: 24px;
+      font-size: 11px;
+      color: #d1d5db;
+    }
+
+    /* Chain selector */
+    .chain-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .chain-pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid #e5e7eb;
+      background: #fff;
+      color: #6b7280;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .chain-pill:hover { border-color: #c4b5fd; color: #7c3aed; }
+    .chain-pill.active {
+      border-color: #7c3aed;
+      background: #f5f3ff;
+      color: #7c3aed;
+    }
+
+    /* Wallet info */
+    .wallet-info {
+      font-size: 11px;
+      color: #6b7280;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wallet-addr { font-weight: 600; color: #1c132c; }
+    .wallet-disconnect {
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* Tx status */
+    .tx-status {
+      font-size: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+    .tx-status-pending { background: #fef3c7; color: #92400e; }
+    .tx-status-success { background: #d1fae5; color: #065f46; }
+    .tx-status-error { background: #fee2e2; color: #991b1b; }
+
+    /* Switch network banner */
+    .switch-network-banner {
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #fef3c7;
+      color: #92400e;
+      margin-top: 8px;
+    }
+
+    /* Token selector */
+    .token-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 12px 0 16px;
+    }
+    .token-pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid #e5e7eb;
+      background: #fff;
+      color: #6b7280;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .token-pill:hover { border-color: #c4b5fd; color: #7c3aed; }
+    .token-pill.active {
+      border-color: #7c3aed;
+      background: #f5f3ff;
+      color: #7c3aed;
+    }
+    .selector-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .route-hint {
+      font-size: 11px;
+      color: #6b7280;
+      background: #f5f3ff;
+      border: 1px solid #ede9fe;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      text-align: center;
+    }
+    .route-hint strong { color: #7c3aed; }
+  </style>
+</head>
+<body>
+  <div class="checkout-card" id="checkout-card">
+    <div class="checkout-logo"><span class="dot"></span> OmniFlow</div>
+    <div class="checkout-loading" id="checkout-loading">Loading payment...</div>
+    <div id="checkout-content" style="display:none"></div>
+    <div class="checkout-footer">Powered by OmniFlow</div>
+  </div>
+
+  <script>
+    var API_BASE = window.__OMNIFLOW_API_URL__
+      || (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : 'https://omniflow.up.railway.app');
+
+    // Build ERC20 transfer(address,uint256) calldata
+    function buildErc20TransferCalldata(to, amountBigInt) {
+      var selector = '0xa9059cbb';
+      var addr = to.toLowerCase().replace('0x', '').padStart(64, '0');
+      var amt = amountBigInt.toString(16).padStart(64, '0');
+      return selector + addr + amt;
+    }
+
+    // Chain display names and chainIds for MetaMask
+    var CHAIN_META = {
+      polygon:   { name: 'Polygon',   chainId: 137,   hexId: '0x89' },
+      base:      { name: 'Base',      chainId: 8453,  hexId: '0x2105' },
+      arbitrum:  { name: 'Arbitrum',  chainId: 42161, hexId: '0xa4b1' },
+      avalanche: { name: 'Avalanche', chainId: 43114, hexId: '0xa86a' },
+      optimism:  { name: 'Optimism',  chainId: 10,    hexId: '0xa' },
+    };
+
+    // State
+    var _payment = null;
+    var _selectedChain = null;
+    var _selectedToken = null;
+    var _walletAddress = null;
+    var _timerInterval = null;
+    var _pollInterval = null;
+
+    var params = new URLSearchParams(window.location.search);
+    var paymentId = params.get('id');
+
+    if (!paymentId) {
+      document.getElementById('checkout-loading').innerHTML =
+        '<div class="checkout-error">No payment ID provided</div>';
+    } else {
+      loadPayment(paymentId);
+    }
+
+    async function loadPayment(id) {
+      try {
+        var res = await fetch(API_BASE + '/v1/payments/' + id);
+        if (!res.ok) {
+          var err = await res.json().catch(function() { return {}; });
+          throw new Error(err.message || 'Payment not found');
+        }
+        _payment = await res.json();
+        renderPayment(_payment);
+      } catch (e) {
+        document.getElementById('checkout-loading').innerHTML =
+          '<div class="checkout-error">' + e.message + '</div>';
+      }
+    }
+
+    function renderPayment(p) {
+      document.getElementById('checkout-loading').style.display = 'none';
+      var content = document.getElementById('checkout-content');
+      content.style.display = 'block';
+
+      var statusClass = 'status-' + p.status.toLowerCase();
+      var amountDisplay = parseFloat(p.amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6
+      });
+
+      var html = '';
+
+      // Status badge
+      html += '<div class="checkout-status ' + statusClass + '">' + p.status + '</div>';
+
+      // Amount
+      html += '<div class="checkout-amount">' + amountDisplay + ' ' + (p.token || 'USDC') + '</div>';
+
+      // Merchant requested chain
+      html += '<div class="checkout-token">on ' + (p.chain || 'polygon') + '</div>';
+
+      // Description
+      if (p.description) {
+        html += '<div class="checkout-desc">' + escapeHtml(p.description) + '</div>';
+      }
+
+      if (p.status === 'PENDING') {
+        // Chain selector
+        var chains = p.acceptedChains || [p.chain || 'polygon'];
+        if (!_selectedChain) _selectedChain = p.chain || chains[0];
+
+        html += '<div class="selector-label">Pay from</div>';
+        html += '<div class="chain-selector" id="chain-selector">';
+        for (var i = 0; i < chains.length; i++) {
+          var ch = chains[i];
+          var meta = CHAIN_META[ch] || { name: ch };
+          var active = ch === _selectedChain ? ' active' : '';
+          html += '<button class="chain-pill' + active + '" data-chain="' + ch + '" onclick="selectChain(\'' + ch + '\')">' + meta.name + '</button>';
+        }
+        html += '</div>';
+
+        // Token selector
+        var tokens = (p.payerTokens && p.payerTokens[_selectedChain]) || [{ symbol: p.token || 'USDC' }];
+        if (!_selectedToken) _selectedToken = p.token || 'USDC';
+        // Ensure selected token exists on this chain
+        if (!tokens.find(function(t) { return t.symbol === _selectedToken; })) {
+          _selectedToken = tokens[0].symbol;
+        }
+
+        html += '<div class="selector-label">Pay with</div>';
+        html += '<div class="token-selector" id="token-selector">';
+        for (var j = 0; j < tokens.length; j++) {
+          var tk = tokens[j];
+          var tkActive = tk.symbol === _selectedToken ? ' active' : '';
+          html += '<button class="token-pill' + tkActive + '" data-token="' + tk.symbol + '" onclick="selectToken(\'' + tk.symbol + '\')">' + tk.symbol + '</button>';
+        }
+        html += '</div>';
+
+        // Route hint
+        html += '<div class="route-hint" id="route-hint">' + getRouteHint() + '</div>';
+
+        // Timer
+        if (p.expiresAt) {
+          html += '<div class="checkout-timer" id="checkout-timer"></div>';
+        }
+
+        // Details
+        html += '<div class="checkout-details">';
+        html += '<div class="checkout-row"><span class="checkout-row-label">Merchant receives</span><span class="checkout-row-value">' + p.amount + ' ' + (p.token || 'USDC') + ' on ' + ((CHAIN_META[p.chain] || {}).name || p.chain) + '</span></div>';
+        html += '<div class="checkout-row"><span class="checkout-row-label">You pay on</span><span class="checkout-row-value" id="detail-network">' + ((CHAIN_META[_selectedChain] || {}).name || _selectedChain) + '</span></div>';
+        if (p.paymentId) {
+          html += '<div class="checkout-row"><span class="checkout-row-label">Payment ID</span><span class="checkout-row-value">' + p.paymentId + '</span></div>';
+        }
+        html += '</div>';
+
+        // Wallet status area
+        html += '<div id="wallet-area"></div>';
+
+        // Tx status area
+        html += '<div id="tx-status"></div>';
+
+        // Actions — two-step: Connect, then Pay
+        html += '<div class="checkout-actions" id="checkout-actions">';
+        if (typeof window.ethereum !== 'undefined') {
+          if (_walletAddress) {
+            html += '<button class="checkout-btn checkout-btn-primary" id="btn-pay" onclick="handlePay()">Pay ' + _selectedToken + '</button>';
+          } else {
+            html += '<button class="checkout-btn checkout-btn-secondary" id="btn-connect" onclick="handleConnect()">Connect Wallet</button>';
+          }
+        } else {
+          html += '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Install MetaMask to pay directly</div>';
+        }
+        html += '</div>';
+
+        // QR
+        html += '<div class="checkout-qr" id="checkout-qr"></div>';
+      } else if (p.status === 'PROCESSING') {
+        html += '<div class="tx-status tx-status-pending">Payment received, processing settlement...</div>';
+        html += '<div class="checkout-details">';
+        if (p.payerAddress) {
+          html += '<div class="checkout-row"><span class="checkout-row-label">Paid by</span><span class="checkout-row-value">' + truncAddr(p.payerAddress) + '</span></div>';
+        }
+        html += '</div>';
+      } else if (p.status === 'COMPLETED') {
+        html += '<div class="tx-status tx-status-success">Payment completed!</div>';
+        html += '<div class="checkout-details">';
+        if (p.payerAddress) {
+          html += '<div class="checkout-row"><span class="checkout-row-label">Paid by</span><span class="checkout-row-value">' + truncAddr(p.payerAddress) + '</span></div>';
+        }
+        if (p.payerChain) {
+          html += '<div class="checkout-row"><span class="checkout-row-label">From</span><span class="checkout-row-value">' + p.payerChain + '</span></div>';
+        }
+        html += '</div>';
+        if (p.successUrl) {
+          html += '<div style="font-size:11px;color:#9ca3af;margin-top:12px;">Redirecting...</div>';
+        }
+      } else if (p.status === 'EXPIRED') {
+        html += '<div class="tx-status tx-status-error">This payment has expired.</div>';
+      } else if (p.status === 'CANCELLED') {
+        html += '<div class="tx-status tx-status-error">This payment was cancelled.</div>';
+      }
+
+      content.innerHTML = html;
+
+      // Generate QR
+      if (p.status === 'PENDING') {
+        var qrEl = document.getElementById('checkout-qr');
+        if (qrEl) {
+          var qr = qrcode(0, 'M');
+          qr.addData(window.location.href);
+          qr.make();
+          qrEl.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 2, scalable: true });
+        }
+        if (p.expiresAt) startTimer(p.expiresAt);
+        startPolling(p.id);
+        // If wallet already connected, update UI
+        if (_walletAddress) updateWalletUI();
+      }
+      if (p.status === 'COMPLETED' && p.successUrl) {
+        setTimeout(function() { window.location.href = p.successUrl; }, 3000);
+      }
+    }
+
+    function selectChain(chain) {
+      _selectedChain = chain;
+      // Update chain pills
+      var pills = document.querySelectorAll('.chain-pill');
+      pills.forEach(function(pill) {
+        pill.classList.toggle('active', pill.dataset.chain === chain);
+      });
+      // Re-render token pills for new chain
+      var tokens = (_payment.payerTokens && _payment.payerTokens[chain]) || [{ symbol: _payment.token || 'USDC' }];
+      if (!tokens.find(function(t) { return t.symbol === _selectedToken; })) {
+        _selectedToken = tokens[0].symbol;
+      }
+      var tokenContainer = document.getElementById('token-selector');
+      if (tokenContainer) {
+        var tokenHtml = '';
+        for (var j = 0; j < tokens.length; j++) {
+          var tk = tokens[j];
+          var tkActive = tk.symbol === _selectedToken ? ' active' : '';
+          tokenHtml += '<button class="token-pill' + tkActive + '" data-token="' + tk.symbol + '" onclick="selectToken(\'' + tk.symbol + '\')">' + tk.symbol + '</button>';
+        }
+        tokenContainer.innerHTML = tokenHtml;
+      }
+      // Update details & route
+      var detailNet = document.getElementById('detail-network');
+      if (detailNet) detailNet.textContent = (CHAIN_META[chain] || {}).name || chain;
+      updateRouteHint();
+      updatePayButton();
+      if (_walletAddress) updateWalletUI();
+    }
+
+    function selectToken(symbol) {
+      _selectedToken = symbol;
+      var pills = document.querySelectorAll('.token-pill');
+      pills.forEach(function(pill) {
+        pill.classList.toggle('active', pill.dataset.token === symbol);
+      });
+      updateRouteHint();
+      updatePayButton();
+    }
+
+    function getRouteHint() {
+      if (!_payment) return '';
+      var sameToken = _selectedToken === _payment.token;
+      var sameChain = _selectedChain === _payment.chain;
+      var chainName = function(c) { return (CHAIN_META[c] || {}).name || c; };
+
+      if (sameToken && sameChain) {
+        return 'Direct transfer — <strong>instant</strong>';
+      } else if (!sameToken && sameChain) {
+        return _selectedToken + ' → ' + _payment.token + ' swap on ' + chainName(_selectedChain) + ' — <strong>~1 min</strong>';
+      } else if (sameToken && !sameChain) {
+        return chainName(_selectedChain) + ' → ' + chainName(_payment.chain) + ' bridge — <strong>5-20 min</strong>';
+      } else {
+        return _selectedToken + ' → swap → bridge → ' + chainName(_payment.chain) +
+          (_payment.token !== 'USDC' ? ' → ' + _payment.token : '') + ' — <strong>5-25 min</strong>';
+      }
+    }
+
+    function updateRouteHint() {
+      var el = document.getElementById('route-hint');
+      if (el) el.innerHTML = getRouteHint();
+    }
+
+    function updatePayButton() {
+      var btn = document.getElementById('btn-pay');
+      if (btn && !btn.disabled) {
+        btn.textContent = 'Pay ' + _selectedToken;
+      }
+    }
+
+    async function handleConnect() {
+      if (!window.ethereum) return;
+      var btn = document.getElementById('btn-connect');
+      try {
+        btn.textContent = 'Connecting...';
+        btn.disabled = true;
+        var accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        _walletAddress = accounts[0];
+        updateWalletUI();
+        // Replace connect button with pay button
+        var actions = document.getElementById('checkout-actions');
+        if (actions) {
+          actions.innerHTML = '<button class="checkout-btn checkout-btn-primary" id="btn-pay" onclick="handlePay()">Pay ' + _selectedToken + '</button>';
+        }
+      } catch (e) {
+        btn.textContent = 'Connect Wallet';
+        btn.disabled = false;
+        if (e.code !== 4001) showTxStatus('error', e.message || 'Failed to connect');
+      }
+    }
+
+    async function handlePay() {
+      if (!window.ethereum || !_walletAddress) return;
+
+      var btn = document.getElementById('btn-pay');
+      try {
+        // Switch to correct chain
+        var targetMeta = CHAIN_META[_selectedChain];
+        if (!targetMeta) {
+          showTxStatus('error', 'Unknown chain: ' + _selectedChain);
+          return;
+        }
+
+        btn.textContent = 'Switching network...';
+        btn.disabled = true;
+
+        var currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (currentChainId.toLowerCase() !== targetMeta.hexId.toLowerCase()) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: targetMeta.hexId }],
+            });
+          } catch (switchErr) {
+            if (switchErr.code === 4902) {
+              showTxStatus('error', 'Please add ' + targetMeta.name + ' to your wallet');
+            } else {
+              showTxStatus('error', 'Failed to switch network');
+            }
+            btn.textContent = 'Pay ' + _selectedToken;
+            btn.disabled = false;
+            return;
+          }
+        }
+
+        // Build calldata for selected token
+        var tokenAddress = null;
+        var calldata = null;
+        var isSameToken = _selectedToken === _payment.token;
+
+        if (isSameToken) {
+          // Use pre-built calldata from backend (includes paymentId)
+          var details = _payment.paymentDetails[_selectedChain];
+          if (!details) {
+            showTxStatus('error', 'No payment details for ' + _selectedChain);
+            btn.textContent = 'Pay ' + _selectedToken;
+            btn.disabled = false;
+            return;
+          }
+          tokenAddress = details.tokenAddress;
+          calldata = details.calldata;
+        } else {
+          // Build ERC20 transfer for selected token to merchant MSCA + paymentId
+          var payerTokens = (_payment.payerTokens && _payment.payerTokens[_selectedChain]) || [];
+          var tokenInfo = payerTokens.find(function(t) { return t.symbol === _selectedToken; });
+          if (!tokenInfo) {
+            showTxStatus('error', _selectedToken + ' not available on ' + _selectedChain);
+            btn.textContent = 'Pay ' + _selectedToken;
+            btn.disabled = false;
+            return;
+          }
+          tokenAddress = tokenInfo.address;
+          // Convert amountRaw from merchant token decimals to payer token decimals
+          var merchantAmountRaw = BigInt(_payment.paymentDetails[_payment.chain].amountRaw);
+          var merchantDecimals = 18; // default
+          var payerMerchantToken = (_payment.payerTokens && _payment.payerTokens[_payment.chain] || []).find(function(t) { return t.symbol === _payment.token; });
+          if (payerMerchantToken) merchantDecimals = payerMerchantToken.decimals || 18;
+          var payerDecimals = tokenInfo.decimals || 6;
+          var amountRaw;
+          if (merchantDecimals === payerDecimals) {
+            amountRaw = merchantAmountRaw;
+          } else if (merchantDecimals > payerDecimals) {
+            amountRaw = merchantAmountRaw / (10n ** BigInt(merchantDecimals - payerDecimals));
+          } else {
+            amountRaw = merchantAmountRaw * (10n ** BigInt(payerDecimals - merchantDecimals));
+          }
+          var transferData = buildErc20TransferCalldata(_payment.recipient, amountRaw);
+          calldata = transferData + _payment.paymentId;
+        }
+
+        btn.textContent = 'Confirm in wallet...';
+        showTxStatus('pending', 'Confirm the transaction in your wallet...');
+
+        var txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: _walletAddress,
+            to: tokenAddress,
+            data: calldata,
+          }],
+        });
+
+        showTxStatus('pending', 'Transaction sent! Waiting for confirmation...');
+        btn.textContent = 'Submitting...';
+
+        // Submit to backend
+        var submitRes = await fetch(API_BASE + '/v1/payments/' + _payment.id + '/pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            txHash: txHash,
+            chain: _selectedChain,
+            payerAddress: _walletAddress,
+            token: _selectedToken,
+          }),
+        });
+
+        if (!submitRes.ok) {
+          var err = await submitRes.json().catch(function() { return {}; });
+          showTxStatus('error', err.message || 'Failed to submit payment');
+          btn.textContent = 'Pay ' + _selectedToken;
+          btn.disabled = false;
+          return;
+        }
+
+        showTxStatus('success', 'Payment submitted! Processing...');
+        btn.style.display = 'none';
+      } catch (e) {
+        if (e.code === 4001) {
+          showTxStatus('error', 'Transaction rejected');
+        } else {
+          showTxStatus('error', e.message || 'Transaction failed');
+        }
+        btn.textContent = 'Pay ' + _selectedToken;
+        btn.disabled = false;
+      }
+    }
+
+    function updateWalletUI() {
+      var area = document.getElementById('wallet-area');
+      if (!area || !_walletAddress) return;
+
+      var html = '<div class="wallet-info">';
+      html += '<span>Connected: <span class="wallet-addr">' + truncAddr(_walletAddress) + '</span></span>';
+      html += '<span class="wallet-disconnect" onclick="disconnectWallet()">Disconnect</span>';
+      html += '</div>';
+
+      // Check if on correct network
+      if (window.ethereum && _selectedChain) {
+        var targetMeta = CHAIN_META[_selectedChain];
+        if (targetMeta) {
+          window.ethereum.request({ method: 'eth_chainId' }).then(function(chainId) {
+            if (chainId.toLowerCase() !== targetMeta.hexId.toLowerCase()) {
+              area.innerHTML = html + '<div class="switch-network-banner">You\'re on a different network. Click Pay to switch to ' + targetMeta.name + '.</div>';
+            } else {
+              area.innerHTML = html;
+            }
+          });
+          return;
+        }
+      }
+      area.innerHTML = html;
+
+      // Update button text
+      var btn = document.getElementById('btn-pay');
+      if (btn && !btn.disabled) {
+        btn.textContent = 'Pay with MetaMask';
+      }
+    }
+
+    function disconnectWallet() {
+      _walletAddress = null;
+      var area = document.getElementById('wallet-area');
+      if (area) area.innerHTML = '';
+      var btn = document.getElementById('btn-pay');
+      if (btn) {
+        btn.textContent = 'Connect Wallet & Pay';
+        btn.disabled = false;
+      }
+      var txEl = document.getElementById('tx-status');
+      if (txEl) txEl.innerHTML = '';
+    }
+
+    function showTxStatus(type, message) {
+      var el = document.getElementById('tx-status');
+      if (!el) return;
+      var cls = type === 'success' ? 'tx-status-success' : type === 'error' ? 'tx-status-error' : 'tx-status-pending';
+      el.innerHTML = '<div class="tx-status ' + cls + '">' + escapeHtml(message) + '</div>';
+    }
+
+    function truncAddr(addr) {
+      if (!addr || addr.length < 12) return addr;
+      return addr.slice(0, 6) + '...' + addr.slice(-4);
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function copyAddress(addr) {
+      if (!addr) return;
+      navigator.clipboard.writeText(addr);
+      var btn = event.target;
+      var orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = orig; }, 2000);
+    }
+
+    function startTimer(expiresAt) {
+      var timerEl = document.getElementById('checkout-timer');
+      if (!timerEl) return;
+
+      function update() {
+        var now = Date.now();
+        var exp = new Date(expiresAt).getTime();
+        var diff = exp - now;
+        if (diff <= 0) {
+          timerEl.textContent = 'Expired';
+          clearInterval(_timerInterval);
+          return;
+        }
+        var mins = Math.floor(diff / 60000);
+        var secs = Math.floor((diff % 60000) / 1000);
+        timerEl.textContent = 'Expires in ' + mins + ':' + secs.toString().padStart(2, '0');
+      }
+      update();
+      _timerInterval = setInterval(update, 1000);
+    }
+
+    function startPolling(id) {
+      if (_pollInterval) clearInterval(_pollInterval);
+      _pollInterval = setInterval(async function() {
+        try {
+          var res = await fetch(API_BASE + '/v1/payments/' + id);
+          if (!res.ok) return;
+          var p = await res.json();
+          if (p.status !== 'PENDING') {
+            clearInterval(_pollInterval);
+            clearInterval(_timerInterval);
+            _payment = p;
+            renderPayment(p);
+          }
+        } catch (e) { /* ignore */ }
+      }, 5000);
+    }
+
+    // Listen for account/chain changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', function(accounts) {
+        _walletAddress = accounts[0] || null;
+        if (_walletAddress) updateWalletUI();
+        else disconnectWallet();
+      });
+      window.ethereum.on('chainChanged', function() {
+        if (_walletAddress) updateWalletUI();
+      });
+    }
+  </script>
+</body>
+</html>

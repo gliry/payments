@@ -11,8 +11,6 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { OperationsService } from './operations.service';
 import { PrepareCollectDto } from './dto/prepare-collect.dto';
 import { PrepareSendDto } from './dto/prepare-send.dto';
-import { PrepareBridgeDto } from './dto/prepare-bridge.dto';
-import { PrepareBatchSendDto } from './dto/prepare-batch-send.dto';
 import { PrepareSwapDepositDto } from './dto/prepare-swap-deposit.dto';
 import { SubmitOperationDto } from './dto/submit-operation.dto';
 import {
@@ -38,30 +36,12 @@ export class OperationsController {
   }
 
   @Post('send')
-  @ApiOperation({ summary: 'Prepare send operation (send USDC to an address)' })
+  @ApiOperation({ summary: 'Prepare send/bridge/batch operation (unified endpoint)' })
   prepareSend(
     @CurrentUser() user: JwtUser,
     @Body() dto: PrepareSendDto,
   ) {
     return this.operationsService.prepareSend(user.id, dto);
-  }
-
-  @Post('bridge')
-  @ApiOperation({ summary: 'Prepare bridge operation (move USDC between chains)' })
-  prepareBridge(
-    @CurrentUser() user: JwtUser,
-    @Body() dto: PrepareBridgeDto,
-  ) {
-    return this.operationsService.prepareBridge(user.id, dto);
-  }
-
-  @Post('batch-send')
-  @ApiOperation({ summary: 'Prepare batch send (send USDC to multiple recipients)' })
-  prepareBatchSend(
-    @CurrentUser() user: JwtUser,
-    @Body() dto: PrepareBatchSendDto,
-  ) {
-    return this.operationsService.prepareBatchSend(user.id, dto);
   }
 
   @Post('swap-deposit')

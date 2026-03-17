@@ -18,8 +18,10 @@ async function bootstrap() {
     }),
   );
 
+  const corsOrigins = process.env.CORS_ORIGINS;
+  const isWildcard = !corsOrigins || corsOrigins === '*';
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') || '*',
+    origin: isWildcard ? true : corsOrigins.split(','),
     credentials: true,
   });
 

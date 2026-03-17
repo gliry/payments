@@ -136,7 +136,7 @@
 <body>
   <div class="app">
     <h1>OmniFlow</h1>
-    <p class="subtitle">API Test Client &mdash; Passkey + Smart Wallet</p>
+    <p class="subtitle">API Test Client &mdash; Passkey + ZeroDev Kernel Wallet</p>
 
     <!-- ===== AUTH ===== -->
     <div class="card" id="authCard">
@@ -185,7 +185,7 @@
         <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet/balances')">GET /wallet/balances</button>
 
         <div class="form-row">
-          <label>Prepare delegate</label>
+          <label>Delegate (prepare + sign + submit atomically)</label>
           <div class="row">
             <select id="delegateChain">
               <option value="polygon">polygon</option>
@@ -195,40 +195,29 @@
               <option value="arbitrum">arbitrum</option>
             </select>
             <button class="btn btn-sm btn-primary" style="flex:none"
-              onclick="doPrepareDelegate()">POST delegate</button>
+              onclick="doPrepareDelegate()">Setup Delegate</button>
           </div>
         </div>
 
         <div class="form-row">
-          <label>Submit delegate (confirm tx)</label>
+          <label>Enable Executor (ECDSA validator for server-side settlement)</label>
           <div class="row">
-            <select id="delegateSubmitChain">
+            <select id="enableExecutorChain">
               <option value="polygon">polygon</option>
               <option value="avalanche">avalanche</option>
               <option value="base">base</option>
               <option value="optimism">optimism</option>
               <option value="arbitrum">arbitrum</option>
             </select>
-            <input type="text" id="delegateTxHash" placeholder="0x..." style="margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
-              onclick="doSubmitDelegate()">POST submit</button>
+              onclick="doEnableExecutor()">Enable Executor</button>
           </div>
         </div>
 
         <div class="form-row">
-          <label>Withdraw from Gateway (burn + mint to chain)</label>
-          <div class="row">
-            <select id="withdrawChain">
-              <option value="polygon">polygon</option>
-              <option value="avalanche">avalanche</option>
-              <option value="base">base</option>
-              <option value="optimism">optimism</option>
-              <option value="arbitrum">arbitrum</option>
-            </select>
-            <input type="text" id="withdrawAmount" placeholder="amount (empty=all)" style="max-width:130px;margin-bottom:0" />
-            <button class="btn btn-sm btn-primary" style="flex:none"
-              onclick="doWithdraw()">POST withdraw</button>
-          </div>
+          <label>Diagnostics</label>
+          <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet/paymaster-status')">Paymaster Status</button>
+          <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/wallet/executor-status')">Executor Status</button>
         </div>
       </div>
 
@@ -239,7 +228,7 @@
 
         <!-- Collect -->
         <div class="form-row">
-          <label>Collect: select source chains — collects full on-chain balance</label>
+          <label>Collect: select source chains &mdash; deposits on-chain USDC to Gateway</label>
           <div class="row" style="align-items:center">
             <div id="collectChains" style="display:flex;gap:10px;flex-wrap:wrap">
               <label style="font-size:13px;cursor:pointer"><input type="checkbox" value="polygon"> polygon</label>
@@ -255,19 +244,27 @@
 
         <hr class="sep">
 
-        <!-- Send -->
+        <!-- Send USDC to address -->
         <div class="form-row">
           <label>Send USDC to address (optional: swap to output token via LiFi)</label>
           <div class="row">
             <input type="text" id="sendAddress" placeholder="0xRecipient..." style="margin-bottom:0" />
           </div>
           <div class="row" style="margin-top:6px">
+            <select id="sendSourceChain" title="Source chain (where to send from)">
+              <option value="">source: auto (hub)</option>
+              <option value="polygon">source: polygon</option>
+              <option value="avalanche">source: avalanche</option>
+              <option value="base">source: base</option>
+              <option value="optimism">source: optimism</option>
+              <option value="arbitrum">source: arbitrum</option>
+            </select>
             <select id="sendDestChain">
-              <option value="polygon">polygon</option>
-              <option value="avalanche">avalanche</option>
-              <option value="base">base</option>
-              <option value="optimism">optimism</option>
-              <option value="arbitrum">arbitrum</option>
+              <option value="polygon">dest: polygon</option>
+              <option value="avalanche">dest: avalanche</option>
+              <option value="base">dest: base</option>
+              <option value="optimism">dest: optimism</option>
+              <option value="arbitrum">dest: arbitrum</option>
             </select>
             <input type="text" id="sendAmount" placeholder="10.00" style="max-width:100px;margin-bottom:0" />
             <button class="btn btn-sm btn-primary" style="flex:none"
@@ -284,7 +281,7 @@
 
         <!-- Bridge -->
         <div class="form-row">
-          <label>Bridge USDC between chains</label>
+          <label>Bridge USDC between chains (send to self)</label>
           <div class="row">
             <div>
               <label style="font-size:11px">From</label>
@@ -316,9 +313,9 @@
 
         <!-- Batch Send -->
         <div class="form-row">
-          <label>Batch Send</label>
+          <label>Batch Send (multiple recipients via POST /operations/send)</label>
           <div id="batchRecipientRows"></div>
-          <button class="btn btn-sm btn-secondary" style="margin-bottom:8px" onclick="addRecipientRow()">+ Add recipient</button>
+          <button class="btn btn-sm btn-secondary" style="margin-bottom:8px" onclick="addBatchRow()">+ Add recipient</button>
           <div class="row">
             <div>
               <label style="font-size:11px">Source chain (optional)</label>
@@ -338,9 +335,9 @@
 
         <hr class="sep">
 
-        <!-- Swap & Deposit (Any Token → USDC → Gateway) -->
+        <!-- Swap & Deposit -->
         <div class="form-row">
-          <label>Swap & Deposit: any token → USDC → Gateway (via LiFi)</label>
+          <label>Swap & Deposit: any token &rarr; USDC &rarr; Gateway (via LiFi)</label>
           <div class="row">
             <select id="swapDepositChain">
               <option value="polygon">polygon</option>
@@ -379,6 +376,52 @@
         </div>
       </div>
 
+      <!-- Payments (Checkout / Pay-in) -->
+      <div class="endpoint-group">
+        <h3>Payments</h3>
+        <button class="btn btn-sm btn-secondary" onclick="apiCall('GET', '/v1/payments')">GET /payments</button>
+
+        <div class="form-row">
+          <label>Create Invoice</label>
+          <div class="row">
+            <input type="text" id="payAmount" placeholder="100.00" style="max-width:100px;margin-bottom:0" />
+            <select id="payToken" style="margin-bottom:0">
+              <option value="USDC">USDC</option>
+              <option value="USDT">USDT</option>
+              <option value="DAI">DAI</option>
+              <option value="WETH">WETH</option>
+              <option value="WBTC">WBTC</option>
+              <option value="LINK">LINK</option>
+              <option value="UNI">UNI</option>
+              <option value="AAVE">AAVE</option>
+            </select>
+            <select id="payChain" style="margin-bottom:0">
+              <option value="polygon">polygon</option>
+              <option value="avalanche">avalanche</option>
+              <option value="base">base</option>
+              <option value="optimism">optimism</option>
+              <option value="arbitrum">arbitrum</option>
+            </select>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <input type="text" id="payDesc" placeholder="Description (optional)" style="margin-bottom:0" />
+            <button class="btn btn-sm btn-primary" style="flex:none"
+              onclick="doCreatePayment()">POST create</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Get / Cancel Payment</label>
+          <div class="row">
+            <input type="text" id="payId" placeholder="payment UUID" style="margin-bottom:0" />
+            <button class="btn btn-sm btn-secondary" style="flex:none"
+              onclick="doGetPayment()">GET</button>
+            <button class="btn btn-sm btn-danger" style="flex:none"
+              onclick="doCancelPayment()">CANCEL</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Webhooks -->
       <div class="endpoint-group">
         <h3>Webhooks</h3>
@@ -413,100 +456,84 @@
   </div>
 
   <script type="module">
-    // ── SDK imports ────────────────────────────────────
-    let toPasskeyTransport, toWebAuthnCredential, WebAuthnMode;
-    let toCircleSmartAccount, toModularTransport;
-    let toWebAuthnAccount, createBundlerClient;
-    let createPublicClient, defineChain, httpTransport;
+    // ── SDK imports (viem only — for UserOp signing) ──
+    let toWebAuthnAccount;
 
     try {
-      const sdk = await import('https://esm.sh/@circle-fin/modular-wallets-core@1');
-      toPasskeyTransport = sdk.toPasskeyTransport;
-      toWebAuthnCredential = sdk.toWebAuthnCredential;
-      WebAuthnMode = sdk.WebAuthnMode;
-      toCircleSmartAccount = sdk.toCircleSmartAccount;
-      toModularTransport = sdk.toModularTransport;
-
-      const viem = await import('https://esm.sh/viem@2');
-      createPublicClient = viem.createPublicClient;
-      defineChain = viem.defineChain;
-      httpTransport = viem.http;
-
-      const viemAA = await import('https://esm.sh/viem@2/account-abstraction');
+      const viemAA = await import('https://esm.sh/viem@2.21.0/account-abstraction');
       toWebAuthnAccount = viemAA.toWebAuthnAccount;
-      createBundlerClient = viemAA.createBundlerClient;
-
-      console.log('Circle SDK + viem loaded');
+      console.log('viem 2.21.0 AA loaded, toWebAuthnAccount:', typeof toWebAuthnAccount);
     } catch (err) {
-      console.error('SDK load error:', err);
-      showAuthStatus('Failed to load SDK: ' + err.message, 'error');
+      console.warn('viem 2.21.0 failed, trying 2.45.1:', err.message);
+      try {
+        const viemAA = await import('https://esm.sh/viem@2.45.1/account-abstraction');
+        toWebAuthnAccount = viemAA.toWebAuthnAccount;
+        console.log('viem 2.45.1 AA loaded, toWebAuthnAccount:', typeof toWebAuthnAccount);
+      } catch (err2) {
+        console.error('All viem imports failed:', err2);
+      }
     }
 
-    const CIRCLE_CLIENT_URL = 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl';
-    const CIRCLE_CLIENT_KEY = 'LIVE_CLIENT_KEY:f7e1a0016e9696cc77499fc2036e0268:2a54d0893cc73933ac0123eaa1ea26e4';
     const API = ''; // relative — same origin
 
-    // ── Chain configs for UserOp signing ─────────────
-    const BUNDLER_RPCS = {
-      polygon: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/polygon',
-      avalanche: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/avalanche',
-      base: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/base',
-      optimism: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/optimism',
-      arbitrum: 'https://modular-sdk.circle.com/v1/rpc/w3s/buidl/arbitrum',
-    };
-
-    const CHAINS = {};
-    if (defineChain) {
-      CHAINS.polygon = defineChain({ id: 137, name: 'Polygon', nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 }, rpcUrls: { default: { http: ['https://polygon-rpc.com'] } } });
-      CHAINS.avalanche = defineChain({ id: 43114, name: 'Avalanche', nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 }, rpcUrls: { default: { http: ['https://api.avax.network/ext/bc/C/rpc'] } } });
-      CHAINS.base = defineChain({ id: 8453, name: 'Base', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.base.org'] } } });
-      CHAINS.optimism = defineChain({ id: 10, name: 'OP Mainnet', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } } });
-      CHAINS.arbitrum = defineChain({ id: 42161, name: 'Arbitrum One', nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } } });
+    // ── Base64url helpers ────────────────────────────────
+    function base64UrlToBytes(b64u) {
+      const b64 = b64u.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+      const bin = atob(b64 + pad);
+      return Uint8Array.from(bin, c => c.charCodeAt(0));
     }
 
-    // ── Fee estimation from native RPC ──────────────────
-    // Per-chain gas strategy: L2s have near-zero fees, L1-like chains need bigger buffers
-    const L2_CHAIN_IDS = new Set([42161, 8453, 10]); // Arbitrum, Base, Optimism
-    const L2_FLOOR = 100_000_000n; // 0.1 gwei — minimum for Circle bundler on L2s
+    function bytesToBase64Url(bytes) {
+      const bin = String.fromCharCode(...bytes);
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
 
-    function nativeFeeEstimator(chain) {
-      const isL2 = L2_CHAIN_IDS.has(chain.id);
-
-      return async () => {
-        const rpcUrl = chain.rpcUrls.default.http[0];
-        const [gasPriceRes, priorityFeeRes] = await Promise.all([
-          fetch(rpcUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_gasPrice', params: [] }),
-          }),
-          fetch(rpcUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_maxPriorityFeePerGas', params: [] }),
-          }),
-        ]);
-        const gasPriceData = await gasPriceRes.json();
-        const priorityFeeData = await priorityFeeRes.json();
-
-        const gasPrice = BigInt(gasPriceData.result);
-        const rawPriorityFee = priorityFeeData.result ? BigInt(priorityFeeData.result) : 1n;
-
-        let maxFeePerGas, maxPriorityFeePerGas;
-
-        if (isL2) {
-          // L2s: gas is near-zero, just use floor for bundler compat
-          maxFeePerGas = gasPrice > L2_FLOOR ? gasPrice * 11n / 10n : L2_FLOOR;
-          maxPriorityFeePerGas = L2_FLOOR;
-        } else {
-          // L1-like (Polygon, Avalanche): real gas market, 2x buffer for volatility
-          maxFeePerGas = gasPrice * 2n;
-          maxPriorityFeePerGas = rawPriorityFee * 2n;
-        }
-
-        console.log(`Fee estimate [${isL2 ? 'L2' : 'L1'}] chain ${chain.id}: gasPrice=${gasPrice}, priorityFee=${rawPriorityFee}, maxFee=${maxFeePerGas}, maxPriority=${maxPriorityFeePerGas}`);
-        return { maxFeePerGas, maxPriorityFeePerGas };
+    // ── WebAuthn helpers ─────────────────────────────────
+    function toCreationOptions(opts) {
+      return {
+        ...opts,
+        challenge: base64UrlToBytes(opts.challenge),
+        user: { ...opts.user, id: base64UrlToBytes(opts.user.id) },
+        ...(opts.excludeCredentials && {
+          excludeCredentials: opts.excludeCredentials.map(c => ({ ...c, id: base64UrlToBytes(c.id) })),
+        }),
       };
+    }
+
+    function toRequestOptions(opts) {
+      return {
+        ...opts,
+        challenge: base64UrlToBytes(opts.challenge),
+        ...(opts.allowCredentials && {
+          allowCredentials: opts.allowCredentials.map(c => ({ ...c, id: base64UrlToBytes(c.id) })),
+        }),
+      };
+    }
+
+    function serializeCredential(cred) {
+      if (typeof cred.toJSON === 'function') return cred.toJSON();
+      const resp = {};
+      if (cred.response.attestationObject) resp.attestationObject = bytesToBase64Url(new Uint8Array(cred.response.attestationObject));
+      if (cred.response.clientDataJSON) resp.clientDataJSON = bytesToBase64Url(new Uint8Array(cred.response.clientDataJSON));
+      if (cred.response.authenticatorData) resp.authenticatorData = bytesToBase64Url(new Uint8Array(cred.response.authenticatorData));
+      if (cred.response.signature) resp.signature = bytesToBase64Url(new Uint8Array(cred.response.signature));
+      if (cred.response.userHandle) resp.userHandle = bytesToBase64Url(new Uint8Array(cred.response.userHandle));
+      return {
+        id: cred.id, rawId: bytesToBase64Url(new Uint8Array(cred.rawId)),
+        type: cred.type, authenticatorAttachment: cred.authenticatorAttachment,
+        response: resp, clientExtensionResults: cred.getClientExtensionResults(),
+      };
+    }
+
+    async function extractPublicKeyHex(cred) {
+      const spki = new Uint8Array(cred.response.getPublicKey());
+      const key = await crypto.subtle.importKey('spki', spki, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['verify']);
+      const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key));
+      const x = raw.slice(1, 33);
+      const prefix = raw[64] % 2 === 0 ? 0x02 : 0x03;
+      const compressed = new Uint8Array([prefix, ...x]);
+      return '0x' + Array.from(compressed).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     // ── State ───────────────────────────────────────────
@@ -553,31 +580,34 @@
       if (!username) { showAuthStatus('Enter a username', 'error'); return; }
 
       setLoading('registerBtn', true);
-      showAuthStatus('<span class="loading"></span>Creating passkey...', 'info');
+      showAuthStatus('<span class="loading"></span>Getting challenge...', 'info');
 
       try {
-        const transport = toPasskeyTransport(CIRCLE_CLIENT_URL, CIRCLE_CLIENT_KEY);
+        const optionsRes = await fetch(`${API}/v1/auth/passkey/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'register', username }),
+        });
+        const options = await optionsRes.json();
+        if (!optionsRes.ok) throw new Error(options.message || optionsRes.statusText);
 
-        const credential = await toWebAuthnCredential({
-          transport,
-          mode: WebAuthnMode.Register,
-          username,
+        showAuthStatus('<span class="loading"></span>Creating passkey...', 'info');
+        const credential = await navigator.credentials.create({
+          publicKey: toCreationOptions(options),
         });
 
+        const publicKey = await extractPublicKeyHex(credential);
         console.log('Credential registered:', credential.id);
         localStorage.setItem('omniflow_credential', JSON.stringify({
-          id: credential.id, publicKey: credential.publicKey,
+          id: credential.id, publicKey,
         }));
-        showAuthStatus('<span class="loading"></span>Sending to backend...', 'info');
 
+        showAuthStatus('<span class="loading"></span>Verifying & registering...', 'info');
+        const serialized = serializeCredential(credential);
         const res = await fetch(`${API}/v1/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username,
-            credentialId: credential.id,
-            publicKey: credential.publicKey,
-          }),
+          body: JSON.stringify({ username, credential: serialized, publicKey }),
         });
 
         const data = await res.json();
@@ -604,30 +634,35 @@
       if (!username) { showAuthStatus('Enter a username', 'error'); return; }
 
       setLoading('loginBtn', true);
-      showAuthStatus('<span class="loading"></span>Authenticating with passkey...', 'info');
+      showAuthStatus('<span class="loading"></span>Getting challenge...', 'info');
 
       try {
-        const transport = toPasskeyTransport(CIRCLE_CLIENT_URL, CIRCLE_CLIENT_KEY);
+        const optionsRes = await fetch(`${API}/v1/auth/passkey/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'login', username }),
+        });
+        const options = await optionsRes.json();
+        if (!optionsRes.ok) throw new Error(options.message || optionsRes.statusText);
 
-        const credential = await toWebAuthnCredential({
-          transport,
-          mode: WebAuthnMode.Login,
-          username,
+        showAuthStatus('<span class="loading"></span>Authenticating with passkey...', 'info');
+        const credential = await navigator.credentials.get({
+          publicKey: toRequestOptions(options),
         });
 
         console.log('Credential login:', credential.id);
-        localStorage.setItem('omniflow_credential', JSON.stringify({
-          id: credential.id, publicKey: credential.publicKey,
-        }));
-        showAuthStatus('<span class="loading"></span>Sending to backend...', 'info');
+        const storedCred = JSON.parse(localStorage.getItem('omniflow_credential') || 'null');
+        if (storedCred) {
+          storedCred.id = credential.id;
+          localStorage.setItem('omniflow_credential', JSON.stringify(storedCred));
+        }
 
+        showAuthStatus('<span class="loading"></span>Verifying & logging in...', 'info');
+        const serialized = serializeCredential(credential);
         const res = await fetch(`${API}/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username,
-            credentialId: credential.id,
-          }),
+          body: JSON.stringify({ username, credential: serialized }),
         });
 
         const data = await res.json();
@@ -655,7 +690,7 @@
       const resBody = document.getElementById('resBody');
 
       // Remove any previous sign buttons
-      resBox.querySelectorAll('.sign-btn').forEach(b => b.remove());
+      resBox.querySelectorAll('.sign-btn, [data-sign-row]').forEach(b => b.remove());
 
       resBox.classList.remove('hidden');
       resStatus.className = 'res-status';
@@ -693,9 +728,10 @@
       }
     }
 
+    // ── Sign button for operations ──────────────────────
     function showSignButton(container, operationId, signRequests) {
-      const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
-      const hasSwap = signRequests.some(r => r.type === 'LIFI_SWAP' && r.calls);
+      const clientSteps = signRequests.filter(r => !r.serverSide && (r.userOpHash || r.calls));
+      const hasSwap = signRequests.some(r => r.type === 'LIFI_SWAP' && (r.userOpHash || r.calls));
       const label = hasSwap
         ? 'Refresh Quote & Sign'
         : clientSteps.length > 0
@@ -703,6 +739,7 @@
           : 'Submit (server-side steps only)';
 
       const btnRow = document.createElement('div');
+      btnRow.setAttribute('data-sign-row', '1');
       btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
 
       const signBtn = document.createElement('button');
@@ -710,7 +747,6 @@
       signBtn.textContent = label;
       signBtn.onclick = async () => {
         if (hasSwap) {
-          // Auto-refresh quote right before signing to minimize stale-calldata window
           signBtn.disabled = true;
           signBtn.textContent = 'Refreshing quote...';
           const resBody = document.getElementById('resBody');
@@ -727,7 +763,6 @@
               return;
             }
             resBody.textContent += `\n\nQuote refreshed: ${data.quote?.tool} route, output: ${data.quote?.outputToken}`;
-            // Sign with fresh signRequests
             btnRow.remove();
             handleSignRequests(operationId, data.signRequests);
           } catch (err) {
@@ -742,7 +777,6 @@
       };
       btnRow.appendChild(signBtn);
 
-      // Manual refresh button (swap only)
       if (hasSwap) {
         const refreshBtn = document.createElement('button');
         refreshBtn.className = 'btn btn-secondary';
@@ -779,6 +813,9 @@
     }
 
     // ── Sign & Execute UserOps ─────────────────────────
+    // Handles two kinds of signRequests:
+    // 1. Pre-prepared: has `userOpHash` -> sign directly
+    // 2. Raw calls: has `calls` -> prepare UserOp -> sign -> submit -> get txHash
     async function handleSignRequests(operationId, signRequests) {
       const resBox = document.getElementById('apiResponse');
       const resStatus = document.getElementById('resStatus');
@@ -792,7 +829,7 @@
       }
       const cred = JSON.parse(credJson);
 
-      const clientSteps = signRequests.filter(r => !r.serverSide && r.calls);
+      const clientSteps = signRequests.filter(r => !r.serverSide && (r.userOpHash || r.calls));
 
       if (clientSteps.length === 0) {
         resBody.textContent += '\n\nNo client signing needed — submitting to server...';
@@ -801,7 +838,7 @@
         return;
       }
 
-      resStatus.textContent = 'Signing UserOperations with Passkey...';
+      resStatus.textContent = 'Preparing & signing UserOps with Passkey...';
       resStatus.className = 'res-status';
 
       const owner = toWebAuthnAccount({
@@ -815,62 +852,64 @@
         resBody.textContent += `\n\n[${i + 1}/${clientSteps.length}] ${req.description || req.type} (${req.chain})...`;
 
         try {
-          const chain = CHAINS[req.chain];
-          const bundlerUrl = BUNDLER_RPCS[req.chain];
+          let userOpHash = req.userOpHash;
+          let requestId = null;
 
-          if (!chain || !bundlerUrl) {
-            resBody.textContent += `\n  SKIP: no config for chain "${req.chain}"`;
-            continue;
+          // If no pre-built userOpHash, prepare the UserOp from calls first
+          if (!userOpHash && req.calls) {
+            resBody.textContent += '\n  Preparing UserOp...';
+            const prepRes = await fetch(`${API}/v1/wallet/userop/prepare`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${jwt}`,
+              },
+              body: JSON.stringify({ chain: req.chain, calls: req.calls }),
+            });
+            const prepData = await prepRes.json();
+            if (!prepRes.ok) {
+              throw new Error(prepData.message || JSON.stringify(prepData));
+            }
+            userOpHash = prepData.userOpHash;
+            requestId = prepData.requestId;
+            resBody.textContent += ` hash=${userOpHash.slice(0, 14)}...`;
           }
 
-          const transport = toModularTransport(bundlerUrl, CIRCLE_CLIENT_KEY);
-          const client = createPublicClient({ chain, transport });
-          const account = await toCircleSmartAccount({ client, owner });
+          // Sign the UserOp hash with Passkey (biometric prompt)
+          resBody.textContent += '\n  Signing...';
+          const result = await owner.sign({ hash: userOpHash });
+          const signature = typeof result === 'string' ? result : result.signature;
+          const webauthn = typeof result === 'object' ? result.webauthn : undefined;
+          resBody.textContent += ` ok`;
 
-          const bundlerClient = createBundlerClient({
-            account,
-            client,
-            transport,
-            paymaster: true,
-            userOperation: { estimateFeesPerGas: nativeFeeEstimator(chain) },
-          });
-
-          resBody.textContent += '\n  Sending UserOp...';
-
-          const hash = await bundlerClient.sendUserOperation({
-            calls: req.calls.map(c => ({
-              to: c.to,
-              data: c.data,
-              ...(c.value ? { value: BigInt(c.value) } : {}),
-            })),
-          });
-
-          resBody.textContent += `\n  UserOp: ${hash}`;
-          resBody.textContent += '\n  Waiting for receipt...';
-
-          const receipt = await bundlerClient.waitForUserOperationReceipt({ hash });
-          const txHash = receipt.receipt.transactionHash;
-
-          resBody.textContent += `\n  TX: ${txHash}`;
-          signatures.push({ stepId: req.stepId, txHash });
-        } catch (err) {
-          const errMsg = err.message || '';
-          // Detect LiFi MinimalOutputBalanceViolation (selector 0x63ecb9f6)
-          if (errMsg.includes('0x63ecb9f6') || errMsg.includes('MinimalOutputBalanceViolation')) {
-            resBody.textContent += `\n  SLIPPAGE ERROR: Swap output fell below minimum. The price moved between quote and execution.`;
-            resBody.textContent += `\n  Try again — the quote will auto-refresh with a fresh price.`;
+          // If we prepared via userop/prepare, submit via userop/submit to get txHash
+          if (requestId) {
+            resBody.textContent += '\n  Submitting UserOp to bundler...';
+            const subRes = await fetch(`${API}/v1/wallet/userop/submit`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${jwt}`,
+              },
+              body: JSON.stringify({ requestId, signature, webauthn }),
+            });
+            const subData = await subRes.json();
+            if (!subRes.ok) {
+              throw new Error(subData.message || JSON.stringify(subData));
+            }
+            resBody.textContent += ` txHash=${subData.txHash.slice(0, 14)}...`;
+            signatures.push({ stepId: req.stepId, txHash: subData.txHash });
           } else {
-            resBody.textContent += `\n  ERROR: ${errMsg}`;
+            signatures.push({ stepId: req.stepId, signature, webauthn });
           }
-          if (err.details) resBody.textContent += `\n  Details: ${JSON.stringify(err.details)}`;
-          if (err.cause) resBody.textContent += `\n  Cause: ${err.cause.message || JSON.stringify(err.cause)}`;
-          resBody.textContent += `\n  Chain: ${req.chain} (${CHAINS[req.chain]?.id}), calls: ${req.calls?.length || 0}`;
+        } catch (err) {
+          resBody.textContent += `\n  ERROR: ${err.message || err}`;
           console.error('Sign error for step', req.stepId, err);
         }
       }
 
       if (signatures.length > 0) {
-        resBody.textContent += `\n\nSubmitting ${signatures.length} signature(s)...`;
+        resBody.textContent += `\n\nSubmitting ${signatures.length} result(s) to operation...`;
         const result = await submitSignatures(operationId, signatures);
         handleSubmitResult(resBox, resStatus, resBody, operationId, result);
       } else {
@@ -908,9 +947,8 @@
       resStatus.textContent = `Operation ${result.status || 'submitted'}`;
       resStatus.className = 'res-status res-ok';
 
-      // If PROCESSING — server handles burn intent + mint, auto-poll for completion
       if (result.status === 'PROCESSING') {
-        resBody.textContent += '\n\n⏳ Server is processing burn intent + mint (waiting for chain finality)...';
+        resBody.textContent += '\n\nServer is processing burn intent + mint (waiting for chain finality)...';
         resBody.textContent += '\nPolling every 15s for completion...';
         pollOperationStatus(resBox, resStatus, resBody, operationId);
       }
@@ -918,7 +956,7 @@
 
     async function pollOperationStatus(resBox, resStatus, resBody, operationId) {
       let attempts = 0;
-      const maxAttempts = 80; // 80 * 15s = 20 min
+      const maxAttempts = 80;
       const interval = 15_000;
 
       const poll = async () => {
@@ -930,7 +968,7 @@
           const data = await res.json();
 
           if (data.status === 'COMPLETED') {
-            resBody.textContent += `\n\n✅ Operation COMPLETED! (after ${attempts * 15}s)`;
+            resBody.textContent += `\n\nOperation COMPLETED! (after ${attempts * 15}s)`;
             resBody.textContent += '\n' + JSON.stringify(data, null, 2);
             resStatus.textContent = 'Operation COMPLETED';
             resStatus.className = 'res-status res-ok';
@@ -938,15 +976,14 @@
           }
 
           if (data.status === 'FAILED') {
-            resBody.textContent += `\n\n❌ Operation FAILED: ${data.errorMessage || 'unknown'}`;
+            resBody.textContent += `\n\nOperation FAILED: ${data.errorMessage || 'unknown'}`;
             resStatus.textContent = 'Operation FAILED';
             resStatus.className = 'res-status res-err';
             return;
           }
 
-          // AWAITING_SIGNATURE = worker prepared a LiFi swap, needs second user signature
           if (data.status === 'AWAITING_SIGNATURE' && data.signRequests && data.signRequests.length > 0) {
-            resBody.textContent += `\n\n🔑 Operation needs your signature for swap step!`;
+            resBody.textContent += `\n\nOperation needs your signature for swap step!`;
             resBody.textContent += '\n' + JSON.stringify(data, null, 2);
             resStatus.textContent = 'Awaiting Signature (swap)';
             resStatus.className = 'res-status';
@@ -954,14 +991,13 @@
             return;
           }
 
-          // Still processing
           const stepsInfo = (data.steps || []).map(s => `${s.type}:${s.status}`).join(', ');
           resBody.textContent += `\n  [${attempts * 15}s] ${data.status} — steps: ${stepsInfo}`;
 
           if (attempts < maxAttempts) {
             setTimeout(poll, interval);
           } else {
-            resBody.textContent += '\n\n⚠️ Polling timeout (20 min). Check status manually.';
+            resBody.textContent += '\n\nPolling timeout (20 min). Check status manually.';
           }
         } catch (err) {
           resBody.textContent += `\n  Poll error: ${err.message}`;
@@ -972,28 +1008,17 @@
       setTimeout(poll, interval);
     }
 
-    // ── Wallet: Delegate (with auto-sign) ──────────────
+    // ── Wallet: Delegate (atomic: prepare -> sign -> submit) ──────────────
     async function doPrepareDelegate() {
       const chain = document.getElementById('delegateChain').value;
       const data = await apiCall('POST', '/v1/wallet/delegate', { chain });
 
-      // Delegate returns { calls, chain, delegateSetupId } — offer to sign
-      if (data && data.calls && data.calls.length > 0) {
-        const resBox = document.getElementById('apiResponse');
-        const signBtn = document.createElement('button');
-        signBtn.className = 'btn btn-primary sign-btn';
-        signBtn.style.marginTop = '12px';
-        signBtn.style.display = 'block';
-        signBtn.textContent = `Sign Delegate TX (${chain})`;
-        signBtn.onclick = () => {
-          signBtn.remove();
-          signDelegateAndSubmit(chain, data.calls);
-        };
-        resBox.appendChild(signBtn);
+      if (data && data.userOpHash) {
+        await signDelegateAndSubmit(chain, data.userOpHash);
       }
     }
 
-    async function signDelegateAndSubmit(chain, calls) {
+    async function signDelegateAndSubmit(chain, userOpHash) {
       const resBody = document.getElementById('resBody');
       const resStatus = document.getElementById('resStatus');
 
@@ -1003,16 +1028,9 @@
         return;
       }
       const cred = JSON.parse(credJson);
-      const chainDef = CHAINS[chain];
-      const bundlerUrl = BUNDLER_RPCS[chain];
-
-      if (!chainDef || !bundlerUrl) {
-        resBody.textContent += `\n\nERROR: No config for chain "${chain}"`;
-        return;
-      }
 
       try {
-        resBody.textContent += '\n\nSigning delegate UserOp...';
+        resBody.textContent += '\n\nSigning delegate UserOp hash...';
         resStatus.textContent = 'Signing with Passkey...';
         resStatus.className = 'res-status';
 
@@ -1020,34 +1038,15 @@
           credential: { id: cred.id, publicKey: cred.publicKey },
         });
 
-        const transport = toModularTransport(bundlerUrl, CIRCLE_CLIENT_KEY);
-        const client = createPublicClient({ chain: chainDef, transport });
-        const account = await toCircleSmartAccount({ client, owner });
+        const result = await owner.sign({ hash: userOpHash });
+        const signature = typeof result === 'string' ? result : result.signature;
+        const webauthn = typeof result === 'object' ? result.webauthn : undefined;
 
-        const bundlerClient = createBundlerClient({
-          account, client, transport, paymaster: true,
-          userOperation: { estimateFeesPerGas: nativeFeeEstimator(chainDef) },
-        });
+        console.log('[delegate] signature:', signature?.slice(0, 30), 'webauthn:', !!webauthn);
+        resBody.textContent += `\nSigned: ${signature?.slice(0, 30)}...`;
+        resBody.textContent += '\n\nSubmitting signature to backend...';
 
-        const hash = await bundlerClient.sendUserOperation({
-          calls: calls.map(c => ({
-            to: c.to,
-            data: c.data,
-            ...(c.value ? { value: BigInt(c.value) } : {}),
-          })),
-        });
-
-        resBody.textContent += `\nUserOp: ${hash}`;
-        resBody.textContent += '\nWaiting for receipt...';
-
-        const receipt = await bundlerClient.waitForUserOperationReceipt({ hash });
-        const txHash = receipt.receipt.transactionHash;
-
-        resBody.textContent += `\nTX: ${txHash}`;
-        resBody.textContent += '\n\nSubmitting to backend for verification...';
-
-        // Auto-submit delegate confirmation
-        await apiCall('POST', '/v1/wallet/delegate/submit', { chain, txHash });
+        await apiCall('POST', '/v1/wallet/delegate/submit', { chain, signature, webauthn });
       } catch (err) {
         resBody.textContent += `\nERROR: ${err.message}`;
         resStatus.textContent = 'Delegate signing failed';
@@ -1056,19 +1055,72 @@
       }
     }
 
-    async function doSubmitDelegate() {
-      const chain = document.getElementById('delegateSubmitChain').value;
-      const txHash = document.getElementById('delegateTxHash').value.trim();
-      if (!txHash) { alert('Enter tx hash'); return; }
-      await apiCall('POST', '/v1/wallet/delegate/submit', { chain, txHash });
-    }
+    // ── Wallet: Enable Executor (prepare -> sign -> submit) ──────────────
+    async function doEnableExecutor() {
+      const chain = document.getElementById('enableExecutorChain').value;
+      const resBody = document.getElementById('resBody');
+      const resStatus = document.getElementById('resStatus');
 
-    async function doWithdraw() {
-      const chain = document.getElementById('withdrawChain').value;
-      const amount = document.getElementById('withdrawAmount').value.trim();
-      const body = { chain };
-      if (amount) body.amount = amount;
-      await apiCall('POST', '/v1/wallet/withdraw', body);
+      const data = await apiCall('POST', '/v1/wallet/enable-executor', { chain });
+      if (!data) return;
+
+      if (data.alreadyEnabled) {
+        resBody.textContent += '\n\nECDSA validator already enabled on this chain.';
+        return;
+      }
+
+      const credJson = localStorage.getItem('omniflow_credential');
+      if (!credJson) {
+        resBody.textContent += '\n\nERROR: No credential stored. Please re-login.';
+        return;
+      }
+      const cred = JSON.parse(credJson);
+
+      try {
+        const owner = toWebAuthnAccount({
+          credential: { id: cred.id, publicKey: cred.publicKey },
+        });
+
+        const submitBody = { chain };
+
+        // Step 1: Sign uninstall UserOp if needed
+        if (data.needsUninstall) {
+          resBody.textContent += '\n\nModule previously installed — signing uninstall UserOp...';
+          resStatus.textContent = 'Signing uninstall with Passkey...';
+
+          const uninstallResult = await owner.sign({ hash: data.uninstallUserOpHash });
+          const uninstallSig = typeof uninstallResult === 'string' ? uninstallResult : uninstallResult.signature;
+          const uninstallWa = typeof uninstallResult === 'object' ? uninstallResult.webauthn : undefined;
+
+          submitBody.uninstallRequestId = data.uninstallRequestId;
+          submitBody.uninstallSignature = uninstallSig;
+          submitBody.uninstallWebauthn = uninstallWa;
+
+          resBody.textContent += `\nUninstall signed: ${uninstallSig?.slice(0, 30)}...`;
+        }
+
+        // Step 2: Sign enable hash
+        resBody.textContent += '\n\nSigning enable hash...';
+        resStatus.textContent = 'Signing enable with Passkey...';
+
+        const enableResult = await owner.sign({ hash: data.enableHash });
+        const enableSig = typeof enableResult === 'string' ? enableResult : enableResult.signature;
+        const enableWa = typeof enableResult === 'object' ? enableResult.webauthn : undefined;
+
+        submitBody.enableSignature = enableSig;
+        submitBody.webauthn = enableWa;
+
+        resBody.textContent += `\nEnable signed: ${enableSig?.slice(0, 30)}...`;
+        resBody.textContent += '\n\nSubmitting to backend...';
+        resStatus.textContent = 'Submitting enable executor...';
+
+        await apiCall('POST', '/v1/wallet/enable-executor/submit', submitBody);
+      } catch (err) {
+        resBody.textContent += `\nERROR: ${err.message}`;
+        resStatus.textContent = 'Enable executor failed';
+        resStatus.className = 'res-status res-err';
+        console.error('Enable executor error:', err);
+      }
     }
 
     // ── Operations: Collect ─────────────────────────────
@@ -1088,17 +1140,20 @@
       if (!destinationAddress) { alert('Enter recipient address'); return; }
       if (!amount) { alert('Enter amount'); return; }
 
-      const body = { destinationAddress, destinationChain, amount };
+      const recipient = { address: destinationAddress, chain: destinationChain, amount };
 
-      // Optional LiFi swap output token
       const outputToken = document.getElementById('sendOutputToken').value.trim();
       if (outputToken) {
-        body.outputToken = outputToken;
+        recipient.outputToken = outputToken;
         const decimals = document.getElementById('sendOutputDecimals').value.trim();
-        if (decimals) body.outputTokenDecimals = parseInt(decimals, 10);
+        if (decimals) recipient.outputTokenDecimals = parseInt(decimals, 10);
         const slippage = document.getElementById('sendSlippage').value.trim();
-        if (slippage) body.slippage = parseFloat(slippage);
+        if (slippage) recipient.slippage = parseFloat(slippage);
       }
+
+      const body = { recipients: [recipient] };
+      const sourceChain = document.getElementById('sendSourceChain').value;
+      if (sourceChain) body.sourceChain = sourceChain;
 
       await apiCall('POST', '/v1/operations/send', body);
     }
@@ -1110,17 +1165,17 @@
       const amount = document.getElementById('bridgeAmount').value.trim();
       if (!amount) { alert('Enter amount'); return; }
 
-      await apiCall('POST', '/v1/operations/bridge', {
+      // Bridge = send to self (no address), uses unified send endpoint
+      await apiCall('POST', '/v1/operations/send', {
         sourceChain,
-        destinationChain,
-        amount,
+        recipients: [{ chain: destinationChain, amount }],
       });
     }
 
     // ── Operations: Batch Send ─────────────────────────
-    const BATCH_CHAIN_OPTIONS = ['polygon', 'avalanche', 'base', 'optimism', 'arbitrum'];
+    const CHAIN_OPTIONS = ['polygon', 'avalanche', 'base', 'optimism', 'arbitrum'];
 
-    function addRecipientRow(addr = '', chain = '', amount = '') {
+    function addBatchRow(addr = '', chain = '', amount = '') {
       const container = document.getElementById('batchRecipientRows');
       const wrapper = document.createElement('div');
       wrapper.style.marginBottom = '6px';
@@ -1128,7 +1183,7 @@
         <div class="row" style="margin-bottom:2px">
           <input type="text" placeholder="0xAddress..." value="${addr}" style="flex:3;margin-bottom:0" data-field="address" />
           <select style="flex:1;margin-bottom:0" data-field="chain">
-            ${BATCH_CHAIN_OPTIONS.map(c => `<option value="${c}"${c === chain ? ' selected' : ''}>${c}</option>`).join('')}
+            ${CHAIN_OPTIONS.map(c => `<option value="${c}"${c === chain ? ' selected' : ''}>${c}</option>`).join('')}
           </select>
           <input type="text" placeholder="50.00" value="${amount}" style="flex:1;max-width:90px;margin-bottom:0" data-field="amount" />
           <button class="btn btn-sm btn-secondary" style="flex:none;padding:4px 8px" onclick="this.parentElement.parentElement.remove()">&times;</button>
@@ -1141,8 +1196,7 @@
       container.appendChild(wrapper);
     }
 
-    // Init with one empty row
-    document.addEventListener('DOMContentLoaded', () => addRecipientRow());
+    document.addEventListener('DOMContentLoaded', () => addBatchRow());
 
     async function doBatchSend() {
       const wrappers = document.querySelectorAll('#batchRecipientRows > div');
@@ -1167,7 +1221,7 @@
       const body = { recipients };
       if (sourceChain) body.sourceChain = sourceChain;
 
-      await apiCall('POST', '/v1/operations/batch-send', body);
+      await apiCall('POST', '/v1/operations/send', body);
     }
 
     // ── Operations: Swap & Deposit ─────────────────────
@@ -1188,7 +1242,7 @@
       await apiCall('POST', '/v1/operations/swap-deposit', body);
     }
 
-    // ── Operations: Get by ID / Submit ──────────────────
+    // ── Operations: Get by ID ───────────────────────────
     async function doGetOp() {
       const id = document.getElementById('opId').value.trim();
       if (!id) { alert('Enter operation ID'); return; }
@@ -1212,6 +1266,32 @@
       await apiCall('POST', `/v1/operations/${id}/submit`, { signatures });
     }
 
+    // ── Payments ────────────────────────────────────────
+    async function doCreatePayment() {
+      const amount = document.getElementById('payAmount').value.trim();
+      if (!amount) { alert('Enter amount'); return; }
+      const body = {
+        amount,
+        token: document.getElementById('payToken').value,
+        chain: document.getElementById('payChain').value,
+      };
+      const desc = document.getElementById('payDesc').value.trim();
+      if (desc) body.description = desc;
+      await apiCall('POST', '/v1/payments', body);
+    }
+
+    async function doGetPayment() {
+      const id = document.getElementById('payId').value.trim();
+      if (!id) { alert('Enter payment ID'); return; }
+      await apiCall('GET', `/v1/payments/${id}`);
+    }
+
+    async function doCancelPayment() {
+      const id = document.getElementById('payId').value.trim();
+      if (!id) { alert('Enter payment ID'); return; }
+      await apiCall('POST', `/v1/payments/${id}/cancel`);
+    }
+
     // ── Webhooks ────────────────────────────────────────
     async function doCreateWebhook() {
       const url = document.getElementById('webhookUrl').value.trim();
@@ -1230,18 +1310,20 @@
     window.doLogin = doLogin;
     window.apiCall = apiCall;
     window.doPrepareDelegate = doPrepareDelegate;
-    window.doSubmitDelegate = doSubmitDelegate;
-    window.doWithdraw = doWithdraw;
+    window.doEnableExecutor = doEnableExecutor;
     window.doCollect = doCollect;
     window.doSend = doSend;
     window.doBridge = doBridge;
+    window.doBatchSend = doBatchSend;
+    window.addBatchRow = addBatchRow;
+    window.doSwapDeposit = doSwapDeposit;
     window.doGetOp = doGetOp;
     window.doSubmitOp = doSubmitOp;
-    window.doBatchSend = doBatchSend;
-    window.doSwapDeposit = doSwapDeposit;
-    window.addRecipientRow = addRecipientRow;
     window.handleSignRequests = handleSignRequests;
     window.signDelegateAndSubmit = signDelegateAndSubmit;
+    window.doCreatePayment = doCreatePayment;
+    window.doGetPayment = doGetPayment;
+    window.doCancelPayment = doCancelPayment;
     window.doCreateWebhook = doCreateWebhook;
     window.doDeleteWebhook = doDeleteWebhook;
   </script>

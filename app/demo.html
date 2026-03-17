@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniFlow — Product Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   OmniFlow Demo — Styles
+   ============================================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#1894E8;--accent:#9F72FF;--mint:#62E2A4;
+  --bg:#FFFFFF;--soft:#F8F9FC;--border:#E5E7EB;
+  --text:#1c132c;--muted:#6b7280;
+  --success:#10B981;--warning:#F59E0B;--error:#EF4444;
+  --gradient:linear-gradient(135deg,#1894E8,#9F72FF);
+  --sidebar-w:260px;--radius:16px;--radius-sm:10px;
+}
+body{font-family:'Inter',sans-serif;color:var(--text);background:var(--bg);overflow:hidden;height:100vh;width:100vw}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* Progress bar */
+.demo-progress{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--soft);border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:8px 24px;height:40px}
+.demo-progress__track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.demo-progress__bar{height:100%;background:var(--gradient);border-radius:2px;transition:width 0.3s ease}
+.demo-progress__label{font-size:0.75rem;font-weight:600;color:var(--muted);white-space:nowrap;min-width:160px}
+.demo-controls{position:fixed;bottom:48px;right:24px;z-index:9999;font-size:0.7rem;color:var(--muted);background:rgba(255,255,255,0.9);padding:4px 10px;border-radius:8px;border:1px solid var(--border)}
+
+/* Scene container */
+#scene-container{width:100vw;height:calc(100vh - 40px);position:relative;overflow:hidden}
+.scene{position:absolute;inset:0;opacity:0;transition:opacity 0.4s ease;display:flex;align-items:center;justify-content:center}
+.scene.active{opacity:1}
+
+/* ─── Shared Components ─── */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 1px 2px rgba(0,0,0,0.05);padding:24px}
+.card--hero{background:linear-gradient(135deg,#F1EBFF 0%,#FFFFFF 50%,#E8F4FD 100%);border:1px solid rgba(159,114,255,0.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);font-size:0.875rem;font-weight:600;border:none;cursor:pointer;transition:all 0.15s ease;white-space:nowrap;font-family:inherit}
+.btn--primary{background:var(--gradient);color:#fff;box-shadow:0 2px 8px rgba(24,148,232,0.25)}
+.btn--primary:hover{box-shadow:0 4px 16px rgba(24,148,232,0.35);transform:translateY(-1px)}
+.btn--secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+.btn--success{background:var(--success);color:#fff}
+.btn--sm{padding:6px 14px;font-size:0.8125rem;border-radius:8px}
+.btn--lg{padding:14px 28px;font-size:1rem;border-radius:12px}
+.btn--full{width:100%}
+.btn--pulse{animation:btnPulse 1s ease}
+@keyframes btnPulse{0%{transform:scale(1)}50%{transform:scale(0.95);opacity:0.8}100%{transform:scale(1)}}
+.input{padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.875rem;font-family:inherit;width:100%;transition:border 0.15s,box-shadow 0.15s;outline:none;background:var(--bg)}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,148,232,0.1)}
+.input--mono{font-family:'JetBrains Mono',monospace;font-size:0.8125rem}
+.input-group{display:flex;flex-direction:column;gap:6px}
+.input-label{font-size:0.8125rem;font-weight:600;color:var(--text)}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:0.6875rem;font-weight:600;white-space:nowrap}
+.badge--active,.badge--completed{background:rgba(16,185,129,0.1);color:var(--success)}
+.badge--processing{background:rgba(24,148,232,0.1);color:var(--primary)}
+.badge--pending{background:rgba(245,158,11,0.1);color:var(--warning)}
+.gradient-text{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.text-muted{color:var(--muted)}
+
+/* ─── Onboarding (Scene 1) ─── */
+.onboarding-card{background:#fff;border-radius:24px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:48px;max-width:480px;width:100%;text-align:center}
+.logo{display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.5rem;font-weight:800;margin-bottom:4px}
+.logo__dot{width:28px;height:28px;border-radius:8px;background:var(--gradient)}
+.tagline{color:var(--muted);font-size:0.9375rem;margin-bottom:24px}
+.chains-row{display:flex;justify-content:center;gap:12px;margin-bottom:24px}
+.features-row{display:flex;justify-content:center;gap:16px;margin-bottom:32px;flex-wrap:wrap}
+.feature{display:flex;align-items:center;gap:6px;font-size:0.8125rem;font-weight:500}
+.feature svg{color:var(--success)}
+.status-box{font-size:0.8125rem;padding:10px 14px;border-radius:var(--radius-sm);margin-top:12px;transition:all 0.3s ease;opacity:0;max-height:0;overflow:hidden}
+.status-box.show{opacity:1;max-height:100px}
+.status-box.info{background:rgba(24,148,232,0.08);color:var(--primary)}
+.status-box.success{background:rgba(16,185,129,0.08);color:var(--success)}
+.wallet-display{margin-top:12px;padding:16px;border-radius:12px;background:var(--soft);opacity:0;max-height:0;overflow:hidden;transition:all 0.4s ease}
+.wallet-display.show{opacity:1;max-height:120px}
+.wallet-label{font-size:0.75rem;font-weight:600;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.wallet-address{font-family:'JetBrains Mono',monospace;font-size:0.8125rem;word-break:break-all}
+
+/* ─── App Layout (Scenes 2-3, 6-7) ─── */
+.app-layout{display:flex;width:100%;height:100%;overflow:hidden}
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--soft);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100%}
+.sidebar__logo{padding:20px 24px;display:flex;align-items:center;gap:10px;font-size:1.25rem;font-weight:800;border-bottom:1px solid var(--border)}
+.sidebar__logo .logo__dot{width:24px;height:24px;border-radius:6px}
+.sidebar__nav{flex:1;padding:12px;display:flex;flex-direction:column;gap:2px}
+.sidebar__link{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-sm);color:var(--muted);font-size:0.875rem;font-weight:500;transition:all 0.15s ease;cursor:pointer;text-decoration:none}
+.sidebar__link:hover{background:rgba(0,0,0,0.03);color:var(--text)}
+.sidebar__link.active{background:#fff;color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.sidebar__link svg{width:20px;height:20px;opacity:0.7;flex-shrink:0}
+.sidebar__link.active svg{opacity:1}
+.sidebar__badge{margin-left:auto;padding:2px 8px;border-radius:10px;font-size:0.6875rem;font-weight:600;background:var(--gradient);color:#fff}
+.sidebar__footer{padding:16px 24px;border-top:1px solid var(--border)}
+.sidebar__user{display:flex;align-items:center;gap:12px}
+.sidebar__avatar{width:32px;height:32px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.875rem;font-weight:700;flex-shrink:0}
+.sidebar__user-info{overflow:hidden}
+.sidebar__user-name{font-size:0.875rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar__user-addr{font-family:'JetBrains Mono',monospace;font-size:0.6875rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main-content{flex:1;display:flex;flex-direction:column;overflow-y:auto}
+.header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
+.header__title{font-size:1.125rem;font-weight:700}
+.header__balance{font-family:'JetBrains Mono',monospace;font-size:0.875rem;font-weight:600;color:var(--success)}
+.content{padding:32px;display:flex;flex-direction:column;gap:24px}
+
+/* ─── Dashboard ─── */
+.balance-card{padding:32px}
+.balance-amount{font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:4px}
+.balance-breakdown{display:flex;gap:24px;margin-top:12px;font-size:0.8125rem;color:var(--muted)}
+.balance-breakdown span{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text)}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.quick-action{display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px;text-decoration:none;color:var(--text);cursor:pointer;border-radius:var(--radius);transition:all 0.15s}
+.quick-action:hover{background:var(--soft)}
+.quick-action__icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.quick-action__icon--receive{background:rgba(16,185,129,0.1);color:var(--success)}
+.quick-action__icon--send{background:rgba(24,148,232,0.1);color:var(--primary)}
+.quick-action__icon--batch{background:rgba(159,114,255,0.1);color:var(--accent)}
+.quick-action__label{font-size:0.875rem;font-weight:600}
+.table{width:100%;border-collapse:collapse}
+.table th{padding:10px 16px;font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);border-bottom:1px solid var(--border);text-align:left}
+.table td{padding:12px 16px;font-size:0.875rem;border-bottom:1px solid rgba(229,231,235,0.5);vertical-align:middle}
+.table tr:hover{background:var(--soft)}
+
+/* ─── Payment Links (Scene 3) ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;transition:opacity 0.3s}
+.modal-overlay.show{opacity:1}
+.modal{background:#fff;border-radius:20px;padding:32px;max-width:420px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,0.15);transform:scale(0.95);transition:transform 0.3s}
+.modal-overlay.show .modal{transform:scale(1)}
+.modal__title{font-size:1.25rem;font-weight:700;margin-bottom:20px}
+.link-card{background:var(--soft);border-radius:12px;padding:20px;margin-top:16px}
+.link-url{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--primary);word-break:break-all;margin:8px 0}
+.qr-placeholder{width:120px;height:120px;margin:16px auto;background:#fff;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* ─── Checkout (Scenes 4-5) ─── */
+.checkout{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:480px;padding:24px}
+.checkout__header{text-align:center;margin-bottom:32px}
+.checkout__amount{font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:800;margin:12px 0}
+.checkout__desc{color:var(--muted);font-size:0.9375rem}
+.checkout__card{width:100%}
+.checkout__to{font-size:0.875rem;color:var(--muted);margin-bottom:8px}
+.token-option{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.15s}
+.token-option:hover,.token-option.selected{border-color:var(--primary);background:rgba(24,148,232,0.04)}
+.token-option__info{flex:1}
+.token-option__symbol{font-weight:600;font-size:0.9375rem}
+.token-option__chain{font-size:0.75rem;color:var(--muted)}
+.token-option__balance{font-family:'JetBrains Mono',monospace;font-size:0.8125rem;font-weight:600}
+.route-info{background:var(--soft);border-radius:12px;padding:16px;margin:16px 0;font-size:0.8125rem;display:flex;align-items:center;gap:8px}
+.route-info svg{flex-shrink:0}
+.success-state{text-align:center;padding:32px 0}
+.success-state__icon{width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.success-state__title{font-size:1.25rem;font-weight:700;margin-bottom:4px}
+.success-state__subtitle{color:var(--muted);font-size:0.875rem}
+.success-state__hash{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--primary);margin-top:12px}
+
+/* ─── Spinner ─── */
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block}
+.spinner--white{border-color:rgba(255,255,255,0.3);border-top-color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Send form ─── */
+.send-form{display:flex;flex-direction:column;gap:16px;max-width:500px}
+.chain-select{display:flex;gap:8px;flex-wrap:wrap}
+.chain-chip{padding:6px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s}
+.chain-chip.selected{border-color:var(--primary);background:rgba(24,148,232,0.06);color:var(--primary)}
+
+/* ─── Finale ─── */
+.finale{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center}
+.finale__logo{font-size:2rem;font-weight:800;display:flex;align-items:center;gap:12px}
+.finale__logo .logo__dot{width:36px;height:36px;border-radius:10px}
+.finale__tagline{font-size:1.25rem;color:var(--muted);font-weight:500}
+.finale__features{display:flex;gap:24px;margin-top:8px}
+.finale__feature{font-size:0.875rem;font-weight:600;color:var(--primary)}
+
+/* ─── Narration bar ─── */
+.narration{position:fixed;bottom:48px;left:0;right:0;z-index:9998;display:flex;justify-content:center;pointer-events:none;padding:0 24px}
+.narration__inner{background:rgba(28,19,44,0.88);color:#fff;padding:10px 24px;border-radius:12px;font-size:0.875rem;font-weight:500;line-height:1.5;max-width:720px;text-align:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transform:translateY(6px);transition:opacity 0.35s ease, transform 0.35s ease;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+.narration__inner.visible{opacity:1;transform:translateY(0)}
+
+/* ─── Animations ─── */
+.fade-in{animation:fadeIn 0.4s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in-delay-1{animation-delay:0.1s;opacity:0}
+.fade-in-delay-2{animation-delay:0.2s;opacity:0}
+.fade-in-delay-3{animation-delay:0.3s;opacity:0}
+.fade-in-delay-4{animation-delay:0.4s;opacity:0}
+.fade-in-delay-5{animation-delay:0.5s;opacity:0}
+</style>
+</head>
+<body>
+
+<div class="demo-progress">
+  <div class="demo-progress__track"><div class="demo-progress__bar" id="progress-bar" style="width:0%"></div></div>
+  <div class="demo-progress__label" id="progress-label">1/7 — Registration</div>
+</div>
+<div id="scene-container"></div>
+<div class="narration"><div class="narration__inner" id="narration"></div></div>
+<div class="demo-controls">Space: pause &nbsp;|&nbsp; ←→: navigate</div>
+
+<script>
+// ============================================================================
+// OmniFlow Demo — Animation Engine
+// ============================================================================
+
+const WALLET_ADDR = '0x7a3F8bC2e5D41fA9d03E6b7c12B4a0d8e5f6b91E';
+const WALLET_SHORT = '0x7a3F...b91E';
+const PAYER_ADDR = '0xB4d2a1C7e8F5d6A3b9E0c4D1f2A8B5e7C6d03F71';
+const PAYER_SHORT = '0xB4d2...3F71';
+const RECIPIENT_ADDR = '0xC5e89D3b6A1f4E2c7B0d5F8a3C6e1D4b7f2a9A42';
+const RECIPIENT_SHORT = '0xC5e8...9A42';
+const PAY_CODE = 'pay_a1b2c3d4e5f6';
+const PAY_URL = 'omniflow.app/pay/' + PAY_CODE;
+
+const SCENE_LABELS = [
+  'Registration', 'Dashboard', 'Create Invoice',
+  'Payer Checkout', 'Payment', 'Balance Update & Bridge', 'Transfer & Finale'
+];
+
+let currentScene = -1;
+let paused = false;
+let sceneAbort = null;
+
+// ─── Helpers ───
+const $ = s => document.querySelector(s);
+const $c = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html) e.innerHTML = html; return e; };
+const delay = ms => new Promise(r => {
+  const id = setTimeout(r, ms);
+  if (sceneAbort) sceneAbort.cleanups.push(() => clearTimeout(id));
+});
+const waitWhilePaused = async () => { while (paused) await new Promise(r => setTimeout(r, 100)); };
+
+const narrationEl = document.getElementById('narration');
+async function narrate(text) {
+  narrationEl.classList.remove('visible');
+  await new Promise(r => setTimeout(r, 250));
+  narrationEl.textContent = text;
+  narrationEl.classList.add('visible');
+}
+function hideNarration() { narrationEl.classList.remove('visible'); }
+
+async function typeText(el, text, speed = 60) {
+  el.value = '';
+  for (const ch of text) {
+    await waitWhilePaused();
+    el.value += ch;
+    el.dispatchEvent(new Event('input'));
+    await delay(speed);
+  }
+}
+
+function animateCounter(el, from, to, duration = 1500) {
+  const start = performance.now();
+  const fmt = v => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return new Promise(resolve => {
+    function tick(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = fmt(from + (to - from) * ease);
+      if (t < 1) requestAnimationFrame(tick); else resolve();
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+function chainSVG(chain, size = 32) {
+  const svgs = {
+    ethereum: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,2 26,16 16,22 6,16" fill="#627eea" opacity="0.9"/><polygon points="16,22 26,16 16,30 6,16" fill="#627eea" opacity="0.6"/></svg>`,
+    base: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="12" fill="#0052ff"/><path d="M16 8 L16 24 M10 16 L22 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`,
+    arbitrum: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#28a0f0" opacity="0.85"/><path d="M12,20 L16,10 L20,20" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    polygon: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#1894E8"/><path d="M10 20 Q16 6 22 20" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/><circle cx="16" cy="12" r="2" fill="#fff"/></svg>`,
+    avalanche: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#e84142"/><path d="M10 22 L16 8 L22 22" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="18" x2="20" y2="18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
+    optimism: `<svg viewBox="0 0 32 32" width="${size}" height="${size}" fill="none"><circle cx="16" cy="16" r="13" fill="#ff0420"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">O</text></svg>`,
+  };
+  return svgs[chain] || svgs.ethereum;
+}
+
+const checkSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const arrowSVG = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function sidebarIcon(name) {
+  const icons = {
+    dashboard: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>`,
+    deposit: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3v10M6 9l4 4 4-4"/><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2"/></svg>`,
+    send: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10h12M12 6l4 4-4 4"/></svg>`,
+    batch: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h12M4 10h12M4 14h8"/></svg>`,
+    links: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12l4-4"/><path d="M6 10a3 3 0 010-4.24l2-2a3 3 0 014.24 4.24"/><path d="M14 10a3 3 0 010 4.24l-2 2a3 3 0 01-4.24-4.24"/></svg>`,
+    history: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>`,
+    settings: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 3v1.5M10 15.5V17M17 10h-1.5M4.5 10H3M14.95 5.05l-1.06 1.06M6.11 13.89l-1.06 1.06M14.95 14.95l-1.06-1.06M6.11 6.11L5.05 5.05"/></svg>`,
+  };
+  return icons[name] || '';
+}
+
+function buildSidebar(activeItem) {
+  const items = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'deposit', label: 'Receive' },
+    { id: 'send', label: 'Send' },
+    { id: 'batch', label: 'Batch Send', badge: 'STAR' },
+    { id: 'links', label: 'Payment Links' },
+    { id: 'history', label: 'History' },
+    { id: 'settings', label: 'Settings' },
+  ];
+  return `
+    <aside class="sidebar">
+      <div class="sidebar__logo"><div class="logo__dot"></div>OmniFlow</div>
+      <nav class="sidebar__nav">
+        ${items.map(i => `
+          <a class="sidebar__link ${i.id === activeItem ? 'active' : ''}" data-id="${i.id}">
+            ${sidebarIcon(i.id)}
+            <span>${i.label}</span>
+            ${i.badge ? `<span class="sidebar__badge">${i.badge}</span>` : ''}
+          </a>
+        `).join('')}
+      </nav>
+      <div class="sidebar__footer">
+        <div class="sidebar__user">
+          <div class="sidebar__avatar">A</div>
+          <div class="sidebar__user-info">
+            <div class="sidebar__user-name">alice</div>
+            <div class="sidebar__user-addr">${WALLET_SHORT}</div>
+          </div>
+        </div>
+      </div>
+    </aside>`;
+}
+
+function drawFakeQR(canvas) {
+  const ctx = canvas.getContext('2d');
+  const s = 5;
+  canvas.width = 100; canvas.height = 100;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 100, 100);
+  ctx.fillStyle = '#000';
+  // Corners
+  for (const [ox, oy] of [[0,0],[14,0],[0,14]]) {
+    for (let y = oy; y < oy+7; y++) for (let x = ox; x < ox+7; x++) {
+      if (y===oy||y===oy+6||x===ox||x===ox+6||(x>=ox+2&&x<=ox+4&&y>=oy+2&&y<=oy+4))
+        ctx.fillRect(x*s, y*s, s, s);
+    }
+  }
+  // Random fill
+  const rng = (seed) => { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+  const rand = rng(42);
+  for (let y = 0; y < 20; y++) for (let x = 0; x < 20; x++) {
+    if ((x<8&&y<8)||(x>=13&&y<8)||(x<8&&y>=13)) continue;
+    if (rand() > 0.55) ctx.fillRect(x*s, y*s, s, s);
+  }
+}
+
+// ─── Progress ───
+function updateProgress() {
+  const pct = ((currentScene + 1) / SCENE_LABELS.length) * 100;
+  $('#progress-bar').style.width = pct + '%';
+  $('#progress-label').textContent = `${currentScene + 1}/${SCENE_LABELS.length} — ${SCENE_LABELS[currentScene]}`;
+}
+
+// ─── Scene Runner ───
+const container = $('#scene-container');
+
+async function runScene(index) {
+  if (index < 0 || index >= scenes.length) return;
+  currentScene = index;
+  updateProgress();
+
+  sceneAbort = { cleanups: [] };
+
+  // Fade out old
+  const old = container.querySelector('.scene.active');
+  if (old) { old.classList.remove('active'); await delay(400); }
+
+  container.innerHTML = '';
+  const wrapper = $c('div', 'scene');
+  container.appendChild(wrapper);
+
+  scenes[index].setup(wrapper);
+  await delay(50);
+  wrapper.classList.add('active');
+  await delay(400);
+
+  try {
+    await scenes[index].animate(wrapper);
+  } catch (e) {
+    if (e === 'abort') return;
+    throw e;
+  }
+}
+
+async function nextScene() {
+  if (currentScene + 1 < scenes.length) {
+    sceneAbort = null;
+    await runScene(currentScene + 1);
+  }
+}
+
+// ─── Keyboard Controls ───
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); paused = !paused; }
+  if (e.code === 'ArrowRight') { e.preventDefault(); sceneAbort = null; runScene(Math.min(currentScene + 1, scenes.length - 1)); }
+  if (e.code === 'ArrowLeft') { e.preventDefault(); sceneAbort = null; runScene(Math.max(currentScene - 1, 0)); }
+});
+
+// ============================================================================
+// SCENES
+// ============================================================================
+const scenes = [];
+
+// ─── SCENE 1: Registration ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="onboarding-card">
+        <div class="logo"><div class="logo__dot"></div>OmniFlow</div>
+        <div class="tagline">One Balance. Any Chain.</div>
+        <div class="chains-row">
+          ${['base','arbitrum','polygon','avalanche','ethereum','optimism'].map(c => chainSVG(c, 36)).join('')}
+        </div>
+        <div class="features-row">
+          <div class="feature">${checkSVG} 0% gas fees</div>
+          <div class="feature">${checkSVG} 6+ chains</div>
+          <div class="feature">${checkSVG} Batch payouts</div>
+        </div>
+        <div class="input-group" style="margin-bottom:12px">
+          <input class="input" id="reg-username" placeholder="Choose a username" autocomplete="off">
+        </div>
+        <button class="btn btn--primary btn--full btn--lg" id="reg-btn">Register with Passkey</button>
+        <div class="status-box" id="reg-status"></div>
+        <div class="wallet-display" id="reg-wallet">
+          <div class="wallet-label">Your Wallet</div>
+          <div class="wallet-address mono">${WALLET_ADDR}</div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Alice creates a new OmniFlow account — no seed phrases, no extensions');
+    await delay(800);
+    await typeText(el.querySelector('#reg-username'), 'alice', 100);
+    await delay(600);
+
+    const btn = el.querySelector('#reg-btn');
+    btn.classList.add('btn--pulse');
+    await delay(400);
+
+    await narrate('Registering with Passkey — biometric authentication, no passwords needed');
+    btn.innerHTML = '<span class="spinner spinner--white"></span> Registering...';
+    const status = el.querySelector('#reg-status');
+    status.className = 'status-box info show';
+    status.textContent = 'Authenticating with Passkey...';
+    await delay(1500);
+
+    status.className = 'status-box success show';
+    status.textContent = 'Wallet created successfully!';
+    btn.innerHTML = '✓ Registered';
+    btn.classList.add('btn--success');
+    btn.style.background = 'var(--success)';
+
+    await delay(400);
+    await narrate('Smart wallet deployed — same address on every chain, zero gas fees');
+    el.querySelector('#reg-wallet').classList.add('show');
+    await delay(2000);
+    await nextScene();
+  }
+});
+
+// ─── SCENE 2: Dashboard ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="app-layout">
+        ${buildSidebar('dashboard')}
+        <div class="main-content">
+          <div class="header">
+            <div class="header__title">Dashboard</div>
+            <div class="header__balance" id="header-bal">$0.00</div>
+          </div>
+          <div class="content">
+            <div class="card card--hero balance-card fade-in">
+              <div style="font-size:0.8125rem;font-weight:600;color:var(--muted);margin-bottom:4px">Total Balance</div>
+              <div class="balance-amount" id="balance-amt">$0.00</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted);background:rgba(0,0,0,0.04);display:inline-block;padding:4px 10px;border-radius:6px;margin-top:4px">${WALLET_SHORT}</div>
+              <div class="balance-breakdown" id="balance-breakdown" style="opacity:0">
+                <div>Gateway: <span>$1,000.00</span></div>
+                <div>On-chain: <span>$250.00</span></div>
+              </div>
+            </div>
+            <div class="card fade-in fade-in-delay-1">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:16px">Quick Actions</div>
+              <div class="quick-actions">
+                <div class="quick-action"><div class="quick-action__icon quick-action__icon--receive"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v14M7 12l5 5 5-5"/><path d="M3 17v2a1 1 0 001 1h16a1 1 0 001-1v-2"/></svg></div><div class="quick-action__label">Receive</div></div>
+                <div class="quick-action"><div class="quick-action__icon quick-action__icon--send"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M14 7l5 5-5 5"/></svg></div><div class="quick-action__label">Send</div></div>
+                <div class="quick-action"><div class="quick-action__icon quick-action__icon--batch"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><div class="quick-action__label">Batch Send</div></div>
+              </div>
+            </div>
+            <div class="card fade-in fade-in-delay-2">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:16px">Recent Operations</div>
+              <table class="table">
+                <thead><tr><th>Type</th><th>Summary</th><th>Amount</th><th>Status</th><th>Time</th></tr></thead>
+                <tbody id="ops-table">
+                  <tr><td><span class="badge badge--processing">Collect</span></td><td>Base, Arbitrum → Arc</td><td class="mono" style="font-weight:600;color:var(--success)">+$800.00</td><td><span class="badge badge--completed">Completed</span></td><td class="text-muted">2 hr ago</td></tr>
+                  <tr><td><span class="badge badge--processing">Send</span></td><td>→ 0xD4f2...8c1A on Base</td><td class="mono" style="font-weight:600">−$150.00</td><td><span class="badge badge--completed">Completed</span></td><td class="text-muted">5 hr ago</td></tr>
+                  <tr><td><span class="badge badge--processing">Batch Send</span></td><td>3 recipients</td><td class="mono" style="font-weight:600">−$400.00</td><td><span class="badge badge--completed">Completed</span></td><td class="text-muted">1 day ago</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Unified dashboard — one balance across all chains');
+    await delay(600);
+    const amt = el.querySelector('#balance-amt');
+    const headerBal = el.querySelector('#header-bal');
+    await animateCounter(amt, 0, 1250, 1800);
+    headerBal.textContent = '$1,250.00';
+    await delay(300);
+    await narrate('Balance split: Gateway (cross-chain pool) + On-chain assets');
+    el.querySelector('#balance-breakdown').style.opacity = '1';
+    await delay(3000);
+    await nextScene();
+  }
+});
+
+// ─── SCENE 3: Create Payment Link ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="app-layout">
+        ${buildSidebar('links')}
+        <div class="main-content">
+          <div class="header">
+            <div class="header__title">Payment Links</div>
+            <div class="header__balance">$1,250.00</div>
+          </div>
+          <div class="content">
+            <div class="card fade-in" style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:1rem;font-weight:700">Payment Links</div><div class="text-muted" style="font-size:0.8125rem;margin-top:2px">Create invoices and receive payments from anyone</div></div>
+              <button class="btn btn--primary" id="create-link-btn">+ Create Payment Link</button>
+            </div>
+            <div class="card fade-in fade-in-delay-1" id="empty-state" style="text-align:center;padding:48px;color:var(--muted)">
+              <div style="font-size:2rem;margin-bottom:8px">📋</div>
+              <div style="font-weight:600">No payment links yet</div>
+              <div style="font-size:0.8125rem;margin-top:4px">Create your first payment link to start receiving payments</div>
+            </div>
+            <div class="card fade-in" id="link-result" style="display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <div><div style="font-weight:700">Design services — January 2026</div><div class="mono" style="font-size:1.25rem;font-weight:700;margin-top:4px">250.00 <span class="text-muted" style="font-size:0.75rem;font-weight:500">USDC</span></div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.75rem;color:var(--muted)">${chainSVG('polygon',14)} Receive on Arc (Polygon)</div></div>
+                <span class="badge badge--active" id="link-status">Active</span>
+              </div>
+              <div class="link-card">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--muted);margin-bottom:4px">Payment Link</div>
+                <div class="link-url">${PAY_URL}</div>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button class="btn btn--primary btn--sm" id="copy-link-btn">Copy Link</button>
+                  <button class="btn btn--secondary btn--sm">Share</button>
+                </div>
+              </div>
+              <div class="qr-placeholder" style="margin-top:16px"><canvas id="qr-canvas"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-overlay" id="create-modal">
+        <div class="modal">
+          <div class="modal__title">Create Payment Link</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="input-group"><label class="input-label">Amount</label><input class="input input--mono" id="link-amount" placeholder="0.00"></div>
+            <div class="input-group"><label class="input-label">Receive Token</label>
+              <div class="chain-select" id="link-token-select">
+                <div class="chain-chip selected" data-token="USDC">💲 USDC</div>
+                <div class="chain-chip" data-token="ETH">⟠ ETH</div>
+                <div class="chain-chip" data-token="WBTC">₿ WBTC</div>
+              </div>
+            </div>
+            <div class="input-group"><label class="input-label">Receive on Chain</label>
+              <div class="chain-select" id="link-chain-select">
+                <div class="chain-chip selected">${chainSVG('polygon',16)} Arc</div>
+                <div class="chain-chip">${chainSVG('base',16)} Base</div>
+                <div class="chain-chip">${chainSVG('arbitrum',16)} Arbitrum</div>
+                <div class="chain-chip">${chainSVG('avalanche',16)} Avalanche</div>
+              </div>
+            </div>
+            <div class="input-group"><label class="input-label">Description</label><input class="input" id="link-desc" placeholder="What is this payment for?"></div>
+            <button class="btn btn--primary btn--full" id="modal-create-btn">Create Payment Link</button>
+          </div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Alice creates a Payment Link — like a Stripe invoice, but for crypto');
+    await delay(1200);
+    // Open modal
+    el.querySelector('#create-modal').classList.add('show');
+    await delay(600);
+    await narrate('Setting amount, receive token, and destination chain');
+    await typeText(el.querySelector('#link-amount'), '250.00', 80);
+    await delay(400);
+    // Token is already USDC (selected), chain is already Arc (selected) — keep defaults
+    // Just highlight them briefly
+    const tokenChips = el.querySelectorAll('#link-token-select .chain-chip');
+    const chainChips = el.querySelectorAll('#link-chain-select .chain-chip');
+    tokenChips[0].style.transition = 'all 0.3s';
+    tokenChips[0].style.boxShadow = '0 0 0 2px var(--primary)';
+    await delay(300);
+    tokenChips[0].style.boxShadow = '';
+    chainChips[0].style.transition = 'all 0.3s';
+    chainChips[0].style.boxShadow = '0 0 0 2px var(--primary)';
+    await delay(300);
+    chainChips[0].style.boxShadow = '';
+    await delay(200);
+    await typeText(el.querySelector('#link-desc'), 'Design services — January 2026', 40);
+    await delay(600);
+
+    const createBtn = el.querySelector('#modal-create-btn');
+    createBtn.classList.add('btn--pulse');
+    await delay(300);
+    createBtn.innerHTML = '<span class="spinner spinner--white"></span>';
+    await delay(800);
+
+    // Close modal
+    el.querySelector('#create-modal').classList.remove('show');
+    await delay(400);
+
+    await narrate('Payment link created — unique URL and QR code, ready to share');
+    // Show result
+    el.querySelector('#empty-state').style.display = 'none';
+    const result = el.querySelector('#link-result');
+    result.style.display = 'block';
+    result.classList.add('fade-in');
+
+    await delay(400);
+    drawFakeQR(el.querySelector('#qr-canvas'));
+
+    await delay(800);
+    const copyBtn = el.querySelector('#copy-link-btn');
+    copyBtn.classList.add('btn--pulse');
+    await delay(300);
+    await narrate('Link copied — Alice sends it to the payer via messenger, email, or QR');
+    copyBtn.textContent = '✓ Copied!';
+    copyBtn.classList.add('btn--success');
+    copyBtn.style.background = 'var(--success)';
+    copyBtn.style.color = '#fff';
+    copyBtn.style.borderColor = 'var(--success)';
+
+    await delay(2000);
+    await nextScene();
+  }
+});
+
+// ─── SCENE 4: Payer Opens Checkout ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="checkout">
+        <div class="checkout__header">
+          <div class="logo" style="margin-bottom:8px"><div class="logo__dot" style="width:24px;height:24px;border-radius:6px"></div>OmniFlow</div>
+          <div class="checkout__to">Payment to <strong>alice</strong></div>
+          <div class="checkout__amount">250.00 USDC</div>
+          <div class="checkout__desc">Design services — January 2026</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.8125rem;color:var(--muted)">${chainSVG('polygon',16)} Receive on Arc (Polygon)</div>
+        </div>
+        <div class="checkout__card card" style="width:100%">
+          <div id="checkout-connect">
+            <button class="btn btn--primary btn--full btn--lg" id="connect-btn">Connect Wallet</button>
+          </div>
+          <div id="checkout-connected" style="display:none">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--soft);border-radius:12px;margin-bottom:16px">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>
+              <div style="font-size:0.8125rem;font-weight:600">Connected</div>
+              <div class="mono" style="font-size:0.75rem;color:var(--muted);margin-left:auto">${PAYER_SHORT}</div>
+            </div>
+            <div style="font-size:0.8125rem;font-weight:600;margin-bottom:8px">Select token to pay with</div>
+            <div id="token-list" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Payer opens the payment link — a branded checkout page');
+    await delay(1200);
+    const btn = el.querySelector('#connect-btn');
+    btn.classList.add('btn--pulse');
+    await delay(400);
+    await narrate('Connecting external wallet — MetaMask, WalletConnect, or any EVM wallet');
+    btn.innerHTML = '<span class="spinner spinner--white"></span> Connecting...';
+    await delay(1500);
+
+    el.querySelector('#checkout-connect').style.display = 'none';
+    const connected = el.querySelector('#checkout-connected');
+    connected.style.display = 'block';
+    connected.classList.add('fade-in');
+
+    await delay(400);
+    await narrate('Payer sees their token balances — can pay with any token on any chain');
+    const tokens = [
+      { symbol: 'ETH', chain: 'Arbitrum', balance: '0.42', color: '#28a0f0', icon: 'arbitrum' },
+      { symbol: 'USDC', chain: 'Polygon', balance: '180.50', color: '#1894E8', icon: 'polygon' },
+      { symbol: 'WETH', chain: 'Base', balance: '0.15', color: '#0052ff', icon: 'base' },
+    ];
+    const list = el.querySelector('#token-list');
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      const div = $c('div', 'token-option fade-in');
+      div.style.animationDelay = (i * 0.1) + 's';
+      div.style.opacity = '0';
+      div.innerHTML = `
+        <div style="width:32px;height:32px;flex-shrink:0">${chainSVG(t.icon, 32)}</div>
+        <div class="token-option__info">
+          <div class="token-option__symbol">${t.symbol}</div>
+          <div class="token-option__chain">${t.chain}</div>
+        </div>
+        <div class="token-option__balance mono">${t.balance}</div>`;
+      list.appendChild(div);
+    }
+    await delay(2000);
+    await nextScene();
+  }
+});
+
+// ─── SCENE 5: Payment ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="checkout">
+        <div class="checkout__header">
+          <div class="logo" style="margin-bottom:8px"><div class="logo__dot" style="width:24px;height:24px;border-radius:6px"></div>OmniFlow</div>
+          <div class="checkout__to">Payment to <strong>alice</strong></div>
+          <div class="checkout__amount">$250.00</div>
+        </div>
+        <div class="checkout__card card" style="width:100%">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--soft);border-radius:12px;margin-bottom:16px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>
+            <div style="font-size:0.8125rem;font-weight:600">Connected</div>
+            <div class="mono" style="font-size:0.75rem;color:var(--muted);margin-left:auto">${PAYER_SHORT}</div>
+          </div>
+          <div class="token-option selected" style="margin-bottom:12px">
+            <div style="width:32px;height:32px;flex-shrink:0">${chainSVG('arbitrum', 32)}</div>
+            <div class="token-option__info">
+              <div class="token-option__symbol">ETH</div>
+              <div class="token-option__chain">Arbitrum</div>
+            </div>
+            <div class="token-option__balance mono">0.42</div>
+          </div>
+          <div class="route-info" id="route-info" style="opacity:0">
+            ${arrowSVG}
+            <span>Route: <strong>ETH → USDC</strong> via Uniswap on Arbitrum</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8125rem;color:var(--muted);margin:12px 0" id="fee-info" style="opacity:0">
+            <span>You send</span><span class="mono" style="font-weight:600;color:var(--text)">≈ 0.0962 ETH</span>
+          </div>
+          <button class="btn btn--primary btn--full btn--lg" id="pay-btn">Pay $250.00</button>
+          <div id="payment-success" style="display:none"></div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Payer selects ETH on Arbitrum — LiFi finds the best swap route automatically');
+    await delay(600);
+    el.querySelector('#route-info').style.opacity = '1';
+    el.querySelector('#route-info').classList.add('fade-in');
+    await delay(800);
+
+    await narrate('One click to pay — swap + transfer happens atomically in a single transaction');
+    const payBtn = el.querySelector('#pay-btn');
+    payBtn.classList.add('btn--pulse');
+    await delay(400);
+    payBtn.innerHTML = '<span class="spinner spinner--white"></span> Confirming...';
+    await delay(2000);
+
+    payBtn.style.display = 'none';
+    el.querySelector('#route-info').style.display = 'none';
+    el.querySelector('#fee-info').style.display = 'none';
+
+    await narrate('Payment confirmed! USDC delivered to Alice\'s wallet');
+    const success = el.querySelector('#payment-success');
+    success.style.display = 'block';
+    success.classList.add('fade-in');
+    success.innerHTML = `
+      <div class="success-state">
+        <div class="success-state__icon"><svg width="32" height="32" fill="none"><path d="M8 16l6 6 10-10" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="success-state__title">Payment Confirmed!</div>
+        <div class="success-state__subtitle">$250.00 USDC sent to alice</div>
+        <div class="success-state__hash">tx: 0x3f8a...c7d2</div>
+      </div>`;
+    await delay(3000);
+    await nextScene();
+  }
+});
+
+// ─── SCENE 6: Merchant Sees Payment + Bridge ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="app-layout">
+        ${buildSidebar('dashboard')}
+        <div class="main-content">
+          <div class="header">
+            <div class="header__title">Dashboard</div>
+            <div class="header__balance" id="header-bal6">$1,250.00</div>
+          </div>
+          <div class="content">
+            <div class="card card--hero balance-card fade-in">
+              <div style="font-size:0.8125rem;font-weight:600;color:var(--muted);margin-bottom:4px">Total Balance</div>
+              <div class="balance-amount" id="balance-amt6">$1,250.00</div>
+              <div class="balance-breakdown">
+                <div>Gateway: <span id="gw-bal">$1,000.00</span></div>
+                <div>On-chain: <span id="oc-bal">$250.00</span></div>
+              </div>
+            </div>
+            <div class="card fade-in fade-in-delay-1" id="notification" style="display:none;border-left:3px solid var(--success)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.1);display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" fill="none"><path d="M10 2v6M10 12v6M2 10h6M12 10h6" stroke="#10B981" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:0.9375rem">Payment received: +$250.00</div>
+                  <div style="font-size:0.8125rem;color:var(--muted)">From ${PAYER_SHORT} — Design services</div>
+                </div>
+                <span class="badge badge--completed">Completed</span>
+              </div>
+            </div>
+            <div class="card fade-in fade-in-delay-2" id="bridge-section" style="display:none">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:16px">Send / Bridge</div>
+              <div class="send-form">
+                <div class="input-group"><label class="input-label">Destination Chain</label>
+                  <div class="chain-select">
+                    <div class="chain-chip">${chainSVG('polygon',16)} Arc</div>
+                    <div class="chain-chip selected">${chainSVG('base',16)} Base</div>
+                    <div class="chain-chip">${chainSVG('arbitrum',16)} Arbitrum</div>
+                    <div class="chain-chip">${chainSVG('avalanche',16)} Avalanche</div>
+                  </div>
+                </div>
+                <div class="input-group"><label class="input-label">Output Token</label>
+                  <div class="chain-select">
+                    <div class="chain-chip selected" data-token="USDC">💲 USDC</div>
+                    <div class="chain-chip" data-token="ETH" id="bridge-eth-chip">⟠ ETH</div>
+                    <div class="chain-chip" data-token="DAI">◈ DAI</div>
+                  </div>
+                </div>
+                <div class="input-group"><label class="input-label">Amount (USDC)</label><input class="input input--mono" id="bridge-amount" value="" readonly></div>
+                <button class="btn btn--primary" id="bridge-btn">Prepare Bridge</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Back on Alice\'s dashboard — balance updates in real-time');
+    await delay(800);
+
+    // Animate balance increase
+    const amt = el.querySelector('#balance-amt6');
+    const hdr = el.querySelector('#header-bal6');
+    await animateCounter(amt, 1250, 1500, 1200);
+    hdr.textContent = '$1,500.00';
+    el.querySelector('#gw-bal').textContent = '$1,250.00';
+
+    await delay(400);
+
+    await narrate('Payment received notification — $250.00 from the payer');
+    // Show notification
+    const notif = el.querySelector('#notification');
+    notif.style.display = 'block';
+    notif.classList.add('fade-in');
+    await delay(1500);
+
+    await narrate('Alice bridges funds to Base and swaps to ETH — via Circle Gateway');
+    // Navigate to bridge
+    el.querySelector('.sidebar__link.active').classList.remove('active');
+    el.querySelector('[data-id="send"]').classList.add('active');
+    el.querySelector('.header__title').textContent = 'Send';
+
+    const bridge = el.querySelector('#bridge-section');
+    bridge.style.display = 'block';
+    bridge.classList.add('fade-in');
+    notif.style.display = 'none';
+    await delay(400);
+
+    await typeText(el.querySelector('#bridge-amount'), '500.00', 80);
+    await delay(400);
+
+    // Animate selecting ETH as output token
+    const ethChip = el.querySelector('#bridge-eth-chip');
+    const usdcChip = ethChip.previousElementSibling;
+    usdcChip.classList.remove('selected');
+    ethChip.classList.add('selected');
+    ethChip.style.transition = 'all 0.3s';
+    ethChip.style.boxShadow = '0 0 0 2px var(--primary)';
+    await delay(400);
+    ethChip.style.boxShadow = '';
+    await delay(300);
+
+    await narrate('One signature — bridge + swap routed automatically');
+    const btn = el.querySelector('#bridge-btn');
+    btn.classList.add('btn--pulse');
+    await delay(300);
+    btn.innerHTML = '<span class="spinner spinner--white"></span> Signing...';
+    await delay(1200);
+    btn.innerHTML = '✓ Bridging 500 USDC → ETH on Base';
+    btn.classList.add('btn--success');
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#fff';
+
+    await delay(2000);
+    await nextScene();
+  }
+});
+
+// ─── SCENE 7: Transfer + Finale ───
+scenes.push({
+  setup(el) {
+    el.innerHTML = `
+      <div class="app-layout" id="layout7">
+        ${buildSidebar('send')}
+        <div class="main-content">
+          <div class="header">
+            <div class="header__title">Send</div>
+            <div class="header__balance">$1,500.00</div>
+          </div>
+          <div class="content">
+            <div class="card fade-in">
+              <div style="font-size:1rem;font-weight:700;margin-bottom:16px">Send</div>
+              <div class="send-form">
+                <div class="input-group"><label class="input-label">Recipient Address</label><input class="input input--mono" id="send-addr" placeholder="0x..." readonly></div>
+                <div class="input-group"><label class="input-label">Destination Chain</label>
+                  <div class="chain-select">
+                    <div class="chain-chip">${chainSVG('polygon',16)} Arc</div>
+                    <div class="chain-chip selected">${chainSVG('base',16)} Base</div>
+                    <div class="chain-chip">${chainSVG('arbitrum',16)} Arbitrum</div>
+                    <div class="chain-chip">${chainSVG('avalanche',16)} Avalanche</div>
+                  </div>
+                </div>
+                <div class="input-group"><label class="input-label">Token</label>
+                  <div class="chain-select">
+                    <div class="chain-chip selected">💲 USDC</div>
+                    <div class="chain-chip">⟠ ETH</div>
+                    <div class="chain-chip">◈ DAI</div>
+                  </div>
+                </div>
+                <div class="input-group"><label class="input-label">Amount</label><input class="input input--mono" id="send-amount" value="" readonly></div>
+                <button class="btn btn--primary" id="send-btn">Send</button>
+              </div>
+            </div>
+            <div class="card fade-in fade-in-delay-1" id="send-result" style="display:none;border-left:3px solid var(--success)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div class="success-state__icon" style="width:40px;height:40px;margin:0"><svg width="20" height="20" fill="none"><path d="M5 10l4 4 6-6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div style="flex:1">
+                  <div style="font-weight:700">Transfer Complete</div>
+                  <div style="font-size:0.8125rem;color:var(--muted)">200.00 USDC → ${RECIPIENT_SHORT} on Base</div>
+                </div>
+                <span class="badge badge--completed">Completed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="finale" style="display:none;position:absolute;inset:0;background:#fff;z-index:100;opacity:0;transition:opacity 0.8s">
+        <div class="finale" style="height:100%;width:100%">
+          <div class="finale__logo"><div class="logo__dot"></div>OmniFlow</div>
+          <div class="finale__tagline">One API. One Balance. Any Chain.</div>
+          <div class="finale__features">
+            <div class="finale__feature">Payment Links</div>
+            <div class="finale__feature">Cross-Chain Bridge</div>
+            <div class="finale__feature">Batch Payouts</div>
+            <div class="finale__feature">0% Gas</div>
+          </div>
+        </div>
+      </div>`;
+  },
+  async animate(el) {
+    await narrate('Alice sends 200 USDC to another user on Base');
+    await delay(600);
+    await typeText(el.querySelector('#send-addr'), RECIPIENT_ADDR, 25);
+    await delay(300);
+    await typeText(el.querySelector('#send-amount'), '200.00', 80);
+    await delay(600);
+
+    const btn = el.querySelector('#send-btn');
+    btn.classList.add('btn--pulse');
+    await delay(300);
+    btn.innerHTML = '<span class="spinner spinner--white"></span> Sending...';
+    await delay(1500);
+    btn.innerHTML = '✓ Sent';
+    btn.classList.add('btn--success');
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#fff';
+
+    await delay(400);
+    await narrate('Transfer complete — settled in seconds, zero gas fees');
+    const result = el.querySelector('#send-result');
+    result.style.display = 'block';
+    result.classList.add('fade-in');
+
+    await delay(2500);
+
+    // Finale
+    hideNarration();
+    const finale = el.querySelector('#finale');
+    finale.style.display = 'flex';
+    await delay(50);
+    finale.style.opacity = '1';
+  }
+});
+
+// ─── Start ───
+runScene(0);
+</script>
+</body>
+</html>

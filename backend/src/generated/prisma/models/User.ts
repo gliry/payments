@@ -221,6 +221,8 @@ export type UserWhereInput = {
   delegateSetups?: Prisma.DelegateSetupListRelationFilter
   operations?: Prisma.OperationListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
+  merchantPayments?: Prisma.PaymentListRelationFilter
+  payerPayments?: Prisma.PaymentListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -237,6 +239,8 @@ export type UserOrderByWithRelationInput = {
   delegateSetups?: Prisma.DelegateSetupOrderByRelationAggregateInput
   operations?: Prisma.OperationOrderByRelationAggregateInput
   webhooks?: Prisma.WebhookOrderByRelationAggregateInput
+  merchantPayments?: Prisma.PaymentOrderByRelationAggregateInput
+  payerPayments?: Prisma.PaymentOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -244,11 +248,11 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   username?: string
   credentialId?: string
   walletAddress?: string
-  delegateAddress?: string
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   publicKey?: Prisma.StringFilter<"User"> | string
+  delegateAddress?: Prisma.StringFilter<"User"> | string
   delegateEncryptedKey?: Prisma.StringFilter<"User"> | string
   metadata?: Prisma.JsonNullableFilter<"User">
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -256,7 +260,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   delegateSetups?: Prisma.DelegateSetupListRelationFilter
   operations?: Prisma.OperationListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
-}, "id" | "username" | "credentialId" | "walletAddress" | "delegateAddress">
+  merchantPayments?: Prisma.PaymentListRelationFilter
+  payerPayments?: Prisma.PaymentListRelationFilter
+}, "id" | "username" | "credentialId" | "walletAddress">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -304,6 +310,8 @@ export type UserCreateInput = {
   delegateSetups?: Prisma.DelegateSetupCreateNestedManyWithoutUserInput
   operations?: Prisma.OperationCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -320,6 +328,8 @@ export type UserUncheckedCreateInput = {
   delegateSetups?: Prisma.DelegateSetupUncheckedCreateNestedManyWithoutUserInput
   operations?: Prisma.OperationUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserUpdateInput = {
@@ -336,6 +346,8 @@ export type UserUpdateInput = {
   delegateSetups?: Prisma.DelegateSetupUpdateManyWithoutUserNestedInput
   operations?: Prisma.OperationUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUpdateManyWithoutPayerUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -352,6 +364,8 @@ export type UserUncheckedUpdateInput = {
   delegateSetups?: Prisma.DelegateSetupUncheckedUpdateManyWithoutUserNestedInput
   operations?: Prisma.OperationUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUncheckedUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUncheckedUpdateManyWithoutPayerUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -435,6 +449,11 @@ export type UserScalarRelationFilter = {
   isNot?: Prisma.UserWhereInput
 }
 
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -471,6 +490,36 @@ export type UserUpdateOneRequiredWithoutOperationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOperationsInput, Prisma.UserUpdateWithoutOperationsInput>, Prisma.UserUncheckedUpdateWithoutOperationsInput>
 }
 
+export type UserCreateNestedOneWithoutMerchantPaymentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutMerchantPaymentsInput, Prisma.UserUncheckedCreateWithoutMerchantPaymentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMerchantPaymentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutPayerPaymentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPayerPaymentsInput, Prisma.UserUncheckedCreateWithoutPayerPaymentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPayerPaymentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutMerchantPaymentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutMerchantPaymentsInput, Prisma.UserUncheckedCreateWithoutMerchantPaymentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutMerchantPaymentsInput
+  upsert?: Prisma.UserUpsertWithoutMerchantPaymentsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutMerchantPaymentsInput, Prisma.UserUpdateWithoutMerchantPaymentsInput>, Prisma.UserUncheckedUpdateWithoutMerchantPaymentsInput>
+}
+
+export type UserUpdateOneWithoutPayerPaymentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPayerPaymentsInput, Prisma.UserUncheckedCreateWithoutPayerPaymentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPayerPaymentsInput
+  upsert?: Prisma.UserUpsertWithoutPayerPaymentsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPayerPaymentsInput, Prisma.UserUpdateWithoutPayerPaymentsInput>, Prisma.UserUncheckedUpdateWithoutPayerPaymentsInput>
+}
+
 export type UserCreateNestedOneWithoutWebhooksInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutWebhooksInput, Prisma.UserUncheckedCreateWithoutWebhooksInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutWebhooksInput
@@ -498,6 +547,8 @@ export type UserCreateWithoutDelegateSetupsInput = {
   updatedAt?: Date | string
   operations?: Prisma.OperationCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserUncheckedCreateWithoutDelegateSetupsInput = {
@@ -513,6 +564,8 @@ export type UserUncheckedCreateWithoutDelegateSetupsInput = {
   updatedAt?: Date | string
   operations?: Prisma.OperationUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserCreateOrConnectWithoutDelegateSetupsInput = {
@@ -544,6 +597,8 @@ export type UserUpdateWithoutDelegateSetupsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operations?: Prisma.OperationUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUpdateManyWithoutPayerUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDelegateSetupsInput = {
@@ -559,6 +614,8 @@ export type UserUncheckedUpdateWithoutDelegateSetupsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   operations?: Prisma.OperationUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUncheckedUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUncheckedUpdateManyWithoutPayerUserNestedInput
 }
 
 export type UserCreateWithoutOperationsInput = {
@@ -574,6 +631,8 @@ export type UserCreateWithoutOperationsInput = {
   updatedAt?: Date | string
   delegateSetups?: Prisma.DelegateSetupCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserUncheckedCreateWithoutOperationsInput = {
@@ -589,6 +648,8 @@ export type UserUncheckedCreateWithoutOperationsInput = {
   updatedAt?: Date | string
   delegateSetups?: Prisma.DelegateSetupUncheckedCreateNestedManyWithoutUserInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserCreateOrConnectWithoutOperationsInput = {
@@ -620,6 +681,8 @@ export type UserUpdateWithoutOperationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   delegateSetups?: Prisma.DelegateSetupUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUpdateManyWithoutPayerUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOperationsInput = {
@@ -635,6 +698,176 @@ export type UserUncheckedUpdateWithoutOperationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   delegateSetups?: Prisma.DelegateSetupUncheckedUpdateManyWithoutUserNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUncheckedUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUncheckedUpdateManyWithoutPayerUserNestedInput
+}
+
+export type UserCreateWithoutMerchantPaymentsInput = {
+  id?: string
+  username: string
+  credentialId: string
+  publicKey: string
+  walletAddress: string
+  delegateAddress: string
+  delegateEncryptedKey: string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  delegateSetups?: Prisma.DelegateSetupCreateNestedManyWithoutUserInput
+  operations?: Prisma.OperationCreateNestedManyWithoutUserInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  payerPayments?: Prisma.PaymentCreateNestedManyWithoutPayerUserInput
+}
+
+export type UserUncheckedCreateWithoutMerchantPaymentsInput = {
+  id?: string
+  username: string
+  credentialId: string
+  publicKey: string
+  walletAddress: string
+  delegateAddress: string
+  delegateEncryptedKey: string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  delegateSetups?: Prisma.DelegateSetupUncheckedCreateNestedManyWithoutUserInput
+  operations?: Prisma.OperationUncheckedCreateNestedManyWithoutUserInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  payerPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutPayerUserInput
+}
+
+export type UserCreateOrConnectWithoutMerchantPaymentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutMerchantPaymentsInput, Prisma.UserUncheckedCreateWithoutMerchantPaymentsInput>
+}
+
+export type UserCreateWithoutPayerPaymentsInput = {
+  id?: string
+  username: string
+  credentialId: string
+  publicKey: string
+  walletAddress: string
+  delegateAddress: string
+  delegateEncryptedKey: string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  delegateSetups?: Prisma.DelegateSetupCreateNestedManyWithoutUserInput
+  operations?: Prisma.OperationCreateNestedManyWithoutUserInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentCreateNestedManyWithoutMerchantInput
+}
+
+export type UserUncheckedCreateWithoutPayerPaymentsInput = {
+  id?: string
+  username: string
+  credentialId: string
+  publicKey: string
+  walletAddress: string
+  delegateAddress: string
+  delegateEncryptedKey: string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  delegateSetups?: Prisma.DelegateSetupUncheckedCreateNestedManyWithoutUserInput
+  operations?: Prisma.OperationUncheckedCreateNestedManyWithoutUserInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutMerchantInput
+}
+
+export type UserCreateOrConnectWithoutPayerPaymentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPayerPaymentsInput, Prisma.UserUncheckedCreateWithoutPayerPaymentsInput>
+}
+
+export type UserUpsertWithoutMerchantPaymentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutMerchantPaymentsInput, Prisma.UserUncheckedUpdateWithoutMerchantPaymentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutMerchantPaymentsInput, Prisma.UserUncheckedCreateWithoutMerchantPaymentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutMerchantPaymentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutMerchantPaymentsInput, Prisma.UserUncheckedUpdateWithoutMerchantPaymentsInput>
+}
+
+export type UserUpdateWithoutMerchantPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  credentialId?: Prisma.StringFieldUpdateOperationsInput | string
+  publicKey?: Prisma.StringFieldUpdateOperationsInput | string
+  walletAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateEncryptedKey?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  delegateSetups?: Prisma.DelegateSetupUpdateManyWithoutUserNestedInput
+  operations?: Prisma.OperationUpdateManyWithoutUserNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  payerPayments?: Prisma.PaymentUpdateManyWithoutPayerUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutMerchantPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  credentialId?: Prisma.StringFieldUpdateOperationsInput | string
+  publicKey?: Prisma.StringFieldUpdateOperationsInput | string
+  walletAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateEncryptedKey?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  delegateSetups?: Prisma.DelegateSetupUncheckedUpdateManyWithoutUserNestedInput
+  operations?: Prisma.OperationUncheckedUpdateManyWithoutUserNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  payerPayments?: Prisma.PaymentUncheckedUpdateManyWithoutPayerUserNestedInput
+}
+
+export type UserUpsertWithoutPayerPaymentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPayerPaymentsInput, Prisma.UserUncheckedUpdateWithoutPayerPaymentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPayerPaymentsInput, Prisma.UserUncheckedCreateWithoutPayerPaymentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPayerPaymentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPayerPaymentsInput, Prisma.UserUncheckedUpdateWithoutPayerPaymentsInput>
+}
+
+export type UserUpdateWithoutPayerPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  credentialId?: Prisma.StringFieldUpdateOperationsInput | string
+  publicKey?: Prisma.StringFieldUpdateOperationsInput | string
+  walletAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateEncryptedKey?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  delegateSetups?: Prisma.DelegateSetupUpdateManyWithoutUserNestedInput
+  operations?: Prisma.OperationUpdateManyWithoutUserNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUpdateManyWithoutMerchantNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPayerPaymentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  credentialId?: Prisma.StringFieldUpdateOperationsInput | string
+  publicKey?: Prisma.StringFieldUpdateOperationsInput | string
+  walletAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateAddress?: Prisma.StringFieldUpdateOperationsInput | string
+  delegateEncryptedKey?: Prisma.StringFieldUpdateOperationsInput | string
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  delegateSetups?: Prisma.DelegateSetupUncheckedUpdateManyWithoutUserNestedInput
+  operations?: Prisma.OperationUncheckedUpdateManyWithoutUserNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUncheckedUpdateManyWithoutMerchantNestedInput
 }
 
 export type UserCreateWithoutWebhooksInput = {
@@ -650,6 +883,8 @@ export type UserCreateWithoutWebhooksInput = {
   updatedAt?: Date | string
   delegateSetups?: Prisma.DelegateSetupCreateNestedManyWithoutUserInput
   operations?: Prisma.OperationCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserUncheckedCreateWithoutWebhooksInput = {
@@ -665,6 +900,8 @@ export type UserUncheckedCreateWithoutWebhooksInput = {
   updatedAt?: Date | string
   delegateSetups?: Prisma.DelegateSetupUncheckedCreateNestedManyWithoutUserInput
   operations?: Prisma.OperationUncheckedCreateNestedManyWithoutUserInput
+  merchantPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutMerchantInput
+  payerPayments?: Prisma.PaymentUncheckedCreateNestedManyWithoutPayerUserInput
 }
 
 export type UserCreateOrConnectWithoutWebhooksInput = {
@@ -696,6 +933,8 @@ export type UserUpdateWithoutWebhooksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   delegateSetups?: Prisma.DelegateSetupUpdateManyWithoutUserNestedInput
   operations?: Prisma.OperationUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUpdateManyWithoutPayerUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWebhooksInput = {
@@ -711,6 +950,8 @@ export type UserUncheckedUpdateWithoutWebhooksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   delegateSetups?: Prisma.DelegateSetupUncheckedUpdateManyWithoutUserNestedInput
   operations?: Prisma.OperationUncheckedUpdateManyWithoutUserNestedInput
+  merchantPayments?: Prisma.PaymentUncheckedUpdateManyWithoutMerchantNestedInput
+  payerPayments?: Prisma.PaymentUncheckedUpdateManyWithoutPayerUserNestedInput
 }
 
 
@@ -722,12 +963,16 @@ export type UserCountOutputType = {
   delegateSetups: number
   operations: number
   webhooks: number
+  merchantPayments: number
+  payerPayments: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   delegateSetups?: boolean | UserCountOutputTypeCountDelegateSetupsArgs
   operations?: boolean | UserCountOutputTypeCountOperationsArgs
   webhooks?: boolean | UserCountOutputTypeCountWebhooksArgs
+  merchantPayments?: boolean | UserCountOutputTypeCountMerchantPaymentsArgs
+  payerPayments?: boolean | UserCountOutputTypeCountPayerPaymentsArgs
 }
 
 /**
@@ -761,6 +1006,20 @@ export type UserCountOutputTypeCountWebhooksArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.WebhookWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountMerchantPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PaymentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPayerPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PaymentWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -776,6 +1035,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   delegateSetups?: boolean | Prisma.User$delegateSetupsArgs<ExtArgs>
   operations?: boolean | Prisma.User$operationsArgs<ExtArgs>
   webhooks?: boolean | Prisma.User$webhooksArgs<ExtArgs>
+  merchantPayments?: boolean | Prisma.User$merchantPaymentsArgs<ExtArgs>
+  payerPayments?: boolean | Prisma.User$payerPaymentsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -823,6 +1084,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   delegateSetups?: boolean | Prisma.User$delegateSetupsArgs<ExtArgs>
   operations?: boolean | Prisma.User$operationsArgs<ExtArgs>
   webhooks?: boolean | Prisma.User$webhooksArgs<ExtArgs>
+  merchantPayments?: boolean | Prisma.User$merchantPaymentsArgs<ExtArgs>
+  payerPayments?: boolean | Prisma.User$payerPaymentsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -834,6 +1097,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     delegateSetups: Prisma.$DelegateSetupPayload<ExtArgs>[]
     operations: Prisma.$OperationPayload<ExtArgs>[]
     webhooks: Prisma.$WebhookPayload<ExtArgs>[]
+    merchantPayments: Prisma.$PaymentPayload<ExtArgs>[]
+    payerPayments: Prisma.$PaymentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1243,6 +1508,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   delegateSetups<T extends Prisma.User$delegateSetupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$delegateSetupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DelegateSetupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   operations<T extends Prisma.User$operationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$operationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OperationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   webhooks<T extends Prisma.User$webhooksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$webhooksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WebhookPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  merchantPayments<T extends Prisma.User$merchantPaymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$merchantPaymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  payerPayments<T extends Prisma.User$payerPaymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$payerPaymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1737,6 +2004,54 @@ export type User$webhooksArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.WebhookScalarFieldEnum | Prisma.WebhookScalarFieldEnum[]
+}
+
+/**
+ * User.merchantPayments
+ */
+export type User$merchantPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Payment
+   */
+  select?: Prisma.PaymentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Payment
+   */
+  omit?: Prisma.PaymentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentInclude<ExtArgs> | null
+  where?: Prisma.PaymentWhereInput
+  orderBy?: Prisma.PaymentOrderByWithRelationInput | Prisma.PaymentOrderByWithRelationInput[]
+  cursor?: Prisma.PaymentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PaymentScalarFieldEnum | Prisma.PaymentScalarFieldEnum[]
+}
+
+/**
+ * User.payerPayments
+ */
+export type User$payerPaymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Payment
+   */
+  select?: Prisma.PaymentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Payment
+   */
+  omit?: Prisma.PaymentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentInclude<ExtArgs> | null
+  where?: Prisma.PaymentWhereInput
+  orderBy?: Prisma.PaymentOrderByWithRelationInput | Prisma.PaymentOrderByWithRelationInput[]
+  cursor?: Prisma.PaymentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PaymentScalarFieldEnum | Prisma.PaymentScalarFieldEnum[]
 }
 
 /**

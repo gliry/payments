@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
 import { OperationsModule } from './operations/operations.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { PaymentsModule } from './payments/payments.module';
 import { LifiModule } from './lifi/lifi.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { LifiModule } from './lifi/lifi.module';
     WalletModule,
     OperationsModule,
     WebhooksModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

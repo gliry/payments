@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniFlow — Checkout</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .checkout { max-width: 440px; width: 100%; }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+
+    .logo { text-align: center; font-size: 14px; color: #a29bfe; margin-bottom: 20px; font-weight: 600; }
+
+    .amount-display {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 700;
+      margin: 16px 0 4px;
+    }
+    .token-chain {
+      text-align: center;
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .merchant-name {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .description {
+      text-align: center;
+      color: #ccc;
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+    .expires {
+      text-align: center;
+      color: #fd79a8;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+
+    .qr-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .qr-container canvas { border-radius: 8px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(255,255,255,0.03);
+      color: #888;
+      transition: all 0.15s;
+      border: none;
+    }
+    .tab.active {
+      background: rgba(108,92,231,0.2);
+      color: #a29bfe;
+    }
+    .tab:hover:not(.active) { background: rgba(255,255,255,0.06); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Form elements */
+    label { display: block; color: #aaa; font-size: 13px; margin-bottom: 6px; }
+    select, input {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: #fff; font-size: 14px;
+      margin-bottom: 12px;
+    }
+    select:focus, input:focus { outline: none; border-color: #6c5ce7; }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(108,92,231,0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
+
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+
+    .info-box {
+      padding: 12px 14px;
+      background: rgba(0,184,148,0.08);
+      border: 1px solid rgba(0,184,148,0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+
+    .status-box {
+      text-align: center;
+      padding: 20px;
+      font-size: 15px;
+    }
+    .status-box .spinner {
+      display: inline-block;
+      width: 24px; height: 24px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #a29bfe;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .success-icon { font-size: 48px; margin-bottom: 12px; }
+
+    .error { color: #ff7675; font-size: 13px; margin-top: 8px; }
+    .hidden { display: none !important; }
+
+    .route-info {
+      padding: 10px 14px;
+      background: rgba(108,92,231,0.08);
+      border: 1px solid rgba(108,92,231,0.2);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #ccc;
+      margin-bottom: 12px;
+    }
+
+    /* OmniFlow login */
+    .balance-display {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 600;
+      color: #00b894;
+      margin: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="checkout">
+    <!-- Loading -->
+    <div class="card" id="loadingCard">
+      <div class="status-box">
+        <div class="spinner"></div>
+        <div>Loading payment...</div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="card hidden" id="errorCard">
+      <div class="status-box">
+        <div style="font-size:48px; margin-bottom:12px">⚠</div>
+        <div id="errorMessage">Payment not found</div>
+      </div>
+    </div>
+
+    <!-- Expired -->
+    <div class="card hidden" id="expiredCard">
+      <div class="status-box">
+        <div style="font-size:48px; margin-bottom:12px">⏰</div>
+        <div>This payment has expired</div>
+      </div>
+    </div>
+
+    <!-- Completed -->
+    <div class="card hidden" id="completedCard">
+      <div class="status-box">
+        <div class="success-icon">✓</div>
+        <div style="font-size:20px; font-weight:600; color:#00b894">Payment Successful!</div>
+        <div style="color:#888; margin-top:8px; font-size:13px" id="completedInfo"></div>
+      </div>
+    </div>
+
+    <!-- Processing -->
+    <div class="card hidden" id="processingCard">
+      <div class="status-box">
+        <div class="spinner"></div>
+        <div>Confirming payment...</div>
+        <div style="color:#888; margin-top:8px; font-size:12px">This may take a few minutes for cross-chain transfers</div>
+      </div>
+    </div>
+
+    <!-- Main checkout -->
+    <div class="card hidden" id="checkoutCard">
+      <div class="logo">⚡ OmniFlow</div>
+
+      <div class="merchant-name">Pay to <strong id="merchantName"></strong></div>
+      <div class="amount-display" id="amountDisplay"></div>
+      <div class="token-chain" id="tokenChainDisplay"></div>
+      <div class="description" id="descDisplay"></div>
+      <div class="expires" id="expiresDisplay"></div>
+
+      <div class="qr-container" id="qrContainer"></div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('wallet')">Connect Wallet</button>
+        <button class="tab" onclick="switchTab('omniflow')">OmniFlow</button>
+      </div>
+
+      <!-- External Wallet Tab -->
+      <div class="tab-content active" id="tab-wallet">
+        <div class="row">
+          <div>
+            <label>Chain</label>
+            <select id="payerChain" onchange="onPayerChainChange()"></select>
+          </div>
+          <div>
+            <label>Pay with</label>
+            <select id="payerToken" onchange="onPayerTokenChange()"></select>
+          </div>
+        </div>
+
+        <div class="route-info" id="routeInfo">
+          <div>You send: <strong id="youSend">—</strong></div>
+          <div>Merchant receives: <strong id="merchantReceives">—</strong></div>
+        </div>
+
+        <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">
+          Connect Wallet
+        </button>
+
+        <div class="hidden" id="connectedInfo">
+          <div class="info-box">
+            Connected: <span id="connectedAddress"></span>
+          </div>
+          <button class="btn btn-primary" id="payBtn" onclick="doExternalPay()">
+            Pay <span id="payBtnAmount"></span>
+          </button>
+        </div>
+
+        <div class="error hidden" id="walletError"></div>
+      </div>
+
+      <!-- OmniFlow Tab -->
+      <div class="tab-content" id="tab-omniflow">
+        <!-- Login -->
+        <div id="omniLoginSection">
+          <label>Username</label>
+          <input type="text" id="omniUsername" placeholder="your username" />
+          <button class="btn btn-secondary" onclick="omniLogin()">Login with Passkey</button>
+        </div>
+
+        <!-- Logged in -->
+        <div class="hidden" id="omniPaySection">
+          <div class="info-box">
+            Logged in as <strong id="omniUser"></strong>
+          </div>
+          <div class="balance-display" id="omniBalance">Loading balance...</div>
+          <button class="btn btn-primary" onclick="omniPay()">
+            Confirm & Pay
+          </button>
+        </div>
+
+        <div class="error hidden" id="omniError"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin + '/v1';
+    let payment = null;
+
+    // Build ERC20 transfer(address,uint256) calldata
+    function buildErc20TransferCalldata(to, amountBigInt) {
+      const selector = '0xa9059cbb';
+      const addr = to.toLowerCase().replace('0x', '').padStart(64, '0');
+      const amt = amountBigInt.toString(16).padStart(64, '0');
+      return selector + addr + amt;
+    }
+    let provider = null;
+    let signer = null;
+    let omniJwt = null;
+    let pollTimer = null;
+
+    // ── Init ──────────────────────────────────────────
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (!id) {
+        showError('No payment ID provided');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/payments/${id}`);
+        if (!res.ok) throw new Error('Payment not found');
+        payment = await res.json();
+
+        if (payment.status === 'EXPIRED' || payment.status === 'CANCELLED') {
+          showScreen('expiredCard');
+          return;
+        }
+        if (payment.status === 'COMPLETED') {
+          showCompleted();
+          return;
+        }
+        if (payment.status === 'PROCESSING') {
+          showScreen('processingCard');
+          startPolling();
+          return;
+        }
+
+        renderCheckout();
+        showScreen('checkoutCard');
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    function showScreen(id) {
+      ['loadingCard', 'errorCard', 'expiredCard', 'completedCard', 'processingCard', 'checkoutCard']
+        .forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      showScreen('errorCard');
+    }
+
+    function showCompleted() {
+      document.getElementById('completedInfo').textContent =
+        `${payment.amount} ${payment.token} on ${payment.chain}`;
+      showScreen('completedCard');
+      if (payment.successUrl) {
+        setTimeout(() => window.location.href = payment.successUrl, 3000);
+      }
+    }
+
+    // ── Render checkout ────────────────────────────────
+    function renderCheckout() {
+      document.getElementById('merchantName').textContent = payment.merchantName;
+      document.getElementById('amountDisplay').textContent = payment.amount;
+      document.getElementById('tokenChainDisplay').textContent =
+        `${payment.token} on ${capitalize(payment.chain)}`;
+      document.getElementById('descDisplay').textContent = payment.description || '';
+
+      // Expiration countdown
+      if (payment.expiresAt) {
+        updateExpiry();
+        setInterval(updateExpiry, 1000);
+      }
+
+      // Chain selector
+      const chainSelect = document.getElementById('payerChain');
+      chainSelect.innerHTML = '';
+      for (const chain of payment.acceptedChains) {
+        const opt = document.createElement('option');
+        opt.value = chain;
+        opt.textContent = capitalize(chain);
+        chainSelect.appendChild(opt);
+      }
+
+      onPayerChainChange();
+
+      // QR code
+      renderQR();
+    }
+
+    function updateExpiry() {
+      const remaining = new Date(payment.expiresAt) - Date.now();
+      if (remaining <= 0) {
+        document.getElementById('expiresDisplay').textContent = 'EXPIRED';
+        return;
+      }
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      document.getElementById('expiresDisplay').textContent =
+        `Expires in ${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function onPayerChainChange() {
+      const chain = document.getElementById('payerChain').value;
+
+      // Populate payer tokens for this chain
+      const tokenSelect = document.getElementById('payerToken');
+      const prevToken = tokenSelect.value;
+      tokenSelect.innerHTML = '';
+
+      const tokens = (payment.payerTokens && payment.payerTokens[chain]) || [{ symbol: 'USDC', name: 'USDC' }];
+      for (const t of tokens) {
+        const opt = document.createElement('option');
+        opt.value = t.symbol;
+        opt.textContent = `${t.symbol} — ${t.name}`;
+        tokenSelect.appendChild(opt);
+      }
+      // Restore previous selection if available on new chain
+      if (tokens.find(t => t.symbol === prevToken)) {
+        tokenSelect.value = prevToken;
+      }
+
+      onPayerTokenChange();
+    }
+
+    function onPayerTokenChange() {
+      const chain = document.getElementById('payerChain').value;
+      const token = document.getElementById('payerToken').value;
+      const isSameToken = token === payment.token;
+      const isSameChain = chain === payment.chain;
+
+      let routeHtml = '';
+      if (isSameToken && isSameChain) {
+        routeHtml =
+          `<div>You send: <strong>${payment.amount} ${token}</strong></div>` +
+          `<div>Merchant receives: <strong>${payment.amount} ${payment.token}</strong></div>`;
+      } else if (!isSameToken && isSameChain) {
+        routeHtml =
+          `<div>You send: <strong>~${payment.amount} ${token} on ${capitalize(chain)}</strong></div>` +
+          `<div>Route: ${token} → swap → ${payment.token}</div>` +
+          `<div>Merchant receives: <strong>${payment.amount} ${payment.token}</strong></div>` +
+          `<div style="color:#fdcb6e">Swap on ${capitalize(chain)} — settlement takes ~1 min</div>`;
+      } else if (isSameToken && !isSameChain) {
+        routeHtml =
+          `<div>You send: <strong>${payment.amount} ${token} on ${capitalize(chain)}</strong></div>` +
+          `<div>Route: ${capitalize(chain)} → Gateway → ${capitalize(payment.chain)}</div>` +
+          `<div>Merchant receives: <strong>${payment.amount} ${payment.token}</strong></div>` +
+          `<div style="color:#fd79a8">Cross-chain — may take 5-20 min</div>`;
+      } else {
+        routeHtml =
+          `<div>You send: <strong>~${payment.amount} ${token} on ${capitalize(chain)}</strong></div>` +
+          `<div>Route: ${token} → swap → USDC → Gateway → ${capitalize(payment.chain)}` +
+          (payment.token !== 'USDC' ? ` → swap → ${payment.token}` : '') + `</div>` +
+          `<div>Merchant receives: <strong>${payment.amount} ${payment.token}</strong></div>` +
+          `<div style="color:#fd79a8">Cross-chain + swap — may take 5-25 min</div>`;
+      }
+
+      document.getElementById('routeInfo').innerHTML = routeHtml;
+      document.getElementById('payBtnAmount').textContent =
+        `${payment.amount} ${token}`;
+    }
+
+    // ── Tabs ──────────────────────────────────────────
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab:nth-child(${tab === 'wallet' ? 1 : 2})`).classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    // ── External Wallet ──────────────────────────────
+    async function connectWallet() {
+      const errEl = document.getElementById('walletError');
+      errEl.classList.add('hidden');
+
+      if (!window.ethereum) {
+        errEl.textContent = 'MetaMask not detected. Please install MetaMask.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const address = accounts[0];
+
+        document.getElementById('connectedAddress').textContent =
+          address.slice(0, 6) + '...' + address.slice(-4);
+        document.getElementById('connectBtn').classList.add('hidden');
+        document.getElementById('connectedInfo').classList.remove('hidden');
+
+        // Switch to correct chain
+        const chain = document.getElementById('payerChain').value;
+        const chainId = getChainId(chain);
+        if (chainId) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x' + chainId.toString(16) }],
+            });
+          } catch (e) {
+            console.warn('Chain switch failed:', e);
+          }
+        }
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    async function doExternalPay() {
+      const errEl = document.getElementById('walletError');
+      errEl.classList.add('hidden');
+      const payBtn = document.getElementById('payBtn');
+      payBtn.disabled = true;
+      payBtn.textContent = 'Sending...';
+
+      try {
+        const chain = document.getElementById('payerChain').value;
+        const payerToken = document.getElementById('payerToken').value;
+        const details = payment.paymentDetails[chain];
+        if (!details) throw new Error(`No payment details for ${chain}`);
+
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        const payerAddress = accounts[0];
+
+        let tokenAddress = details.tokenAddress;
+        let calldata = details.calldata;
+
+        // If payer token differs from merchant token, build transfer of payer's token
+        if (payerToken !== payment.token) {
+          const tokens = payment.payerTokens && payment.payerTokens[chain];
+          const tokenInfo = tokens && tokens.find(t => t.symbol === payerToken);
+          if (!tokenInfo) throw new Error(`Token ${payerToken} not found on ${chain}`);
+          tokenAddress = tokenInfo.address;
+          // Build ERC20 transfer(address,uint256) calldata + paymentId
+          const amountRaw = BigInt(Math.round(parseFloat(payment.amount) * (10 ** tokenInfo.decimals)));
+          calldata = buildErc20TransferCalldata(payment.recipient, amountRaw) + payment.paymentId;
+        }
+
+        // Send the ERC20 transfer
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: payerAddress,
+            to: tokenAddress,
+            data: calldata,
+          }],
+        });
+
+        console.log('Payment tx sent:', txHash);
+
+        // Notify backend (best-effort)
+        try {
+          await fetch(`${API_BASE}/payments/${payment.id}/pay`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txHash,
+              chain,
+              payerAddress,
+              token: payerToken,
+            }),
+          });
+        } catch (e) {
+          console.warn('Failed to notify backend:', e);
+          // Fallback: cron scanner will pick it up
+        }
+
+        showScreen('processingCard');
+        startPolling();
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+        payBtn.disabled = false;
+        const pt = document.getElementById('payerToken').value || 'USDC';
+        payBtn.textContent = `Pay ${payment.amount} ${pt}`;
+      }
+    }
+
+    // ── OmniFlow Internal ─────────────────────────────
+    async function omniLogin() {
+      const errEl = document.getElementById('omniError');
+      errEl.classList.add('hidden');
+      const username = document.getElementById('omniUsername').value.trim();
+      if (!username) { errEl.textContent = 'Enter username'; errEl.classList.remove('hidden'); return; }
+
+      try {
+        // Get login options
+        const optRes = await fetch(`${API_BASE}/auth/login/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        });
+        if (!optRes.ok) throw new Error((await optRes.json()).message || 'Login failed');
+        const options = await optRes.json();
+
+        // WebAuthn assertion
+        const credential = await navigator.credentials.get({
+          publicKey: {
+            challenge: base64urlToBuffer(options.challenge),
+            rpId: options.rpId,
+            allowCredentials: options.allowCredentials?.map(c => ({
+              id: base64urlToBuffer(c.id),
+              type: c.type,
+            })) || [],
+            userVerification: options.userVerification || 'preferred',
+            timeout: options.timeout || 60000,
+          },
+        });
+
+        // Verify
+        const verifyRes = await fetch(`${API_BASE}/auth/login/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            credential: {
+              id: credential.id,
+              rawId: bufferToBase64url(credential.rawId),
+              type: credential.type,
+              response: {
+                authenticatorData: bufferToBase64url(credential.response.authenticatorData),
+                clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
+                signature: bufferToBase64url(credential.response.signature),
+              },
+            },
+          }),
+        });
+        if (!verifyRes.ok) throw new Error((await verifyRes.json()).message || 'Verification failed');
+        const { token } = await verifyRes.json();
+        omniJwt = token;
+
+        // Show logged-in UI
+        document.getElementById('omniLoginSection').classList.add('hidden');
+        document.getElementById('omniPaySection').classList.remove('hidden');
+        document.getElementById('omniUser').textContent = username;
+
+        // Fetch balance
+        const balRes = await fetch(`${API_BASE}/wallet/balances`, {
+          headers: { Authorization: `Bearer ${omniJwt}` },
+        });
+        if (balRes.ok) {
+          const balData = await balRes.json();
+          const totalUsdc = balData.gateway?.balance || '0';
+          document.getElementById('omniBalance').textContent = `$${totalUsdc} USDC`;
+        }
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    async function omniPay() {
+      const errEl = document.getElementById('omniError');
+      errEl.classList.add('hidden');
+
+      try {
+        const res = await fetch(`${API_BASE}/payments/${payment.id}/pay`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${omniJwt}`,
+          },
+          body: JSON.stringify({ internal: true }),
+        });
+        if (!res.ok) throw new Error((await res.json()).message || 'Payment failed');
+
+        showScreen('processingCard');
+        startPolling();
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    // ── Status Polling ────────────────────────────────
+    function startPolling() {
+      if (pollTimer) return;
+      pollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/payments/${payment.id}`);
+          if (!res.ok) return;
+          const updated = await res.json();
+          payment = updated;
+
+          if (updated.status === 'COMPLETED') {
+            clearInterval(pollTimer);
+            showCompleted();
+          } else if (updated.status === 'FAILED') {
+            clearInterval(pollTimer);
+            showError(updated.errorMessage || 'Payment failed');
+          } else if (updated.status === 'EXPIRED') {
+            clearInterval(pollTimer);
+            showScreen('expiredCard');
+          }
+        } catch (e) {
+          console.warn('Poll error:', e);
+        }
+      }, 5000);
+    }
+
+    // ── QR Code (minimal inline generator) ───────────
+    function renderQR() {
+      // Simple QR placeholder — use a library in production
+      const container = document.getElementById('qrContainer');
+      const url = window.location.href;
+      const canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, 160, 160);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('QR Code', 80, 75);
+      ctx.fillText('(add qrcode.js)', 80, 90);
+      container.appendChild(canvas);
+    }
+
+    // ── Helpers ───────────────────────────────────────
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    const CHAIN_IDS = {
+      polygon: 137, avalanche: 43114, base: 8453, optimism: 10, arbitrum: 42161,
+    };
+    function getChainId(chain) { return CHAIN_IDS[chain]; }
+
+    function base64urlToBuffer(base64url) {
+      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = base64.length % 4;
+      const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    function bufferToBase64url(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (const b of bytes) binary += String.fromCharCode(b);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    // ── Start ────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

@@ -25,19 +25,16 @@ export const OperationType = {
   SEND: 'SEND',
   BRIDGE: 'BRIDGE',
   BATCH_SEND: 'BATCH_SEND',
-  SWAP_DEPOSIT: 'SWAP_DEPOSIT'
+  SWAP_DEPOSIT: 'SWAP_DEPOSIT',
+  PAYMENT_SETTLE: 'PAYMENT_SETTLE'
 } as const
 
 export type OperationType = (typeof OperationType)[keyof typeof OperationType]
 
 
 export const OperationStatus = {
-  PREPARING: 'PREPARING',
   AWAITING_SIGNATURE: 'AWAITING_SIGNATURE',
-  SUBMITTED: 'SUBMITTED',
   PROCESSING: 'PROCESSING',
-  AWAITING_SIGNATURE_PHASE2: 'AWAITING_SIGNATURE_PHASE2',
-  SUBMITTED_PHASE2: 'SUBMITTED_PHASE2',
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
   CANCELLED: 'CANCELLED'
@@ -47,15 +44,13 @@ export type OperationStatus = (typeof OperationStatus)[keyof typeof OperationSta
 
 
 export const StepType = {
-  APPROVE: 'APPROVE',
-  DEPOSIT: 'DEPOSIT',
   APPROVE_AND_DEPOSIT: 'APPROVE_AND_DEPOSIT',
   ADD_DELEGATE: 'ADD_DELEGATE',
   BURN_INTENT: 'BURN_INTENT',
-  WAIT_ATTESTATION: 'WAIT_ATTESTATION',
   MINT: 'MINT',
   TRANSFER: 'TRANSFER',
-  LIFI_SWAP: 'LIFI_SWAP'
+  LIFI_SWAP: 'LIFI_SWAP',
+  SWAP_TO_USDC: 'SWAP_TO_USDC'
 } as const
 
 export type StepType = (typeof StepType)[keyof typeof StepType]
@@ -71,3 +66,15 @@ export const StepStatus = {
 } as const
 
 export type StepStatus = (typeof StepStatus)[keyof typeof StepStatus]
+
+
+export const PaymentStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
+  FAILED: 'FAILED'
+} as const
+
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
